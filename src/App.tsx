@@ -1,12 +1,16 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import PWABadge from './PWABadge.tsx'
 import { BookList } from './components/BookList.tsx'
 import { ImportDropzone } from './components/ImportDropzone.tsx'
+import { Pagination } from './components/Pagination.tsx'
 import { SearchControls } from './components/SearchControls.tsx'
 import { useBooks } from './hooks/useBooks.ts'
 import { useGeolocation } from './hooks/useGeolocation.ts'
+import { usePagination } from './hooks/usePagination.ts'
 import { REGIONS } from './lib/libraryApi.ts'
 import './App.css'
+
+const PAGE_SIZE = 20
 
 function App() {
   const { books, loading, error, importFile, removeBook, clearAll } = useBooks()
@@ -14,14 +18,33 @@ function App() {
     useGeolocation()
   const [region, setRegion] = useState<string>(REGIONS[0].code)
   const [notice, setNotice] = useState<string | null>(null)
+  const listTopRef = useRef<HTMLDivElement>(null)
+
+  const {
+    page,
+    pageCount,
+    pageItems,
+    rangeStart,
+    rangeEnd,
+    total,
+    setPage,
+  } = usePagination(books, PAGE_SIZE)
 
   const regionName =
     REGIONS.find((r) => r.code === region)?.name ?? REGIONS[0].name
 
+  const goToPage = (next: number) => {
+    setPage(next)
+    listTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const handleFile = async (file: File) => {
     setNotice(null)
     const result = await importFile(file)
-    if (result) setNotice(`${result.imported}권을 불러왔습니다.`)
+    if (result) {
+      setNotice(`${result.imported}권을 불러왔습니다.`)
+      setPage(1)
+    }
   }
 
   return (
@@ -46,8 +69,10 @@ function App() {
             locationStatus={locationStatus}
             onRequestLocation={requestLocation}
           />
-          <div className="list-header">
-            <span className="list-header__count">{books.length}권</span>
+          <div className="list-header" ref={listTopRef}>
+            <span className="list-header__count">
+              {rangeStart}–{rangeEnd} / {total}권
+            </span>
             <button
               className="list-header__clear"
               onClick={() => {
@@ -58,12 +83,13 @@ function App() {
             </button>
           </div>
           <BookList
-            books={books}
+            books={pageItems}
             region={region}
             regionName={regionName}
             coords={coords}
             onRemove={removeBook}
           />
+          <Pagination page={page} pageCount={pageCount} onChange={goToPage} />
         </>
       ) : (
         <p className="message">
