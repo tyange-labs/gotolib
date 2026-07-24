@@ -1,0 +1,139 @@
+.app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  text-align: left;
+}
+
+.app__header {
+  margin-bottom: 1.5rem;
+}
+
+.app__header h1 {
+  font-size: 2rem;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.app__tagline {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+}
+
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 2rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.dropzone:hover,
+.dropzone--active {
+  border-color: var(--accent);
+  background-color: var(--accent-soft);
+}
+
+.dropzone__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.dropzone__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.message {
+  margin: 1.25rem 0;
+  color: var(--muted);
+}
+
+.message--error {
+  color: #d33;
+}
+
+.message--notice {
+  color: var(--accent);
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.list-header__count {
+  font-weight: 600;
+}
+
+.list-header__clear {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.list-header__clear:hover {
+  color: #d33;
+  border-color: transparent;
+}
+
+.book-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.book-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+
+.book-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.book-card__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.book-card__meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.book-card__isbn {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.book-card__remove {
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+.book-card__remove:hover {
+  color: #d33;
+  border-color: transparent;
+}
