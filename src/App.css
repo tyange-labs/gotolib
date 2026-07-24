@@ -94,12 +94,15 @@
 }
 
 .book-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.85rem 1rem;
+}
+
+.book-card__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
 }
 
 .book-card__body {
@@ -136,4 +139,163 @@
 .book-card__remove:hover {
   color: #d33;
   border-color: transparent;
+}
+
+.book-card__actions {
+  margin-top: 0.6rem;
+}
+
+.book-card__lookup {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  background: none;
+  border-radius: 8px;
+  color: inherit;
+}
+
+.book-card__lookup:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.book-card__lookup:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 검색 컨트롤 */
+.controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.25rem;
+}
+
+.controls__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.controls__label {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.controls__select {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+}
+
+.controls__location {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+}
+
+.controls__location:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.controls__location:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+/* 소장 도서관 패널 */
+.holdings {
+  margin-top: 0.7rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.7rem;
+}
+
+.holdings__status {
+  margin: 0.7rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.holdings__status--error {
+  color: #d33;
+}
+
+.holdings__summary {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.holdings__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.holdings__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.holdings__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.holdings__name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.holdings__addr {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.holdings__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.holdings__distance {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.badge {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge--ok {
+  background: rgba(46, 160, 67, 0.18);
+  color: #3fb950;
+}
+
+.badge--warn {
+  background: rgba(210, 153, 34, 0.18);
+  color: #d29922;
+}
+
+.badge--muted {
+  background: rgba(140, 140, 140, 0.18);
+  color: var(--muted);
 }

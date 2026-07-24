@@ -2,12 +2,21 @@ import { useState } from 'react'
 import PWABadge from './PWABadge.tsx'
 import { BookList } from './components/BookList.tsx'
 import { ImportDropzone } from './components/ImportDropzone.tsx'
+import { SearchControls } from './components/SearchControls.tsx'
 import { useBooks } from './hooks/useBooks.ts'
+import { useGeolocation } from './hooks/useGeolocation.ts'
+import { REGIONS } from './lib/libraryApi.ts'
 import './App.css'
 
 function App() {
   const { books, loading, error, importFile, removeBook, clearAll } = useBooks()
+  const { coords, status: locationStatus, request: requestLocation } =
+    useGeolocation()
+  const [region, setRegion] = useState<string>(REGIONS[0].code)
   const [notice, setNotice] = useState<string | null>(null)
+
+  const regionName =
+    REGIONS.find((r) => r.code === region)?.name ?? REGIONS[0].name
 
   const handleFile = async (file: File) => {
     setNotice(null)
@@ -31,6 +40,12 @@ function App() {
         <p className="message">불러오는 중…</p>
       ) : books.length > 0 ? (
         <>
+          <SearchControls
+            region={region}
+            onRegionChange={setRegion}
+            locationStatus={locationStatus}
+            onRequestLocation={requestLocation}
+          />
           <div className="list-header">
             <span className="list-header__count">{books.length}권</span>
             <button
@@ -42,7 +57,13 @@ function App() {
               전체 삭제
             </button>
           </div>
-          <BookList books={books} onRemove={removeBook} />
+          <BookList
+            books={books}
+            region={region}
+            regionName={regionName}
+            coords={coords}
+            onRemove={removeBook}
+          />
         </>
       ) : (
         <p className="message">
