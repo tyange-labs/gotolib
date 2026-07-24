@@ -50,11 +50,15 @@ export const REGIONS = [
   { code: '39', name: '제주' },
 ] as const
 
-/** ISBN13으로 해당 지역에서 그 책을 소장한 도서관 목록을 조회한다. */
+/**
+ * ISBN13으로 해당 지역에서 그 책을 소장한 도서관 목록을 조회한다.
+ * 거리순으로 진짜 가까운 곳을 고르려면 소장 도서관 전체를 받아야 하므로
+ * pageSize를 크게 잡는다 (앞 N개만 받으면 더 가까운 곳이 누락됨). 호출은 1회.
+ */
 export async function searchLibrariesByBook(
   isbn13: string,
   region: string,
-  pageSize = 50,
+  pageSize = 1000,
 ): Promise<HoldingResult> {
   const params = new URLSearchParams({
     isbn: isbn13,

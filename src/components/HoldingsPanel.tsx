@@ -30,11 +30,17 @@ export function HoldingsPanel({
   }
   if (status !== 'loaded') return null
 
+  // 실제 거리값이 있을 때(위치 확보)만 '가까운'이라 표기한다.
+  const sortedByDistance = libraries.some((lib) => lib.distance != null)
+  const summary = sortedByDistance
+    ? `${regionName} · 소장 ${numFound}개관 중 가까운 ${libraries.length}곳`
+    : numFound > libraries.length
+      ? `${regionName} · 소장 ${numFound}개관 중 ${libraries.length}곳 (📍 위치를 켜면 가까운 순)`
+      : `${regionName} · 소장 ${numFound}개관`
+
   return (
     <div className="holdings">
-      <p className="holdings__summary">
-        {regionName} · 소장 {numFound}개관 중 가까운 {libraries.length}곳
-      </p>
+      <p className="holdings__summary">{summary}</p>
       <ul className="holdings__list">
         {libraries.map((lib) => (
           <li key={lib.libCode} className="holdings__item">
