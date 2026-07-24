@@ -64,6 +64,8 @@ export function parseAladinExport(buffer: ArrayBuffer): Book[] {
       pubDate,
       isbn13,
       price,
+      genre: cellAt(row, columnOf.genre),
+      kdc: kdcFromBugah(cellAt(row, columnOf.bugah)),
       addedAt,
     })
   }
@@ -108,6 +110,8 @@ const COLUMN_MATCHERS = {
   pubDate: [/출간일|발행일|출시일/],
   isbn: [/isbn.?13/i, /isbn/i],
   price: [/판매가|정가|가격/],
+  genre: [/^분야$/, /분야|장르|카테고리/],
+  bugah: [/^부가기호$/, /부가기호/],
 } satisfies Record<string, RegExp[]>
 
 type ColumnKey = keyof typeof COLUMN_MATCHERS
@@ -134,6 +138,15 @@ function normalize(cell: unknown): string {
 function cellAt(row: unknown[], index: number | undefined): string | undefined {
   if (index === undefined) return undefined
   return normalize(row[index]) || undefined
+}
+
+/**
+ * ISBN 부가기호(5자리: [독자대상][발행형태][내용분류 3자리])에서 KDC 주류 한 자리를 뽑는다.
+ * 내용분류기호 3자리의 첫 자리(=전체 3번째 자리)가 KDC 주류(0~9)다. 예: "03810" → "8"(문학).
+ */
+function kdcFromBugah(value: string | undefined): string | undefined {
+  const digits = value?.replace(/\D/g, '') ?? ''
+  return digits.length >= 5 ? digits[2] : undefined
 }
 
 /** "20260715" 같은 YYYYMMDD 형식을 "2026-07-15"로 바꾼다 */

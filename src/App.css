@@ -348,3 +348,273 @@
   padding: 0 0.1rem;
   user-select: none;
 }
+
+/* 세그먼트 컨트롤 */
+.segmented {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin: 1.25rem 0 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.segmented__option {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.segmented__option--active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* 검색바 */
+.searchbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.searchbar:focus-within {
+  border-color: var(--accent);
+}
+
+.searchbar__icon {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.searchbar__input {
+  flex: 1;
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 0.95rem;
+  padding: 0.6rem 0;
+  outline: none;
+}
+
+.searchbar__clear {
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+/* 분류 탭 (KDC 주류는 10개로 고정 → 스크롤 대신 줄바꿈으로 전부 노출) */
+.genre-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.genre-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  font-size: 0.82rem;
+}
+
+.genre-chip--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.genre-chip__count {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.genre-chip--active .genre-chip__count {
+  color: var(--accent);
+}
+
+.link-button {
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
+}
+
+/* 주변 도서관 목록 */
+.lib-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lib-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  background: none;
+  color: inherit;
+}
+
+.lib-card:hover {
+  border-color: var(--accent);
+}
+
+.lib-card__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lib-card__name {
+  font-weight: 600;
+}
+
+.lib-card__addr {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+.lib-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.lib-card__distance {
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.lib-card__chevron {
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
+/* 도서관 상세 (드릴다운) */
+.detail {
+  animation: detail-slide-in 0.22s ease;
+}
+
+@keyframes detail-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.detail__bar {
+  margin: 1.25rem 0 0.5rem;
+}
+
+.detail__back {
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.detail__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.detail__name {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.detail__distance {
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.detail__meta {
+  margin: 1rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detail__row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.detail__label {
+  flex-shrink: 0;
+  width: 3.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.detail__value {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.detail__held {
+  margin-top: 1.75rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.detail__held-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.detail__held-placeholder {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.detail__held-note {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}

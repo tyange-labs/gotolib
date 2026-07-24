@@ -13,6 +13,8 @@ export interface Library {
   homepage: string
   closed: string
   operatingTime: string
+  /** 장서 수 (libSrch 응답에만 존재) */
+  bookCount?: number
 }
 
 export interface HoldingResult {
@@ -69,17 +71,40 @@ export async function searchLibrariesByBook(
     data.response?.libs ?? []
   return {
     numFound: Number(data.response?.numFound ?? 0),
-    libraries: rawLibs.map(({ lib }) => ({
-      libCode: lib.libCode,
-      libName: lib.libName,
-      address: lib.address,
-      tel: lib.tel,
-      latitude: Number(lib.latitude),
-      longitude: Number(lib.longitude),
-      homepage: lib.homepage,
-      closed: lib.closed,
-      operatingTime: lib.operatingTime,
-    })),
+    libraries: rawLibs.map(({ lib }) => mapLib(lib)),
+  }
+}
+
+/**
+ * 지역 내 도서관 목록을 조회한다 (거리 정렬은 호출측에서).
+ * 거리순 정렬이 정확하려면 지역 전체를 받아야 하므로 pageSize를 크게 잡는다 (호출은 1회).
+ */
+export async function searchLibraries(
+  region: string,
+  pageSize = 1500,
+): Promise<Library[]> {
+  const params = new URLSearchParams({ region, pageSize: String(pageSize) })
+  const data = await request(`/api/library/libSrch?${params}`)
+  if (data.response?.error) {
+    throw new LibraryApiError(String(data.response.error))
+  }
+  const rawLibs: Array<{ lib: Record<string, string> }> =
+    data.response?.libs ?? []
+  return rawLibs.map(({ lib }) => mapLib(lib))
+}
+
+function mapLib(lib: Record<string, string>): Library {
+  return {
+    libCode: lib.libCode,
+    libName: lib.libName,
+    address: lib.address,
+    tel: lib.tel,
+    latitude: Number(lib.latitude),
+    longitude: Number(lib.longitude),
+    homepage: lib.homepage,
+    closed: lib.closed,
+    operatingTime: lib.operatingTime,
+    bookCount: lib.BookCount ? Number(lib.BookCount) : undefined,
   }
 }
 
