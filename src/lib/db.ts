@@ -1,5 +1,12 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
+import type { Library } from './libraryApi'
 import type { Book } from '../types/book'
+
+/** 와치리스트 항목 */
+export interface WatchItem {
+  bookId: string
+  addedAt: number
+}
 
 interface GotolibDB extends DBSchema {
   books: {
@@ -7,20 +14,35 @@ interface GotolibDB extends DBSchema {
     value: Book
     indexes: { 'by-addedAt': number }
   }
+  favLibraries: {
+    key: string // libCode
+    value: Library & { addedAt: number }
+  }
+  watchlist: {
+    key: string // bookId
+    value: WatchItem
+  }
 }
 
 let dbPromise: Promise<IDBPDatabase<GotolibDB>> | null = null
 
 function getDB() {
-  dbPromise ??= openDB<GotolibDB>('gotolib', 1, {
-    upgrade(db) {
-      const store = db.createObjectStore('books', { keyPath: 'id' })
-      store.createIndex('by-addedAt', 'addedAt')
+  dbPromise ??= openDB<GotolibDB>('gotolib', 2, {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        const store = db.createObjectStore('books', { keyPath: 'id' })
+        store.createIndex('by-addedAt', 'addedAt')
+      }
+      if (oldVersion < 2) {
+        db.createObjectStore('favLibraries', { keyPath: 'libCode' })
+        db.createObjectStore('watchlist', { keyPath: 'bookId' })
+      }
     },
   })
   return dbPromise
 }
 
+// ── 도서 ──────────────────────────────────────────────
 export async function getAllBooks(): Promise<Book[]> {
   const db = await getDB()
   return db.getAllFromIndex('books', 'by-addedAt')
@@ -41,4 +63,38 @@ export async function deleteBook(id: string): Promise<void> {
 export async function clearBooks(): Promise<void> {
   const db = await getDB()
   await db.clear('books')
+}
+
+// ── 자주 가는 도서관 ─────────────────────────────────
+export async function getFavLibraries(): Promise<Library[]> {
+  const db = await getDB()
+  const rows = await db.getAll('favLibraries')
+  return rows.sort((a, b) => a.addedAt - b.addedAt)
+}
+
+export async function addFavLibrary(library: Library): Promise<void> {
+  const db = await getDB()
+  await db.put('favLibraries', { ...library, addedAt: Date.now() })
+}
+
+export async function removeFavLibrary(libCode: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('favLibraries', libCode)
+}
+
+// ── 도서 와치리스트 ──────────────────────────────────
+export async function getWatchlist(): Promise<WatchItem[]> {
+  const db = await getDB()
+  const rows = await db.getAll('watchlist')
+  return rows.sort((a, b) => a.addedAt - b.addedAt)
+}
+
+export async function addWatchItem(bookId: string): Promise<void> {
+  const db = await getDB()
+  await db.put('watchlist', { bookId, addedAt: Date.now() })
+}
+
+export async function removeWatchItem(bookId: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('watchlist', bookId)
 }

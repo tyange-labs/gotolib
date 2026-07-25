@@ -1,3 +1,4 @@
+import { MapPin } from 'lucide-react'
 import { REGIONS } from '../lib/libraryApi'
 
 type LocationStatus = 'idle' | 'loading' | 'granted' | 'denied' | 'unavailable'
@@ -37,6 +38,7 @@ export function SearchControls({
         onClick={onRequestLocation}
         disabled={locationStatus === 'loading' || locationStatus === 'granted'}
       >
+        <MapPin size={15} aria-hidden />
         {locationText(locationStatus)}
       </button>
     </div>
@@ -48,12 +50,12 @@ function locationText(status: LocationStatus): string {
     case 'loading':
       return '위치 확인 중…'
     case 'granted':
-      return '📍 현재 위치 기준 정렬 중'
+      return '현재 위치 기준 정렬 중'
     case 'denied':
       return '위치 권한 거부됨 · 다시 시도'
     case 'unavailable':
       return '위치 기능 없음'
     default:
-      return '📍 가까운 순으로 보기'
+      return '가까운 순으로 보기'
   }
 }

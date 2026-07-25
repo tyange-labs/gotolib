@@ -1,17 +1,21 @@
+import { Link } from '@tanstack/react-router'
+import { ChevronLeft } from 'lucide-react'
+import { FavoriteStar } from './FavoriteStar'
 import type { NearbyLibrary } from '../hooks/useNearbyLibraries'
 
 interface Props {
   library: NearbyLibrary
-  onBack: () => void
 }
 
-export function LibraryDetail({ library, onBack }: Props) {
+export function LibraryDetail({ library }: Props) {
   return (
     <div className="detail">
       <div className="detail__bar">
-        <button className="detail__back" onClick={onBack} aria-label="뒤로">
-          ‹ 목록
-        </button>
+        <Link to="/nearby" className="detail__back" aria-label="뒤로">
+          <ChevronLeft size={16} />
+          목록
+        </Link>
+        <FavoriteStar library={library} />
       </div>
 
       <div className="detail__head">

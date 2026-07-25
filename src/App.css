@@ -21,6 +21,7 @@
 }
 
 .dropzone {
+  margin-top: 1.25rem;
   border: 2px dashed var(--border);
   border-radius: 12px;
   padding: 2rem 1rem;
@@ -129,6 +130,10 @@
 }
 
 .book-card__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   border: none;
   background: none;
   color: var(--muted);
@@ -144,9 +149,12 @@
 
 .book-card__actions {
   margin-top: 0.6rem;
+  display: flex;
+  gap: 0.4rem;
 }
 
-.book-card__lookup {
+.book-card__lookup,
+.book-card__watch {
   padding: 0.4rem 0.9rem;
   font-size: 0.85rem;
   border: 1px solid var(--border);
@@ -155,13 +163,26 @@
   color: inherit;
 }
 
-.book-card__lookup:hover:not(:disabled) {
+.book-card__lookup:hover:not(:disabled),
+.book-card__watch:hover:not(:disabled) {
   border-color: var(--accent);
 }
 
-.book-card__lookup:disabled {
+.book-card__lookup:disabled,
+.book-card__watch:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.book-card__watch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.book-card__watch--active {
+  border-color: #d6336c;
+  color: #e64980;
 }
 
 /* 검색 컨트롤 */
@@ -194,6 +215,9 @@
 }
 
 .controls__location {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   padding: 0.45rem 0.9rem;
   font-size: 0.85rem;
   border: 1px solid var(--border);
@@ -313,6 +337,9 @@
 
 .pagination__step,
 .pagination__page {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 2rem;
   height: 2rem;
   padding: 0 0.5rem;
@@ -392,8 +419,8 @@
 }
 
 .searchbar__icon {
-  font-size: 0.85rem;
-  opacity: 0.7;
+  flex-shrink: 0;
+  color: var(--muted);
 }
 
 .searchbar__input {
@@ -407,6 +434,10 @@
 }
 
 .searchbar__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   border: none;
   background: none;
   color: var(--muted);
@@ -546,6 +577,9 @@
 }
 
 .detail__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
   border: none;
   background: none;
   color: var(--accent);
@@ -617,4 +651,148 @@
 .detail__held-note {
   font-size: 0.8rem;
   opacity: 0.85;
+}
+
+/* 자주 가는 도서관 */
+.fav-section {
+  margin-top: 0.5rem;
+}
+
+.fav-section__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.lib-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.lib-row .lib-card {
+  flex: 1;
+  min-width: 0;
+}
+
+.fav-star {
+  flex-shrink: 0;
+  width: 2.75rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.fav-star:hover {
+  border-color: var(--accent);
+}
+
+.fav-star--active {
+  color: #f2b705;
+  border-color: #f2b705;
+}
+
+.detail__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail__bar .fav-star {
+  width: auto;
+  padding: 0.25rem 0.6rem;
+  border: none;
+}
+
+/* 소장 미보유(dim) 처리 */
+.holdings__item--dim {
+  opacity: 0.45;
+}
+
+/* 와치리스트 요약 */
+.watchlist {
+  margin-top: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.watchlist__header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.watchlist__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: #e64980;
+}
+
+.watchlist__count {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.watchlist__hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.watchlist__chevron {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+}
+
+.watchlist__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.9rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.watchlist__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.watchlist__book {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 샘플 데이터 배너 */
+.sample-banner {
+  margin: 0.75rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 10px;
+  font-size: 0.88rem;
+  line-height: 1.5;
 }

@@ -1,3 +1,5 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+
 interface Props {
   page: number
   pageCount: number
@@ -15,7 +17,7 @@ export function Pagination({ page, pageCount, onChange }: Props) {
         disabled={page === 1}
         aria-label="이전 페이지"
       >
-        ‹
+        <ChevronLeft size={16} />
       </button>
 
       {pageWindow(page, pageCount).map((item, i) =>
@@ -43,7 +45,7 @@ export function Pagination({ page, pageCount, onChange }: Props) {
         disabled={page === pageCount}
         aria-label="다음 페이지"
       >
-        ›
+        <ChevronRight size={16} />
       </button>
     </nav>
   )

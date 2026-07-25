@@ -3,31 +3,21 @@ import { BookList } from '../components/BookList'
 import { GenreTabs } from '../components/GenreTabs'
 import { Pagination } from '../components/Pagination'
 import { SearchBar } from '../components/SearchBar'
+import { WatchlistSummary } from '../components/WatchlistSummary'
 import { useBookFilter } from '../hooks/useBookFilter'
 import { usePagination } from '../hooks/usePagination'
 import { buildClassTabs } from '../lib/kdc'
-import type { Coords } from '../lib/geo'
 import type { Book } from '../types/book'
 
 const PAGE_SIZE = 20
 
 interface Props {
   books: Book[]
-  region: string
-  regionName: string
-  coords: Coords | null
   onRemove: (id: string) => void
   onClearAll: () => void
 }
 
-export function ShelfView({
-  books,
-  region,
-  regionName,
-  coords,
-  onRemove,
-  onClearAll,
-}: Props) {
+export function ShelfView({ books, onRemove, onClearAll }: Props) {
   const { kdcClass, setKdcClass, query, setQuery, filtered } =
     useBookFilter(books)
   const classTabs = useMemo(() => buildClassTabs(books), [books])
@@ -48,6 +38,7 @@ export function ShelfView({
 
   return (
     <div>
+      <WatchlistSummary />
       <SearchBar
         value={query}
         onChange={setQuery}
@@ -78,13 +69,7 @@ export function ShelfView({
         <p className="message">조건에 맞는 책이 없어요.</p>
       ) : (
         <>
-          <BookList
-            books={pageItems}
-            region={region}
-            regionName={regionName}
-            coords={coords}
-            onRemove={onRemove}
-          />
+          <BookList books={pageItems} onRemove={onRemove} />
           <Pagination page={page} pageCount={pageCount} onChange={goToPage} />
         </>
       )}
