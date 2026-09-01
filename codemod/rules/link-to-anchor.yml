@@ -1,0 +1,15 @@
+id: link-to-anchor
+language: tsx
+severity: hint
+message: >-
+  @solidjs/router names its link component `A`. Skip the sites that also pass
+  `params` -- those need the value interpolated into `href` by hand.
+rule:
+  kind: identifier
+  regex: ^Link$
+  any:
+    - inside: { kind: jsx_opening_element }
+    - inside: { kind: jsx_closing_element }
+    - inside: { kind: jsx_self_closing_element }
+    - inside: { kind: import_specifier }
+fix: A

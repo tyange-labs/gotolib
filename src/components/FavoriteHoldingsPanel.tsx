@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { A } from '@solidjs/router'
 import type { FavHolding, LoanState } from '../hooks/useFavoriteHoldings'
 
 interface Props {
@@ -11,7 +11,7 @@ export function FavoriteHoldingsPanel({ holdings, favoritesCount }: Props) {
     return (
       <div class="holdings">
         <p class="holdings__status">
-          먼저 <Link to="/nearby">주변 도서관</Link>에서 자주 가는 도서관을
+          먼저 <A href="/nearby">주변 도서관</A>에서 자주 가는 도서관을
           등록하세요.
         </p>
       </div>

@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { A } from '@solidjs/router'
 import { ChevronLeft } from 'lucide-solid'
 import { FavoriteStar } from './FavoriteStar'
 import type { NearbyLibrary } from '../hooks/useNearbyLibraries'
@@ -11,10 +11,10 @@ export function LibraryDetail({ library }: Props) {
   return (
     <div class="detail">
       <div class="detail__bar">
-        <Link to="/nearby" class="detail__back" aria-label="뒤로">
+        <A href="/nearby" class="detail__back" aria-label="뒤로">
           <ChevronLeft size={16} />
           목록
-        </Link>
+        </A>
         <FavoriteStar library={library} />
       </div>
 

@@ -1,0 +1,10 @@
+id: link-to-href
+language: tsx
+severity: hint
+message: AnchorProps takes `href`, not `to`.
+rule:
+  kind: property_identifier
+  regex: ^to$
+  inside:
+    kind: jsx_attribute
+fix: href

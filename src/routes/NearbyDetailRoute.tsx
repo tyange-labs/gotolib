@@ -1,4 +1,4 @@
-import { useParams } from '@tanstack/react-router'
+import { useParams } from '@solidjs/router'
 import { LibraryDetail } from '../components/LibraryDetail'
 import { useNearby } from '../context/nearbyContext'
 

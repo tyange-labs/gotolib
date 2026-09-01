@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { A } from '@solidjs/router'
 import { ChevronRight } from 'lucide-solid'
 import { useMemo, useState } from 'react'
 import { FavoriteStar } from '../components/FavoriteStar'
@@ -28,17 +28,13 @@ export function NearbyList() {
           <ul class="lib-list">
             {favorites.favorites.map((lib) => (
               <li key={lib.libCode} class="lib-row">
-                <Link
-                  to="/nearby/$libCode"
-                  params={{ libCode: lib.libCode }}
-                  class="lib-card"
-                >
+                <A href={`/nearby/${lib.libCode}`} class="lib-card">
                   <div class="lib-card__body">
                     <span class="lib-card__name">{lib.libName}</span>
                     <span class="lib-card__addr">{lib.address}</span>
                   </div>
                   <ChevronRight class="lib-card__chevron" size={18} aria-hidden />
-                </Link>
+                </A>
                 <FavoriteStar library={lib} />
               </li>
             ))}
@@ -72,11 +68,7 @@ export function NearbyList() {
             <ul class="lib-list">
               {filtered.map((lib) => (
                 <li key={lib.libCode} class="lib-row">
-                  <Link
-                    to="/nearby/$libCode"
-                    params={{ libCode: lib.libCode }}
-                    class="lib-card"
-                  >
+                  <A href={`/nearby/${lib.libCode}`} class="lib-card">
                     <div class="lib-card__body">
                       <span class="lib-card__name">{lib.libName}</span>
                       <span class="lib-card__addr">{lib.address}</span>
@@ -94,7 +86,7 @@ export function NearbyList() {
                         ›
                       </span>
                     </div>
-                  </Link>
+                  </A>
                   <FavoriteStar library={lib} />
                 </li>
               ))}

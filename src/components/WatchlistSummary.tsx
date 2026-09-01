@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { A } from '@solidjs/router'
 import { ChevronDown, ChevronUp, Heart } from 'lucide-solid'
 import { useEffect, useState } from 'react'
 import { useApp } from '../context/appContext'
@@ -75,7 +75,7 @@ export function WatchlistSummary() {
         <ul class="watchlist__list">
           {favs.length === 0 && (
             <li class="watchlist__item">
-              <Link to="/nearby">주변 도서관</Link>에서 자주 가는 도서관을
+              <A href="/nearby">주변 도서관</A>에서 자주 가는 도서관을
               먼저 등록하세요.
             </li>
           )}

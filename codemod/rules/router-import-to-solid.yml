@@ -1,0 +1,11 @@
+id: router-import-to-solid
+language: tsx
+severity: hint
+message: The official Solid router.
+rule:
+  kind: string_fragment
+  regex: ^@tanstack/react-router$
+  inside:
+    stopBy: end
+    kind: import_statement
+fix: '@solidjs/router'
