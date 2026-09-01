@@ -1,49 +1,22 @@
-import {
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from '@tanstack/react-router'
+import { Route, Router } from '@solidjs/router'
 import { AppLayout } from './routes/AppLayout'
 import { NearbyDetailRoute } from './routes/NearbyDetailRoute'
 import { NearbyLayout } from './routes/NearbyLayout'
 import { NearbyList } from './routes/NearbyList'
 import { ShelfRoute } from './routes/ShelfRoute'
 
-const rootRoute = createRootRoute({ component: AppLayout })
-
-const shelfRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/',
-  component: ShelfRoute,
-})
-
-const nearbyRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: 'nearby',
-  component: NearbyLayout,
-})
-
-const nearbyIndexRoute = createRoute({
-  getParentRoute: () => nearbyRoute,
-  path: '/',
-  component: NearbyList,
-})
-
-const nearbyDetailRoute = createRoute({
-  getParentRoute: () => nearbyRoute,
-  path: '$libCode',
-  component: NearbyDetailRoute,
-})
-
-const routeTree = rootRoute.addChildren([
-  shelfRoute,
-  nearbyRoute.addChildren([nearbyIndexRoute, nearbyDetailRoute]),
-])
-
-export const router = createRouter({ routeTree })
-
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router
-  }
+/**
+ * `root`가 모든 라우트를 감싸는 레이아웃이고, 중첩 Route는 부모 컴포넌트의
+ * `props.children`으로 들어간다. TanStack의 `<Outlet />` 자리가 그것이다.
+ */
+export function AppRouter() {
+  return (
+    <Router root={AppLayout}>
+      <Route path="/" component={ShelfRoute} />
+      <Route path="/nearby" component={NearbyLayout}>
+        <Route path="/" component={NearbyList} />
+        <Route path="/:libCode" component={NearbyDetailRoute} />
+      </Route>
+    </Router>
+  )
 }

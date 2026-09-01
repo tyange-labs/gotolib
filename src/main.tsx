@@ -1,15 +1,14 @@
-import { RouterProvider } from '@tanstack/react-router'
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { render } from 'solid-js/web'
 import { AppProvider } from './context/AppProvider.tsx'
-import { router } from './router.tsx'
+import { AppRouter } from './router.tsx'
 import './index.css'
 import './App.css'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+render(
+  () => (
     <AppProvider>
-      <RouterProvider router={router} />
+      <AppRouter />
     </AppProvider>
-  </StrictMode>,
+  ),
+  document.getElementById('root')!,
 )

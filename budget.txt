@@ -3,15 +3,11 @@
 # Record a reduction with: bun scripts/budget.ts --update
 src/components/BookCard.tsx	hook:useState	2
 src/components/BookCard.tsx	import:react	1
-src/components/FavoriteHoldingsPanel.tsx	import:@tanstack/react-router	1
 src/components/ImportDropzone.tsx	hook:useRef	2
 src/components/ImportDropzone.tsx	hook:useState	2
 src/components/ImportDropzone.tsx	import:react	1
-src/components/LibraryDetail.tsx	import:@tanstack/react-router	1
-src/components/ModeNav.tsx	import:@tanstack/react-router	1
 src/components/WatchlistSummary.tsx	hook:useEffect	2
 src/components/WatchlistSummary.tsx	hook:useState	3
-src/components/WatchlistSummary.tsx	import:@tanstack/react-router	1
 src/components/WatchlistSummary.tsx	import:react	1
 src/context/appContext.ts	api:createContext	2
 src/context/appContext.ts	import:react	1
@@ -51,16 +47,8 @@ src/hooks/useWatchlist.ts	hook:useCallback	1
 src/hooks/useWatchlist.ts	hook:useEffect	2
 src/hooks/useWatchlist.ts	hook:useState	2
 src/hooks/useWatchlist.ts	import:react	1
-src/main.tsx	import:@tanstack/react-router	1
-src/main.tsx	import:react	1
-src/main.tsx	import:react-dom	1
-src/router.tsx	import:@tanstack/react-router	1
-src/routes/AppLayout.tsx	import:@tanstack/react-router	1
-src/routes/NearbyDetailRoute.tsx	import:@tanstack/react-router	1
-src/routes/NearbyLayout.tsx	import:@tanstack/react-router	1
 src/routes/NearbyList.tsx	hook:useMemo	2
 src/routes/NearbyList.tsx	hook:useState	2
-src/routes/NearbyList.tsx	import:@tanstack/react-router	1
 src/routes/NearbyList.tsx	import:react	1
 src/routes/ShelfRoute.tsx	hook:useState	2
 src/routes/ShelfRoute.tsx	import:react	1
