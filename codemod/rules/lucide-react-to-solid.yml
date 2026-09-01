@@ -1,0 +1,11 @@
+id: lucide-react-to-solid
+language: tsx
+severity: hint
+message: lucide-solid ships the same icon names as Solid components.
+rule:
+  kind: string_fragment
+  regex: ^lucide-react$
+  inside:
+    stopBy: end
+    kind: import_statement
+fix: lucide-solid

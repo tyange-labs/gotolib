@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft } from 'lucide-solid'
 import { FavoriteStar } from './FavoriteStar'
 import type { NearbyLibrary } from '../hooks/useNearbyLibraries'
 

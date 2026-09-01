@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-solid'
 import { useMemo, useState } from 'react'
 import { FavoriteStar } from '../components/FavoriteStar'
 import { SearchBar } from '../components/SearchBar'

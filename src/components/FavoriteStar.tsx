@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react'
+import { Star } from 'lucide-solid'
 import { useApp } from '../context/appContext'
 import type { Library } from '../lib/libraryApi'
 

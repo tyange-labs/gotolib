@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ChevronDown, ChevronUp, Heart } from 'lucide-react'
+import { ChevronDown, ChevronUp, Heart } from 'lucide-solid'
 import { useEffect, useState } from 'react'
 import { useApp } from '../context/appContext'
 import { checkAvailability, type Library } from '../lib/libraryApi'

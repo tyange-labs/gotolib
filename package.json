@@ -13,7 +13,7 @@
     "@solidjs/router": "^1.0.0",
     "@tanstack/react-router": "^1.170.18",
     "idb": "^8.0.3",
-    "lucide-react": "^1.26.0",
+    "lucide-solid": "^1.38.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"

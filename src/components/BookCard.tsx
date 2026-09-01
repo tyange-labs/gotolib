@@ -1,4 +1,4 @@
-import { Heart, X } from 'lucide-react'
+import { Heart, X } from 'lucide-solid'
 import { useState } from 'react'
 import { useApp } from '../context/appContext'
 import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'

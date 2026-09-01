@@ -1,4 +1,4 @@
-import { MapPin } from 'lucide-react'
+import { MapPin } from 'lucide-solid'
 import { REGIONS } from '../lib/libraryApi'
 
 type LocationStatus = 'idle' | 'loading' | 'granted' | 'denied' | 'unavailable'

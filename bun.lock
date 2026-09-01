@@ -8,7 +8,7 @@
         "@solidjs/router": "^1.0.0",
         "@tanstack/react-router": "^1.170.18",
         "idb": "^8.0.3",
-        "lucide-react": "^1.26.0",
+        "lucide-solid": "^1.38.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
         "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
@@ -847,7 +847,7 @@
 
     "lru-cache": ["lru-cache@5.1.1", "", { "dependencies": { "yallist": "^3.0.2" } }, "sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w=="],
 
-    "lucide-react": ["lucide-react@1.26.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-raglYVR2+VkMfJL158krjVmE+rV5ST2lzA/KQm1FRSjMHT4MnWaegHxoVEpmc2So3nOEhp9oGejJwAPX8MoAjg=="],
+    "lucide-solid": ["lucide-solid@1.38.0", "", { "peerDependencies": { "solid-js": "^1.4.7" } }, "sha512-+zIaQkkaNkD9uOtUtyDiUfxR5oHjv2Pe37fmSXeoDGuKwdIe/huihu7rLQ6wwtYNMj4ACG/0y2/vShsV6xOUcA=="],
 
     "magic-string": ["magic-string@0.30.21", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.5" } }, "sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ=="],
 
