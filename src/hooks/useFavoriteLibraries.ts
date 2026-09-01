@@ -13,22 +13,16 @@ export function useFavoriteLibraries() {
     getFavLibraries().then(setFavorites).catch(() => setFavorites([]))
   }, [])
 
-  const isFavorite = useCallback(
-    (libCode: string) => favorites.some((lib) => lib.libCode === libCode),
-    [favorites],
-  )
+  const isFavorite = (libCode: string) => favorites.some((lib) => lib.libCode === libCode)
 
-  const toggle = useCallback(
-    async (library: Library) => {
-      if (favorites.some((lib) => lib.libCode === library.libCode)) {
-        await removeFavLibrary(library.libCode)
-      } else {
-        await addFavLibrary(library)
-      }
-      setFavorites(await getFavLibraries())
-    },
-    [favorites],
-  )
+  const toggle = async (library: Library) => {
+    if (favorites.some((lib) => lib.libCode === library.libCode)) {
+      await removeFavLibrary(library.libCode)
+    } else {
+      await addFavLibrary(library)
+    }
+    setFavorites(await getFavLibraries())
+  }
 
   return { favorites, isFavorite, toggle }
 }

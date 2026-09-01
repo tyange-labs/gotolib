@@ -19,7 +19,7 @@ interface State {
 export function useNearbyLibraries(region: string, coords: Coords | null) {
   const [state, setState] = useState<State>({ status: 'idle', libraries: [] })
 
-  const load = useCallback(async () => {
+  const load = async () => {
     setState({ status: 'loading', libraries: [] })
     try {
       const libs = await searchLibraries(region)
@@ -34,7 +34,7 @@ export function useNearbyLibraries(region: string, coords: Coords | null) {
         libraries: [],
       })
     }
-  }, [region, coords])
+  }
 
   // 지역이 바뀌면 다시 불러온다. (좌표만 바뀌면 아래 재정렬 effect가 처리)
   useEffect(() => {

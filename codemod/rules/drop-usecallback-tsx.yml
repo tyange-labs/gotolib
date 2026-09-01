@@ -1,0 +1,9 @@
+id: drop-usecallback-tsx
+language: tsx
+severity: hint
+message: >-
+  Solid runs a component once, so a function defined in its body is already
+  stable. useCallback has nothing to memoise.
+rule:
+  pattern: useCallback($FN, $DEPS)
+fix: $FN

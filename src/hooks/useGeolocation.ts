@@ -7,7 +7,7 @@ export function useGeolocation() {
   const [coords, setCoords] = useState<Coords | null>(null)
   const [status, setStatus] = useState<Status>('idle')
 
-  const request = useCallback(() => {
+  const request = () => {
     if (!('geolocation' in navigator)) {
       setStatus('unavailable')
       return
@@ -24,7 +24,7 @@ export function useGeolocation() {
       () => setStatus('denied'),
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 },
     )
-  }, [])
+  }
 
   // 이미 권한이 허용돼 있으면 팝업 없이 자동으로 위치를 가져온다.
   // 'prompt'(미결정)일 땐 버튼 클릭을 기다리고, Permissions API 미지원 시 조용히 폴백.

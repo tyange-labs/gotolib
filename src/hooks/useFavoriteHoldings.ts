@@ -22,12 +22,12 @@ export function useFavoriteHoldings(isbn13: string | undefined) {
   const { favorites } = useApp()
   const [holdings, setHoldings] = useState<FavHolding[] | null>(null)
 
-  const lookup = useCallback(async () => {
+  const lookup = async () => {
     if (!isbn13) return
     const libs = favorites.favorites
     // 먼저 전부 loading 상태로 표시
     setHoldings(libs.map((library) => ({ library, loan: 'loading' as const })))
-
+  
     await Promise.all(
       libs.map(async (library) => {
         const loan = await fetchLoanState(isbn13, library.libCode)
@@ -40,9 +40,9 @@ export function useFavoriteHoldings(isbn13: string | undefined) {
         )
       }),
     )
-  }, [isbn13, favorites.favorites])
+  }
 
-  const reset = useCallback(() => setHoldings(null), [])
+  const reset = () => setHoldings(null)
 
   return { holdings, favoritesCount: favorites.favorites.length, lookup, reset }
 }

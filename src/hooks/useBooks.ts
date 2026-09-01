@@ -29,7 +29,7 @@ export function useBooks() {
       .finally(() => setLoading(false))
   }, [])
 
-  const importFile = useCallback(async (file: File): Promise<ImportResult | null> => {
+  const importFile = async (file: File): Promise<ImportResult | null> => {
     setError(null)
     try {
       const parsed = parseAladinExport(await file.arrayBuffer())
@@ -45,22 +45,19 @@ export function useBooks() {
       )
       return null
     }
-  }, [])
+  }
 
-  const removeBook = useCallback(
-    async (id: string) => {
-      if (!isSample) await deleteBook(id)
-      setBooks((prev) => prev.filter((book) => book.id !== id))
-    },
-    [isSample],
-  )
+  const removeBook = async (id: string) => {
+    if (!isSample) await deleteBook(id)
+    setBooks((prev) => prev.filter((book) => book.id !== id))
+  }
 
-  const clearAll = useCallback(async () => {
+  const clearAll = async () => {
     await clearBooks()
     // 모두 지우면 다시 데모 샘플로 되돌아간다
     setBooks(SAMPLE_BOOKS)
     setIsSample(true)
-  }, [])
+  }
 
   return { books, loading, error, isSample, importFile, removeBook, clearAll }
 }

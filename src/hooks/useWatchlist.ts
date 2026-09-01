@@ -13,25 +13,22 @@ export function useWatchlist() {
       .catch(() => setIds([]))
   }, [])
 
-  const has = useCallback((bookId: string) => ids.includes(bookId), [ids])
+  const has = (bookId: string) => ids.includes(bookId)
 
   const isFull = ids.length >= WATCHLIST_LIMIT
 
   /** 추가/제거. 한도 초과로 추가 못하면 false. */
-  const toggle = useCallback(
-    async (bookId: string): Promise<boolean> => {
-      if (ids.includes(bookId)) {
-        await removeWatchItem(bookId)
-      } else {
-        if (ids.length >= WATCHLIST_LIMIT) return false
-        await addWatchItem(bookId)
-      }
-      const items = await getWatchlist()
-      setIds(items.map((i) => i.bookId))
-      return true
-    },
-    [ids],
-  )
+  const toggle = async (bookId: string): Promise<boolean> => {
+    if (ids.includes(bookId)) {
+      await removeWatchItem(bookId)
+    } else {
+      if (ids.length >= WATCHLIST_LIMIT) return false
+      await addWatchItem(bookId)
+    }
+    const items = await getWatchlist()
+    setIds(items.map((i) => i.bookId))
+    return true
+  }
 
   return { ids, has, isFull, count: ids.length, toggle }
 }
