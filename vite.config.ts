@@ -1,6 +1,6 @@
 import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig, loadEnv } from 'vite'
-import react from '@vitejs/plugin-react'
+import solid from 'vite-plugin-solid'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
   const apiKey = env.LIBRARY_API_KEY ?? ''
 
   return {
-    plugins: [react(), VitePWA({
+    plugins: [solid(), VitePWA({
       registerType: 'prompt',
       injectRegister: false,
 
