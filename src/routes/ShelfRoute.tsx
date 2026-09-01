@@ -18,7 +18,7 @@ export function ShelfRoute() {
   return (
     <>
       {isSample && (
-        <p className="sample-banner">
+        <p class="sample-banner">
           👋 <strong>샘플 데이터</strong>로 둘러보는 중이에요. 알라딘 보관함
           파일을 올리면 내 목록으로 바뀝니다.
         </p>
@@ -26,13 +26,13 @@ export function ShelfRoute() {
 
       <ImportDropzone onFile={handleFile} />
 
-      {error && <p className="message message--error">{error}</p>}
-      {notice && <p className="message message--notice">{notice}</p>}
+      {error && <p class="message message--error">{error}</p>}
+      {notice && <p class="message message--notice">{notice}</p>}
 
       {loading ? (
-        <p className="message">불러오는 중…</p>
+        <p class="message">불러오는 중…</p>
       ) : books.length === 0 ? (
-        <p className="message">
+        <p class="message">
           아직 저장된 책이 없어요. 알라딘 보관함 파일을 불러와보세요.
         </p>
       ) : (

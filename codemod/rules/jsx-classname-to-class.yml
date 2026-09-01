@@ -1,0 +1,10 @@
+id: jsx-classname-to-class
+language: tsx
+severity: hint
+message: JSX in Solid uses the DOM attribute name, `class`.
+rule:
+  kind: property_identifier
+  regex: ^className$
+  inside:
+    kind: jsx_attribute
+fix: class

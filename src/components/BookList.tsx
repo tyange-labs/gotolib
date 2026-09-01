@@ -8,7 +8,7 @@ interface Props {
 
 export function BookList({ books, onRemove }: Props) {
   return (
-    <ul className="book-list">
+    <ul class="book-list">
       {books.map((book) => (
         <BookCard key={book.id} book={book} onRemove={onRemove} />
       ))}

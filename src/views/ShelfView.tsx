@@ -51,12 +51,12 @@ export function ShelfView({ books, onRemove, onClearAll }: Props) {
         onSelect={setKdcClass}
       />
 
-      <div className="list-header" ref={topRef}>
-        <span className="list-header__count">
+      <div class="list-header" ref={topRef}>
+        <span class="list-header__count">
           {total > 0 ? `${rangeStart}–${rangeEnd} / ${total}권` : '0권'}
         </span>
         <button
-          className="list-header__clear"
+          class="list-header__clear"
           onClick={() => {
             if (confirm('저장된 도서 목록을 모두 삭제할까요?')) onClearAll()
           }}
@@ -66,7 +66,7 @@ export function ShelfView({ books, onRemove, onClearAll }: Props) {
       </div>
 
       {total === 0 ? (
-        <p className="message">조건에 맞는 책이 없어요.</p>
+        <p class="message">조건에 맞는 책이 없어요.</p>
       ) : (
         <>
           <BookList books={pageItems} onRemove={onRemove} />

@@ -17,7 +17,7 @@ export function ImportDropzone({ onFile }: Props) {
 
   return (
     <div
-      className={`dropzone${dragging ? ' dropzone--active' : ''}`}
+      class={`dropzone${dragging ? ' dropzone--active' : ''}`}
       onClick={() => inputRef.current?.click()}
       onDragOver={(e) => {
         e.preventDefault()
@@ -31,8 +31,8 @@ export function ImportDropzone({ onFile }: Props) {
         if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click()
       }}
     >
-      <p className="dropzone__title">알라딘 보관함 파일 불러오기</p>
-      <p className="dropzone__hint">
+      <p class="dropzone__title">알라딘 보관함 파일 불러오기</p>
+      <p class="dropzone__hint">
         내보내기한 파일(xls, xlsx, csv)을 끌어다 놓거나 클릭해서 선택하세요
       </p>
       <input

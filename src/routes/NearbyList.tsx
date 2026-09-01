@@ -21,23 +21,23 @@ export function NearbyList() {
   return (
     <div>
       {favorites.favorites.length > 0 && (
-        <section className="fav-section">
-          <p className="fav-section__title">
+        <section class="fav-section">
+          <p class="fav-section__title">
             ★ 자주 가는 도서관 {favorites.favorites.length}
           </p>
-          <ul className="lib-list">
+          <ul class="lib-list">
             {favorites.favorites.map((lib) => (
-              <li key={lib.libCode} className="lib-row">
+              <li key={lib.libCode} class="lib-row">
                 <Link
                   to="/nearby/$libCode"
                   params={{ libCode: lib.libCode }}
-                  className="lib-card"
+                  class="lib-card"
                 >
-                  <div className="lib-card__body">
-                    <span className="lib-card__name">{lib.libName}</span>
-                    <span className="lib-card__addr">{lib.address}</span>
+                  <div class="lib-card__body">
+                    <span class="lib-card__name">{lib.libName}</span>
+                    <span class="lib-card__addr">{lib.address}</span>
                   </div>
-                  <ChevronRight className="lib-card__chevron" size={18} aria-hidden />
+                  <ChevronRight class="lib-card__chevron" size={18} aria-hidden />
                 </Link>
                 <FavoriteStar library={lib} />
               </li>
@@ -49,48 +49,48 @@ export function NearbyList() {
       <SearchBar value={query} onChange={setQuery} placeholder="도서관 이름 검색" />
 
       {status === 'loading' && (
-        <p className="message">{regionName} 도서관을 불러오는 중…</p>
+        <p class="message">{regionName} 도서관을 불러오는 중…</p>
       )}
       {status === 'error' && (
-        <p className="message message--error">
+        <p class="message message--error">
           {error}{' '}
-          <button className="link-button" onClick={reload}>
+          <button class="link-button" onClick={reload}>
             다시 시도
           </button>
         </p>
       )}
       {status === 'loaded' && (
         <>
-          <div className="list-header">
-            <span className="list-header__count">
+          <div class="list-header">
+            <span class="list-header__count">
               {regionName} · {filtered.length}곳{coords ? ' · 가까운 순' : ''}
             </span>
           </div>
           {filtered.length === 0 ? (
-            <p className="message">이름에 맞는 도서관이 없어요.</p>
+            <p class="message">이름에 맞는 도서관이 없어요.</p>
           ) : (
-            <ul className="lib-list">
+            <ul class="lib-list">
               {filtered.map((lib) => (
-                <li key={lib.libCode} className="lib-row">
+                <li key={lib.libCode} class="lib-row">
                   <Link
                     to="/nearby/$libCode"
                     params={{ libCode: lib.libCode }}
-                    className="lib-card"
+                    class="lib-card"
                   >
-                    <div className="lib-card__body">
-                      <span className="lib-card__name">{lib.libName}</span>
-                      <span className="lib-card__addr">{lib.address}</span>
+                    <div class="lib-card__body">
+                      <span class="lib-card__name">{lib.libName}</span>
+                      <span class="lib-card__addr">{lib.address}</span>
                     </div>
-                    <div className="lib-card__meta">
+                    <div class="lib-card__meta">
                       {lib.distance != null && (
-                        <span className="lib-card__distance">
+                        <span class="lib-card__distance">
                           {lib.distance < 10
                             ? lib.distance.toFixed(1)
                             : Math.round(lib.distance)}
                           km
                         </span>
                       )}
-                      <span className="lib-card__chevron" aria-hidden>
+                      <span class="lib-card__chevron" aria-hidden>
                         ›
                       </span>
                     </div>

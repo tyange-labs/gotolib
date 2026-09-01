@@ -10,7 +10,7 @@ export function FavoriteStar({ library }: { library: Library }) {
   return (
     <button
       type="button"
-      className={`fav-star${active ? ' fav-star--active' : ''}`}
+      class={`fav-star${active ? ' fav-star--active' : ''}`}
       aria-pressed={active}
       aria-label={
         active ? '자주 가는 도서관에서 제거' : '자주 가는 도서관에 추가'

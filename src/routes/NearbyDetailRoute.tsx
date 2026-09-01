@@ -9,10 +9,10 @@ export function NearbyDetailRoute() {
   const library = libraries.find((lib) => lib.libCode === libCode)
 
   if (status === 'loading') {
-    return <p className="message">도서관 정보를 불러오는 중…</p>
+    return <p class="message">도서관 정보를 불러오는 중…</p>
   }
   if (!library) {
-    return <p className="message">도서관을 찾을 수 없어요.</p>
+    return <p class="message">도서관을 찾을 수 없어요.</p>
   }
   return <LibraryDetail library={library} />
 }

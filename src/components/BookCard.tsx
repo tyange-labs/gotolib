@@ -31,19 +31,19 @@ export function BookCard({ book, onRemove }: Props) {
   }
 
   return (
-    <li className="book-card">
-      <div className="book-card__row">
-        <div className="book-card__body">
-          <p className="book-card__title">{book.title}</p>
-          <p className="book-card__meta">
+    <li class="book-card">
+      <div class="book-card__row">
+        <div class="book-card__body">
+          <p class="book-card__title">{book.title}</p>
+          <p class="book-card__meta">
             {[book.author, book.publisher, book.pubDate]
               .filter(Boolean)
               .join(' · ')}
           </p>
-          {book.isbn13 && <p className="book-card__isbn">ISBN {book.isbn13}</p>}
+          {book.isbn13 && <p class="book-card__isbn">ISBN {book.isbn13}</p>}
         </div>
         <button
-          className="book-card__remove"
+          class="book-card__remove"
           onClick={() => onRemove(book.id)}
           aria-label={`${book.title} 삭제`}
         >
@@ -51,9 +51,9 @@ export function BookCard({ book, onRemove }: Props) {
         </button>
       </div>
 
-      <div className="book-card__actions">
+      <div class="book-card__actions">
         <button
-          className="book-card__lookup"
+          class="book-card__lookup"
           onClick={toggleLookup}
           disabled={!book.isbn13}
           title={book.isbn13 ? undefined : 'ISBN이 없어 조회할 수 없어요'}
@@ -61,7 +61,7 @@ export function BookCard({ book, onRemove }: Props) {
           {open ? '닫기' : '도서관 찾기'}
         </button>
         <button
-          className={`book-card__watch${watched ? ' book-card__watch--active' : ''}`}
+          class={`book-card__watch${watched ? ' book-card__watch--active' : ''}`}
           onClick={() => watchlist.toggle(book.id)}
           disabled={watchDisabled}
           aria-pressed={watched}

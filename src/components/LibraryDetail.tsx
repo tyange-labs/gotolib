@@ -9,25 +9,25 @@ interface Props {
 
 export function LibraryDetail({ library }: Props) {
   return (
-    <div className="detail">
-      <div className="detail__bar">
-        <Link to="/nearby" className="detail__back" aria-label="뒤로">
+    <div class="detail">
+      <div class="detail__bar">
+        <Link to="/nearby" class="detail__back" aria-label="뒤로">
           <ChevronLeft size={16} />
           목록
         </Link>
         <FavoriteStar library={library} />
       </div>
 
-      <div className="detail__head">
-        <h2 className="detail__name">{library.libName}</h2>
+      <div class="detail__head">
+        <h2 class="detail__name">{library.libName}</h2>
         {library.distance != null && (
-          <span className="detail__distance">
+          <span class="detail__distance">
             {formatDistance(library.distance)}
           </span>
         )}
       </div>
 
-      <dl className="detail__meta">
+      <dl class="detail__meta">
         <Row label="주소" value={library.address} />
         {library.tel && library.tel !== '-' && (
           <Row label="전화" value={library.tel} />
@@ -40,9 +40,9 @@ export function LibraryDetail({ library }: Props) {
           <Row label="장서" value={`${library.bookCount.toLocaleString()}권`} />
         )}
         {library.homepage && (
-          <div className="detail__row">
-            <dt className="detail__label">홈페이지</dt>
-            <dd className="detail__value">
+          <div class="detail__row">
+            <dt class="detail__label">홈페이지</dt>
+            <dd class="detail__value">
               <a href={library.homepage} target="_blank" rel="noreferrer">
                 바로가기
               </a>
@@ -51,12 +51,12 @@ export function LibraryDetail({ library }: Props) {
         )}
       </dl>
 
-      <section className="detail__held">
-        <h3 className="detail__held-title">내 보관함 중 이 도서관 소장 도서</h3>
-        <p className="detail__held-placeholder">
+      <section class="detail__held">
+        <h3 class="detail__held-title">내 보관함 중 이 도서관 소장 도서</h3>
+        <p class="detail__held-placeholder">
           이 도서관이 소장한 내 책 목록은 백엔드 연동 후 제공됩니다.
           <br />
-          <span className="detail__held-note">
+          <span class="detail__held-note">
             (도서관별 소장 조회는 책마다 API 호출이 필요해 서버에서 인덱싱·캐시할
             예정이에요.)
           </span>
@@ -68,9 +68,9 @@ export function LibraryDetail({ library }: Props) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="detail__row">
-      <dt className="detail__label">{label}</dt>
-      <dd className="detail__value">{value}</dd>
+    <div class="detail__row">
+      <dt class="detail__label">{label}</dt>
+      <dd class="detail__value">{value}</dd>
     </div>
   )
 }

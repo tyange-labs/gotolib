@@ -17,11 +17,11 @@ export function SearchControls({
   onRequestLocation,
 }: Props) {
   return (
-    <div className="controls">
-      <label className="controls__field">
-        <span className="controls__label">지역</span>
+    <div class="controls">
+      <label class="controls__field">
+        <span class="controls__label">지역</span>
         <select
-          className="controls__select"
+          class="controls__select"
           value={region}
           onChange={(e) => onRegionChange(e.target.value)}
         >
@@ -34,7 +34,7 @@ export function SearchControls({
       </label>
 
       <button
-        className="controls__location"
+        class="controls__location"
         onClick={onRequestLocation}
         disabled={locationStatus === 'loading' || locationStatus === 'granted'}
       >

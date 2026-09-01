@@ -49,40 +49,40 @@ export function WatchlistSummary() {
   ).length
 
   return (
-    <section className="watchlist">
+    <section class="watchlist">
       <button
-        className="watchlist__header"
+        class="watchlist__header"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
       >
-        <span className="watchlist__title">
+        <span class="watchlist__title">
           <Heart size={15} fill="currentColor" />
           와치리스트 {watched.length}권
         </span>
         {favs.length === 0 ? (
-          <span className="watchlist__hint">
+          <span class="watchlist__hint">
             자주 가는 도서관 등록 필요
           </span>
         ) : (
-          <span className="watchlist__count">대출 가능 {availableCount}권</span>
+          <span class="watchlist__count">대출 가능 {availableCount}권</span>
         )}
-        <span className="watchlist__chevron" aria-hidden>
+        <span class="watchlist__chevron" aria-hidden>
           {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </span>
       </button>
 
       {expanded && (
-        <ul className="watchlist__list">
+        <ul class="watchlist__list">
           {favs.length === 0 && (
-            <li className="watchlist__item">
+            <li class="watchlist__item">
               <Link to="/nearby">주변 도서관</Link>에서 자주 가는 도서관을
               먼저 등록하세요.
             </li>
           )}
           {favs.length > 0 &&
             watched.map((book) => (
-              <li key={book.id} className="watchlist__item">
-                <span className="watchlist__book">{book.title}</span>
+              <li key={book.id} class="watchlist__item">
+                <span class="watchlist__book">{book.title}</span>
                 <StatusLabel status={statuses[book.id]} />
               </li>
             ))}
@@ -94,20 +94,20 @@ export function WatchlistSummary() {
 
 function StatusLabel({ status }: { status?: BookStatus }) {
   if (!status || status.state === 'loading')
-    return <span className="badge badge--muted">확인 중</span>
+    return <span class="badge badge--muted">확인 중</span>
   switch (status.state) {
     case 'available':
       return (
-        <span className="badge badge--ok" title={status.library}>
+        <span class="badge badge--ok" title={status.library}>
           대출 가능
         </span>
       )
     case 'onLoan':
-      return <span className="badge badge--warn">대출 중</span>
+      return <span class="badge badge--warn">대출 중</span>
     case 'notHeld':
-      return <span className="badge badge--muted">미소장</span>
+      return <span class="badge badge--muted">미소장</span>
     case 'error':
-      return <span className="badge badge--muted">확인 실패</span>
+      return <span class="badge badge--muted">확인 실패</span>
   }
 }
 

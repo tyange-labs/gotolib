@@ -8,11 +8,11 @@ interface Props {
 
 export function SearchBar({ value, onChange, placeholder }: Props) {
   return (
-    <div className="searchbar">
-      <Search className="searchbar__icon" size={16} aria-hidden />
+    <div class="searchbar">
+      <Search class="searchbar__icon" size={16} aria-hidden />
       <input
         type="search"
-        className="searchbar__input"
+        class="searchbar__input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder ?? '검색'}
@@ -20,7 +20,7 @@ export function SearchBar({ value, onChange, placeholder }: Props) {
       />
       {value && (
         <button
-          className="searchbar__clear"
+          class="searchbar__clear"
           onClick={() => onChange('')}
           aria-label="검색어 지우기"
         >

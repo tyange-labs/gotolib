@@ -11,7 +11,7 @@ interface Props {
 /** KDC 주류 분류 탭 (가로 스크롤 칩) */
 export function GenreTabs({ tabs, total, selected, onSelect }: Props) {
   return (
-    <div className="genre-tabs" role="tablist" aria-label="분류">
+    <div class="genre-tabs" role="tablist" aria-label="분류">
       <Chip
         label={ALL_CLASSES}
         count={total}
@@ -46,11 +46,11 @@ function Chip({
     <button
       role="tab"
       aria-selected={active}
-      className={`genre-chip${active ? ' genre-chip--active' : ''}`}
+      class={`genre-chip${active ? ' genre-chip--active' : ''}`}
       onClick={onClick}
     >
       {label}
-      <span className="genre-chip__count">{count}</span>
+      <span class="genre-chip__count">{count}</span>
     </button>
   )
 }

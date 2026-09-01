@@ -9,8 +9,8 @@ interface Props {
 export function FavoriteHoldingsPanel({ holdings, favoritesCount }: Props) {
   if (favoritesCount === 0) {
     return (
-      <div className="holdings">
-        <p className="holdings__status">
+      <div class="holdings">
+        <p class="holdings__status">
           먼저 <Link to="/nearby">주변 도서관</Link>에서 자주 가는 도서관을
           등록하세요.
         </p>
@@ -20,18 +20,18 @@ export function FavoriteHoldingsPanel({ holdings, favoritesCount }: Props) {
   if (!holdings) return null
 
   return (
-    <div className="holdings">
-      <ul className="holdings__list">
+    <div class="holdings">
+      <ul class="holdings__list">
         {holdings.map(({ library, loan }) => (
           <li
             key={library.libCode}
-            className={`holdings__item${
+            class={`holdings__item${
               loan === 'notHeld' ? ' holdings__item--dim' : ''
             }`}
           >
-            <div className="holdings__info">
-              <span className="holdings__name">{library.libName}</span>
-              <span className="holdings__addr">{library.address}</span>
+            <div class="holdings__info">
+              <span class="holdings__name">{library.libName}</span>
+              <span class="holdings__addr">{library.address}</span>
             </div>
             <LoanBadge loan={loan} />
           </li>
@@ -44,14 +44,14 @@ export function FavoriteHoldingsPanel({ holdings, favoritesCount }: Props) {
 function LoanBadge({ loan }: { loan: LoanState }) {
   switch (loan) {
     case 'loading':
-      return <span className="badge badge--muted">확인 중</span>
+      return <span class="badge badge--muted">확인 중</span>
     case 'available':
-      return <span className="badge badge--ok">대출 가능</span>
+      return <span class="badge badge--ok">대출 가능</span>
     case 'onLoan':
-      return <span className="badge badge--warn">대출 중</span>
+      return <span class="badge badge--warn">대출 중</span>
     case 'notHeld':
-      return <span className="badge badge--muted">미소장</span>
+      return <span class="badge badge--muted">미소장</span>
     case 'error':
-      return <span className="badge badge--muted">확인 실패</span>
+      return <span class="badge badge--muted">확인 실패</span>
   }
 }

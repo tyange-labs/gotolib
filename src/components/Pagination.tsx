@@ -10,9 +10,9 @@ export function Pagination({ page, pageCount, onChange }: Props) {
   if (pageCount <= 1) return null
 
   return (
-    <nav className="pagination" aria-label="도서 목록 페이지">
+    <nav class="pagination" aria-label="도서 목록 페이지">
       <button
-        className="pagination__step"
+        class="pagination__step"
         onClick={() => onChange(page - 1)}
         disabled={page === 1}
         aria-label="이전 페이지"
@@ -22,13 +22,13 @@ export function Pagination({ page, pageCount, onChange }: Props) {
 
       {pageWindow(page, pageCount).map((item, i) =>
         item === 'gap' ? (
-          <span key={`gap-${i}`} className="pagination__gap">
+          <span key={`gap-${i}`} class="pagination__gap">
             …
           </span>
         ) : (
           <button
             key={item}
-            className={`pagination__page${
+            class={`pagination__page${
               item === page ? ' pagination__page--current' : ''
             }`}
             onClick={() => onChange(item)}
@@ -40,7 +40,7 @@ export function Pagination({ page, pageCount, onChange }: Props) {
       )}
 
       <button
-        className="pagination__step"
+        class="pagination__step"
         onClick={() => onChange(page + 1)}
         disabled={page === pageCount}
         aria-label="다음 페이지"

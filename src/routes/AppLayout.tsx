@@ -9,10 +9,10 @@ export function AppLayout() {
   const { region, setRegion, locationStatus, requestLocation } = useApp()
 
   return (
-    <div className="app">
-      <header className="app__header">
+    <div class="app">
+      <header class="app__header">
         <h1>gotolib</h1>
-        <p className="app__tagline">알라딘 보관함 속 책, 도서관에서 찾기</p>
+        <p class="app__tagline">알라딘 보관함 속 책, 도서관에서 찾기</p>
       </header>
 
       <ModeNav />
