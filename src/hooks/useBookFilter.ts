@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { createMemo, createSignal } from 'solid-js'
 import { kdcLabel } from '../lib/kdc'
 import type { Book } from '../types/book'
 
@@ -9,23 +9,24 @@ function normalize(text: string): string {
   return text.toLowerCase().replace(/\s+/g, '')
 }
 
-export function useBookFilter(books: Book[]) {
-  const [kdcClass, setKdcClass] = useState<string>(ALL_CLASSES)
-  const [query, setQuery] = useState('')
+export function useBookFilter(books: () => Book[]) {
+  const [kdcClass, setKdcClass] = createSignal<string>(ALL_CLASSES)
+  const [query, setQuery] = createSignal('')
 
-  const filtered = useMemo(() => {
+  const filtered = createMemo(() => {
     // 어절 단위로 나눈 뒤 각 어절을 정규화 → 모두 포함(AND)하는 책만 통과
-    const terms = query.split(/\s+/).map(normalize).filter(Boolean)
+    const terms = query().split(/\s+/).map(normalize).filter(Boolean)
+    const selected = kdcClass()
 
-    return books.filter((book) => {
-      if (kdcClass !== ALL_CLASSES && kdcLabel(book) !== kdcClass) return false
+    return books().filter((book) => {
+      if (selected !== ALL_CLASSES && kdcLabel(book) !== selected) return false
       if (terms.length === 0) return true
       const haystack = normalize(
         `${book.title} ${book.author ?? ''} ${book.publisher ?? ''}`,
       )
       return terms.every((term) => haystack.includes(term))
     })
-  }, [books, kdcClass, query])
+  })
 
   return { kdcClass, setKdcClass, query, setQuery, filtered }
 }

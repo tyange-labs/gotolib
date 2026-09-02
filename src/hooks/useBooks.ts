@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { createSignal, onMount } from 'solid-js'
 import { SAMPLE_BOOKS } from '../data/sampleBooks'
 import { clearBooks, deleteBook, getAllBooks, saveBooks } from '../lib/db'
 import { ParseError, parseAladinExport } from '../lib/parseAladin'
@@ -9,13 +9,13 @@ interface ImportResult {
 }
 
 export function useBooks() {
-  const [books, setBooks] = useState<Book[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [books, setBooks] = createSignal<Book[]>([])
+  const [loading, setLoading] = createSignal(true)
+  const [error, setError] = createSignal<string | null>(null)
   // 저장된 도서가 없어 데모 샘플을 보여주는 중인지 (포트폴리오용, 비영속)
-  const [isSample, setIsSample] = useState(false)
+  const [isSample, setIsSample] = createSignal(false)
 
-  useEffect(() => {
+  onMount(() => {
     getAllBooks()
       .then((stored) => {
         if (stored.length === 0) {
@@ -27,7 +27,7 @@ export function useBooks() {
       })
       .catch(() => setError('저장된 도서 목록을 불러오지 못했습니다.'))
       .finally(() => setLoading(false))
-  }, [])
+  })
 
   const importFile = async (file: File): Promise<ImportResult | null> => {
     setError(null)
@@ -48,7 +48,7 @@ export function useBooks() {
   }
 
   const removeBook = async (id: string) => {
-    if (!isSample) await deleteBook(id)
+    if (!isSample()) await deleteBook(id)
     setBooks((prev) => prev.filter((book) => book.id !== id))
   }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { createSignal, onMount } from 'solid-js'
 import {
   addFavLibrary,
   getFavLibraries,
@@ -7,16 +7,17 @@ import {
 import type { Library } from '../lib/libraryApi'
 
 export function useFavoriteLibraries() {
-  const [favorites, setFavorites] = useState<Library[]>([])
+  const [favorites, setFavorites] = createSignal<Library[]>([])
 
-  useEffect(() => {
+  onMount(() => {
     getFavLibraries().then(setFavorites).catch(() => setFavorites([]))
-  }, [])
+  })
 
-  const isFavorite = (libCode: string) => favorites.some((lib) => lib.libCode === libCode)
+  const isFavorite = (libCode: string) =>
+    favorites().some((lib) => lib.libCode === libCode)
 
   const toggle = async (library: Library) => {
-    if (favorites.some((lib) => lib.libCode === library.libCode)) {
+    if (favorites().some((lib) => lib.libCode === library.libCode)) {
       await removeFavLibrary(library.libCode)
     } else {
       await addFavLibrary(library)

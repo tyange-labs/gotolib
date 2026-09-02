@@ -1,17 +1,17 @@
-import { createContext, use } from 'react'
+import { createContext, useContext } from 'solid-js'
 import type { NearbyLibrary } from '../hooks/useNearbyLibraries'
 
 export interface NearbyValue {
-  status: 'idle' | 'loading' | 'loaded' | 'error'
-  error?: string
-  libraries: NearbyLibrary[]
+  status: () => 'idle' | 'loading' | 'loaded' | 'error'
+  error: () => string | undefined
+  libraries: () => NearbyLibrary[]
   reload: () => void
 }
 
-export const NearbyContext = createContext<NearbyValue | null>(null)
+export const NearbyContext = createContext<NearbyValue>()
 
 export function useNearby(): NearbyValue {
-  const ctx = use(NearbyContext)
+  const ctx = useContext(NearbyContext)
   if (!ctx) throw new Error('useNearby must be used within NearbyProvider')
   return ctx
 }

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { createSignal } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { checkAvailability, type Library } from '../lib/libraryApi'
 
@@ -18,19 +18,20 @@ export interface FavHolding {
  * 책 한 권을 '자주 가는 도서관'에서만 조회한다.
  * 도서관 전체를 나열하되, 소장 안 한 곳은 notHeld(=dim)로 표시.
  */
-export function useFavoriteHoldings(isbn13: string | undefined) {
+export function useFavoriteHoldings(isbn13: () => string | undefined) {
   const { favorites } = useApp()
-  const [holdings, setHoldings] = useState<FavHolding[] | null>(null)
+  const [holdings, setHoldings] = createSignal<FavHolding[] | null>(null)
 
   const lookup = async () => {
-    if (!isbn13) return
-    const libs = favorites.favorites
+    const isbn = isbn13()
+    if (!isbn) return
+    const libs = favorites.favorites()
     // 먼저 전부 loading 상태로 표시
     setHoldings(libs.map((library) => ({ library, loan: 'loading' as const })))
-  
+
     await Promise.all(
       libs.map(async (library) => {
-        const loan = await fetchLoanState(isbn13, library.libCode)
+        const loan = await fetchLoanState(isbn, library.libCode)
         setHoldings((prev) =>
           prev
             ? prev.map((h) =>
@@ -44,7 +45,12 @@ export function useFavoriteHoldings(isbn13: string | undefined) {
 
   const reset = () => setHoldings(null)
 
-  return { holdings, favoritesCount: favorites.favorites.length, lookup, reset }
+  return {
+    holdings,
+    favoritesCount: () => favorites.favorites().length,
+    lookup,
+    reset,
+  }
 }
 
 async function fetchLoanState(

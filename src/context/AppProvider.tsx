@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { createSignal, type JSX } from 'solid-js'
 import { useBooks } from '../hooks/useBooks'
 import { useFavoriteLibraries } from '../hooks/useFavoriteLibraries'
 import { useGeolocation } from '../hooks/useGeolocation'
@@ -6,36 +6,18 @@ import { useWatchlist } from '../hooks/useWatchlist'
 import { REGIONS } from '../lib/libraryApi'
 import { AppContext, type AppValue } from './appContext'
 
-export function AppProvider({ children }: { children: ReactNode }) {
+export function AppProvider(props: { children: JSX.Element }) {
   const { books, loading, error, isSample, importFile, removeBook, clearAll } =
     useBooks()
   const { coords, status: locationStatus, request: requestLocation } =
     useGeolocation()
-  const [region, setRegion] = useState<string>(REGIONS[0].code)
+  const [region, setRegion] = createSignal<string>(REGIONS[0].code)
   const favorites = useFavoriteLibraries()
   const watchlist = useWatchlist()
 
-  const value = useMemo<AppValue>(() => {
-    const regionName =
-      REGIONS.find((r) => r.code === region)?.name ?? REGIONS[0].name
-    return {
-      books,
-      loading,
-      error,
-      isSample,
-      importFile,
-      removeBook,
-      clearAll,
-      region,
-      setRegion,
-      regionName,
-      coords,
-      locationStatus,
-      requestLocation,
-      favorites,
-      watchlist,
-    }
-  }, [
+  // 값이 아니라 접근자를 담는다. 객체는 한 번만 만들어지고 다시 만들 이유가
+  // 없으므로 useMemo에 해당하는 것이 필요 없다.
+  const value: AppValue = {
     books,
     loading,
     error,
@@ -44,12 +26,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     removeBook,
     clearAll,
     region,
+    setRegion,
+    regionName: () =>
+      REGIONS.find((r) => r.code === region())?.name ?? REGIONS[0].name,
     coords,
     locationStatus,
     requestLocation,
     favorites,
     watchlist,
-  ])
+  }
 
-  return <AppContext value={value}>{children}</AppContext>
+  return <AppContext.Provider value={value}>{props.children}</AppContext.Provider>
 }
