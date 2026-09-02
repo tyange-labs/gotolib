@@ -44,7 +44,7 @@ function Chip(props: {
       role="tab"
       aria-selected={props.active}
       class={`genre-chip${props.active ? ' genre-chip--active' : ''}`}
-      onClick={props.onClick}
+      onClick={() => props.onClick()}
     >
       {props.label}
       <span class="genre-chip__count">{props.count}</span>

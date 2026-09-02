@@ -29,7 +29,7 @@ export function SearchControls(props: Props) {
 
       <button
         class="controls__location"
-        onClick={props.onRequestLocation}
+        onClick={() => props.onRequestLocation()}
         disabled={
           props.locationStatus === 'loading' ||
           props.locationStatus === 'granted'
