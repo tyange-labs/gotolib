@@ -43,7 +43,7 @@ function walk(dir: string, extensions: string[], out: string[] = []): string[] {
 
 function measure(config: Config): Counts {
   const patterns = Object.entries(config.tokens).map(
-    ([token, source]) => [token, new RegExp(source, 'g')] as const,
+    ([token, source]) => [token, new RegExp(source, 'gm')] as const,
   )
   const counts: Counts = new Map()
 

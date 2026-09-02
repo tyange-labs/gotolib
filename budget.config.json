@@ -9,7 +9,7 @@
   "baseline": "budget.txt",
   "title": "Remaining React dependencies in gotolib, on the way to Solid.",
   "tokens": {
-    "import:react": "from ['\"]react['\"]",
+    "import:react": "from ['\\\"][^'\\\"]*\\breact\\b[^'\\\"]*['\\\"]",
     "import:react-dom": "from ['\"]react-dom",
     "import:@tanstack/react-router": "from ['\"]@tanstack/react-router['\"]",
     "import:lucide-react": "from ['\"]lucide-react['\"]",
@@ -18,7 +18,8 @@
     "hook:useMemo": "\\buseMemo\\b",
     "hook:useCallback": "\\buseCallback\\b",
     "hook:useRef": "\\buseRef\\b",
-    "jsx:className": "\\bclassName=",
-    "type:React.": "\\bReact\\.\\w+"
+    "jsx:className": "\\bclassName\\b",
+    "type:React.": "\\bReact\\.\\w+",
+    "solid:props-destructured": "^export function [A-Z]\\w*\\(\\s*\\{"
   }
 }
