@@ -1,5 +1,6 @@
 import { A } from '@solidjs/router'
 import { ChevronLeft } from 'lucide-solid'
+import { Show } from 'solid-js'
 import { FavoriteStar } from './FavoriteStar'
 import type { NearbyLibrary } from '../hooks/useNearbyLibraries'
 
@@ -7,7 +8,7 @@ interface Props {
   library: NearbyLibrary
 }
 
-export function LibraryDetail({ library }: Props) {
+export function LibraryDetail(props: Props) {
   return (
     <div class="detail">
       <div class="detail__bar">
@@ -15,40 +16,45 @@ export function LibraryDetail({ library }: Props) {
           <ChevronLeft size={16} />
           목록
         </A>
-        <FavoriteStar library={library} />
+        <FavoriteStar library={props.library} />
       </div>
 
       <div class="detail__head">
-        <h2 class="detail__name">{library.libName}</h2>
-        {library.distance != null && (
+        <h2 class="detail__name">{props.library.libName}</h2>
+        <Show when={props.library.distance != null}>
           <span class="detail__distance">
-            {formatDistance(library.distance)}
+            {formatDistance(props.library.distance!)}
           </span>
-        )}
+        </Show>
       </div>
 
       <dl class="detail__meta">
-        <Row label="주소" value={library.address} />
-        {library.tel && library.tel !== '-' && (
-          <Row label="전화" value={library.tel} />
-        )}
-        {library.operatingTime && (
-          <Row label="운영" value={library.operatingTime} />
-        )}
-        {library.closed && <Row label="휴관" value={library.closed} />}
-        {library.bookCount != null && (
-          <Row label="장서" value={`${library.bookCount.toLocaleString()}권`} />
-        )}
-        {library.homepage && (
+        <Row label="주소" value={props.library.address} />
+        <Show when={props.library.tel && props.library.tel !== '-'}>
+          <Row label="전화" value={props.library.tel} />
+        </Show>
+        <Show when={props.library.operatingTime}>
+          <Row label="운영" value={props.library.operatingTime} />
+        </Show>
+        <Show when={props.library.closed}>
+          <Row label="휴관" value={props.library.closed} />
+        </Show>
+        <Show when={props.library.bookCount != null}>
+          <Row
+            label="장서"
+            value={`${props.library.bookCount!.toLocaleString()}권`}
+          />
+        </Show>
+        <Show when={props.library.homepage}>
           <div class="detail__row">
             <dt class="detail__label">홈페이지</dt>
             <dd class="detail__value">
-              <a href={library.homepage} target="_blank" rel="noreferrer">
+              <a href={props.library.homepage} target="_blank" rel="noreferrer">
                 바로가기
               </a>
             </dd>
           </div>
-        )}
+        </Show>
       </dl>
 
       <section class="detail__held">
@@ -66,15 +72,14 @@ export function LibraryDetail({ library }: Props) {
   )
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row(props: { label: string; value: string }) {
   return (
     <div class="detail__row">
-      <dt class="detail__label">{label}</dt>
-      <dd class="detail__value">{value}</dd>
+      <dt class="detail__label">{props.label}</dt>
+      <dd class="detail__value">{props.value}</dd>
     </div>
   )
 }
-
 function formatDistance(km: number): string {
   return km < 10 ? `${km.toFixed(1)}km` : `${Math.round(km)}km`
 }

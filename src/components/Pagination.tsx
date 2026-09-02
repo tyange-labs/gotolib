@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-solid'
+import { For, Show } from 'solid-js'
 
 interface Props {
   page: number
@@ -6,51 +7,50 @@ interface Props {
   onChange: (page: number) => void
 }
 
-export function Pagination({ page, pageCount, onChange }: Props) {
-  if (pageCount <= 1) return null
-
+export function Pagination(props: Props) {
   return (
-    <nav class="pagination" aria-label="도서 목록 페이지">
-      <button
-        class="pagination__step"
-        onClick={() => onChange(page - 1)}
-        disabled={page === 1}
-        aria-label="이전 페이지"
-      >
-        <ChevronLeft size={16} />
-      </button>
+    <Show when={props.pageCount > 1}>
+      <nav class="pagination" aria-label="도서 목록 페이지">
+        <button
+          class="pagination__step"
+          onClick={() => props.onChange(props.page - 1)}
+          disabled={props.page === 1}
+          aria-label="이전 페이지"
+        >
+          <ChevronLeft size={16} />
+        </button>
 
-      {pageWindow(page, pageCount).map((item, i) =>
-        item === 'gap' ? (
-          <span key={`gap-${i}`} class="pagination__gap">
-            …
-          </span>
-        ) : (
-          <button
-            key={item}
-            class={`pagination__page${
-              item === page ? ' pagination__page--current' : ''
-            }`}
-            onClick={() => onChange(item)}
-            aria-current={item === page ? 'page' : undefined}
-          >
-            {item}
-          </button>
-        ),
-      )}
+        <For each={pageWindow(props.page, props.pageCount)}>
+          {(item) => (
+            <Show
+              when={item !== 'gap'}
+              fallback={<span class="pagination__gap">…</span>}
+            >
+              <button
+                class={`pagination__page${
+                  item === props.page ? ' pagination__page--current' : ''
+                }`}
+                onClick={() => props.onChange(item as number)}
+                aria-current={item === props.page ? 'page' : undefined}
+              >
+                {item}
+              </button>
+            </Show>
+          )}
+        </For>
 
-      <button
-        class="pagination__step"
-        onClick={() => onChange(page + 1)}
-        disabled={page === pageCount}
-        aria-label="다음 페이지"
-      >
-        <ChevronRight size={16} />
-      </button>
-    </nav>
+        <button
+          class="pagination__step"
+          onClick={() => props.onChange(props.page + 1)}
+          disabled={props.page === props.pageCount}
+          aria-label="다음 페이지"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </nav>
+    </Show>
   )
 }
-
 /** 현재 페이지 주변 ±1과 처음/끝을 보여주고 나머지는 '…'로 접는다. */
 function pageWindow(page: number, pageCount: number): Array<number | 'gap'> {
   const pages = new Set<number>([1, pageCount, page, page - 1, page + 1])

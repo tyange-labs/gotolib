@@ -1,4 +1,5 @@
 import { MapPin } from 'lucide-solid'
+import { For } from 'solid-js'
 import { REGIONS } from '../lib/libraryApi'
 
 type LocationStatus = 'idle' | 'loading' | 'granted' | 'denied' | 'unavailable'
@@ -10,36 +11,32 @@ interface Props {
   onRequestLocation: () => void
 }
 
-export function SearchControls({
-  region,
-  onRegionChange,
-  locationStatus,
-  onRequestLocation,
-}: Props) {
+export function SearchControls(props: Props) {
   return (
     <div class="controls">
       <label class="controls__field">
         <span class="controls__label">지역</span>
         <select
           class="controls__select"
-          value={region}
-          onChange={(e) => onRegionChange(e.target.value)}
+          value={props.region}
+          onChange={(e) => props.onRegionChange(e.currentTarget.value)}
         >
-          {REGIONS.map((r) => (
-            <option key={r.code} value={r.code}>
-              {r.name}
-            </option>
-          ))}
+          <For each={REGIONS}>
+            {(r) => <option value={r.code}>{r.name}</option>}
+          </For>
         </select>
       </label>
 
       <button
         class="controls__location"
-        onClick={onRequestLocation}
-        disabled={locationStatus === 'loading' || locationStatus === 'granted'}
+        onClick={props.onRequestLocation}
+        disabled={
+          props.locationStatus === 'loading' ||
+          props.locationStatus === 'granted'
+        }
       >
         <MapPin size={15} aria-hidden />
-        {locationText(locationStatus)}
+        {locationText(props.locationStatus)}
       </button>
     </div>
   )

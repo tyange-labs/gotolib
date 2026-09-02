@@ -1,3 +1,4 @@
+import { For } from 'solid-js'
 import type { Book } from '../types/book'
 import { BookCard } from './BookCard'
 
@@ -6,12 +7,12 @@ interface Props {
   onRemove: (id: string) => void
 }
 
-export function BookList({ books, onRemove }: Props) {
+export function BookList(props: Props) {
   return (
     <ul class="book-list">
-      {books.map((book) => (
-        <BookCard key={book.id} book={book} onRemove={onRemove} />
-      ))}
+      <For each={props.books}>
+        {(book) => <BookCard book={book} onRemove={props.onRemove} />}
+      </For>
     </ul>
   )
 }

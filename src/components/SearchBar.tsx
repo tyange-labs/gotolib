@@ -1,4 +1,5 @@
 import { Search, X } from 'lucide-solid'
+import { Show } from 'solid-js'
 
 interface Props {
   value: string
@@ -6,27 +7,27 @@ interface Props {
   placeholder?: string
 }
 
-export function SearchBar({ value, onChange, placeholder }: Props) {
+export function SearchBar(props: Props) {
   return (
     <div class="searchbar">
       <Search class="searchbar__icon" size={16} aria-hidden />
       <input
         type="search"
         class="searchbar__input"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder ?? '검색'}
-        aria-label={placeholder ?? '검색'}
+        value={props.value}
+        onInput={(e) => props.onChange(e.currentTarget.value)}
+        placeholder={props.placeholder ?? '검색'}
+        aria-label={props.placeholder ?? '검색'}
       />
-      {value && (
+      <Show when={props.value}>
         <button
           class="searchbar__clear"
-          onClick={() => onChange('')}
+          onClick={() => props.onChange('')}
           aria-label="검색어 지우기"
         >
           <X size={16} />
         </button>
-      )}
+      </Show>
     </div>
   )
 }
