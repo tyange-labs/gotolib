@@ -14,9 +14,13 @@ export function useBookFilter(books: () => Book[]) {
   const [query, setQuery] = createSignal('')
 
   const filtered = createMemo(() => {
-    // 어절 단위로 나눈 뒤 각 어절을 정규화 → 모두 포함(AND)하는 책만 통과
+    // 어절 단위로 나눈 뒤 각 어절을 정규화 → 모두 포함(AND)하는 책만 통과.
+    // solid/reactivity 오탐: filter 콜백은 이 memo 본문 안에서 동기적으로
+    // 실행되므로 terms/selected는 memo가 다시 돌 때마다 새로 계산된다.
+    /* eslint-disable solid/reactivity */
     const terms = query().split(/\s+/).map(normalize).filter(Boolean)
     const selected = kdcClass()
+    /* eslint-enable solid/reactivity */
 
     return books().filter((book) => {
       if (selected !== ALL_CLASSES && kdcLabel(book) !== selected) return false

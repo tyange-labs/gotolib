@@ -13,6 +13,8 @@ export function NearbyList() {
   const [query, setQuery] = createSignal('')
 
   const filtered = createMemo(() => {
+    // solid/reactivity 오탐: filter 콜백은 이 memo 안에서 동기적으로 실행된다.
+    // eslint-disable-next-line solid/reactivity
     const q = query().trim().replace(/\s+/g, '')
     if (!q) return libraries()
     return libraries().filter((lib) =>
