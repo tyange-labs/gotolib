@@ -6,16 +6,16 @@ export function ModeNav() {
     <nav class="segmented" role="tablist">
       <A
         href="/"
-        activeOptions={{ exact: true }}
+        end
         class="segmented__option"
-        activeProps={{ className: 'segmented__option segmented__option--active' }}
+        activeClass="segmented__option--active"
       >
         내 서재
       </A>
       <A
         href="/nearby"
         class="segmented__option"
-        activeProps={{ className: 'segmented__option segmented__option--active' }}
+        activeClass="segmented__option--active"
       >
         주변 도서관
       </A>

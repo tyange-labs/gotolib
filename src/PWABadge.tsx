@@ -1,6 +1,7 @@
 import './PWABadge.css'
+import { Show } from 'solid-js'
 
-import { useRegisterSW } from 'virtual:pwa-register/react'
+import { useRegisterSW } from 'virtual:pwa-register/solid'
 
 function PWABadge() {
   // periodic sync is disabled, change the value to enable it, the period is in milliseconds
@@ -34,8 +35,7 @@ function PWABadge() {
 
   return (
     <div class="PWABadge" role="alert" aria-labelledby="toast-message">
-      { (needRefresh)
-      && (
+      <Show when={needRefresh()}>
         <div class="PWABadge-toast">
           <div class="PWABadge-message">
             <span id="toast-message">New content available, click on reload button to update.</span>
@@ -47,7 +47,7 @@ function PWABadge() {
             <button class="PWABadge-toast-button" onClick={() => close()}>Close</button>
           </div>
         </div>
-      )}
+      </Show>
     </div>
   )
 }
