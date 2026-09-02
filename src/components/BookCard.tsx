@@ -83,8 +83,8 @@ export function BookCard(props: Props) {
 
       <Show when={open()}>
         <FavoriteHoldingsPanel
-          holdings={holdings}
-          favoritesCount={favoritesCount}
+          holdings={holdings()}
+          favoritesCount={favoritesCount()}
         />
       </Show>
     </li>

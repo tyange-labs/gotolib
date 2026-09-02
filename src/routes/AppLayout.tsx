@@ -18,9 +18,9 @@ export function AppLayout(props: RouteSectionProps) {
       <ModeNav />
 
       <SearchControls
-        region={region}
+        region={region()}
         onRegionChange={setRegion}
-        locationStatus={locationStatus}
+        locationStatus={locationStatus()}
         onRequestLocation={requestLocation}
       />
 

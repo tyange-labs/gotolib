@@ -45,7 +45,7 @@ export function ShelfRoute() {
             </p>
           }
         >
-          <ShelfView books={books} onRemove={removeBook} onClearAll={clearAll} />
+          <ShelfView books={books()} onRemove={removeBook} onClearAll={clearAll} />
         </Show>
       </Show>
     </>
