@@ -1,24 +1,25 @@
-import { useRef, useState, type DragEvent } from 'react'
+import { createSignal } from 'solid-js'
 
 interface Props {
   onFile: (file: File) => void
 }
 
-export function ImportDropzone({ onFile }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [dragging, setDragging] = useState(false)
+export function ImportDropzone(props: Props) {
+  // Solid의 ref는 변수에 직접 대입된다. .current가 없다.
+  let input!: HTMLInputElement
+  const [dragging, setDragging] = createSignal(false)
 
   const handleDrop = (e: DragEvent) => {
     e.preventDefault()
     setDragging(false)
-    const file = e.dataTransfer.files[0]
-    if (file) onFile(file)
+    const file = e.dataTransfer?.files[0]
+    if (file) props.onFile(file)
   }
 
   return (
     <div
-      class={`dropzone${dragging ? ' dropzone--active' : ''}`}
-      onClick={() => inputRef.current?.click()}
+      class={`dropzone${dragging() ? ' dropzone--active' : ''}`}
+      onClick={() => input.click()}
       onDragOver={(e) => {
         e.preventDefault()
         setDragging(true)
@@ -26,9 +27,9 @@ export function ImportDropzone({ onFile }: Props) {
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       role="button"
-      tabIndex={0}
+      tabindex={0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click()
+        if (e.key === 'Enter' || e.key === ' ') input.click()
       }}
     >
       <p class="dropzone__title">알라딘 보관함 파일 불러오기</p>
@@ -36,14 +37,14 @@ export function ImportDropzone({ onFile }: Props) {
         내보내기한 파일(xls, xlsx, csv)을 끌어다 놓거나 클릭해서 선택하세요
       </p>
       <input
-        ref={inputRef}
+        ref={input}
         type="file"
         accept=".xls,.xlsx,.csv,.tsv"
         hidden
         onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (file) onFile(file)
-          e.target.value = ''
+          const file = e.currentTarget.files?.[0]
+          if (file) props.onFile(file)
+          e.currentTarget.value = ''
         }}
       />
     </div>

@@ -16,7 +16,7 @@ export function AppProvider(props: { children: JSX.Element }) {
   const watchlist = useWatchlist()
 
   // 값이 아니라 접근자를 담는다. 객체는 한 번만 만들어지고 다시 만들 이유가
-  // 없으므로 useMemo에 해당하는 것이 필요 없다.
+  // 없으므로 메모이제이션이 필요 없다.
   const value: AppValue = {
     books,
     loading,
