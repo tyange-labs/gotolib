@@ -1,6 +1,6 @@
 import { A } from '@solidjs/router'
 import { ChevronDown, ChevronUp, Heart } from 'lucide-solid'
-import { useEffect, useState } from 'react'
+import { For, Show, createEffect, createSignal, on, onCleanup } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { checkAvailability, type Library } from '../lib/libraryApi'
 import type { Book } from '../types/book'
@@ -15,102 +15,120 @@ type BookStatus =
 /** 와치리스트 책들을 앱 진입 시 자주 가는 도서관에서 대출 가능 여부 조회 */
 export function WatchlistSummary() {
   const { books, watchlist, favorites } = useApp()
-  const [expanded, setExpanded] = useState(false)
-  const [statuses, setStatuses] = useState<Record<string, BookStatus>>({})
+  const [expanded, setExpanded] = createSignal(false)
+  const [statuses, setStatuses] = createSignal<Record<string, BookStatus>>({})
 
-  const watched = watchlist.ids
-    .map((id) => books.find((b) => b.id === id))
-    .filter((b): b is Book => Boolean(b))
+  const watched = () =>
+    watchlist
+      .ids()
+      .map((id) => books().find((b) => b.id === id))
+      .filter((b): b is Book => Boolean(b))
 
-  const favs = favorites.favorites
-  // 조회 재실행 키 (와치 도서 집합 + 자주 가는 도서관 집합이 바뀔 때만)
-  const key = `${watchlist.ids.join(',')}|${favs.map((f) => f.libCode).join(',')}`
+  const favs = () => favorites.favorites()
 
-  useEffect(() => {
-    if (watched.length === 0 || favs.length === 0) return
-    let cancelled = false
-    setStatuses(
-      Object.fromEntries(watched.map((b) => [b.id, { state: 'loading' }])),
-    )
-    watched.forEach(async (book) => {
-      const status = await bestStatus(book, favs)
-      if (!cancelled) setStatuses((prev) => ({ ...prev, [book.id]: status }))
-    })
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key])
+  // 조회 재실행 키 (와치 도서 집합 + 자주 가는 도서관 집합이 바뀔 때만).
+  // `on`으로 이 키 하나만 추적한다. 그냥 두면 아래에서 읽는 statuses까지
+  // 의존이 되어 응답이 올 때마다 조회가 다시 돈다.
+  const key = () =>
+    `${watchlist.ids().join(',')}|${favs().map((f) => f.libCode).join(',')}`
 
-  if (watched.length === 0) return null
+  createEffect(
+    on(key, () => {
+      const list = watched()
+      const libs = favs()
+      if (list.length === 0 || libs.length === 0) return
 
-  const availableCount = Object.values(statuses).filter(
-    (s) => s.state === 'available',
-  ).length
+      let cancelled = false
+      onCleanup(() => {
+        cancelled = true
+      })
+
+      setStatuses(
+        Object.fromEntries(list.map((b) => [b.id, { state: 'loading' }])),
+      )
+      list.forEach(async (book) => {
+        const status = await bestStatus(book, libs)
+        if (!cancelled) setStatuses((prev) => ({ ...prev, [book.id]: status }))
+      })
+    }),
+  )
+
+  const availableCount = () =>
+    Object.values(statuses()).filter((s) => s.state === 'available').length
 
   return (
-    <section class="watchlist">
-      <button
-        class="watchlist__header"
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={expanded}
-      >
-        <span class="watchlist__title">
-          <Heart size={15} fill="currentColor" />
-          와치리스트 {watched.length}권
-        </span>
-        {favs.length === 0 ? (
-          <span class="watchlist__hint">
-            자주 가는 도서관 등록 필요
+    <Show when={watched().length > 0}>
+      <section class="watchlist">
+        <button
+          class="watchlist__header"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded()}
+        >
+          <span class="watchlist__title">
+            <Heart size={15} fill="currentColor" />
+            와치리스트 {watched().length}권
           </span>
-        ) : (
-          <span class="watchlist__count">대출 가능 {availableCount}권</span>
-        )}
-        <span class="watchlist__chevron" aria-hidden>
-          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </span>
-      </button>
+          <Show
+            when={favs().length > 0}
+            fallback={
+              <span class="watchlist__hint">자주 가는 도서관 등록 필요</span>
+            }
+          >
+            <span class="watchlist__count">대출 가능 {availableCount()}권</span>
+          </Show>
+          <span class="watchlist__chevron" aria-hidden>
+            <Show when={expanded()} fallback={<ChevronDown size={16} />}>
+              <ChevronUp size={16} />
+            </Show>
+          </span>
+        </button>
 
-      {expanded && (
-        <ul class="watchlist__list">
-          {favs.length === 0 && (
-            <li class="watchlist__item">
-              <A href="/nearby">주변 도서관</A>에서 자주 가는 도서관을
-              먼저 등록하세요.
-            </li>
-          )}
-          {favs.length > 0 &&
-            watched.map((book) => (
-              <li key={book.id} class="watchlist__item">
-                <span class="watchlist__book">{book.title}</span>
-                <StatusLabel status={statuses[book.id]} />
+        <Show when={expanded()}>
+          <ul class="watchlist__list">
+            <Show when={favs().length === 0}>
+              <li class="watchlist__item">
+                <A href="/nearby">주변 도서관</A>에서 자주 가는 도서관을 먼저
+                등록하세요.
               </li>
-            ))}
-        </ul>
-      )}
-    </section>
+            </Show>
+            <Show when={favs().length > 0}>
+              <For each={watched()}>
+                {(book) => (
+                  <li class="watchlist__item">
+                    <span class="watchlist__book">{book.title}</span>
+                    <StatusLabel status={statuses()[book.id]} />
+                  </li>
+                )}
+              </For>
+            </Show>
+          </ul>
+        </Show>
+      </section>
+    </Show>
   )
 }
 
-function StatusLabel({ status }: { status?: BookStatus }) {
-  if (!status || status.state === 'loading')
-    return <span class="badge badge--muted">확인 중</span>
-  switch (status.state) {
-    case 'available':
-      return (
-        <span class="badge badge--ok" title={status.library}>
-          대출 가능
-        </span>
-      )
-    case 'onLoan':
-      return <span class="badge badge--warn">대출 중</span>
-    case 'notHeld':
-      return <span class="badge badge--muted">미소장</span>
-    case 'error':
-      return <span class="badge badge--muted">확인 실패</span>
-  }
+const STATUS_LABEL: Record<BookStatus['state'], string> = {
+  loading: '확인 중',
+  available: '대출 가능',
+  onLoan: '대출 중',
+  notHeld: '미소장',
+  error: '확인 실패',
 }
 
+function StatusLabel(props: { status?: BookStatus }) {
+  const state = () => props.status?.state ?? 'loading'
+  const tone = () =>
+    state() === 'available' ? 'ok' : state() === 'onLoan' ? 'warn' : 'muted'
+  const title = () =>
+    props.status?.state === 'available' ? props.status.library : undefined
+
+  return (
+    <span class={`badge badge--${tone()}`} title={title()}>
+      {STATUS_LABEL[state()]}
+    </span>
+  )
+}
 /** 자주 가는 도서관들 중 가장 좋은 상태(대출가능 > 대출중 > 미소장)를 고른다 */
 async function bestStatus(book: Book, favs: Library[]): Promise<BookStatus> {
   if (!book.isbn13) return { state: 'notHeld' }
