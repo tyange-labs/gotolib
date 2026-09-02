@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Show, createSignal } from 'solid-js'
 import { ImportDropzone } from '../components/ImportDropzone'
 import { useApp } from '../context/appContext'
 import { ShelfView } from '../views/ShelfView'
@@ -7,7 +7,7 @@ import { ShelfView } from '../views/ShelfView'
 export function ShelfRoute() {
   const { books, loading, error, isSample, importFile, removeBook, clearAll } =
     useApp()
-  const [notice, setNotice] = useState<string | null>(null)
+  const [notice, setNotice] = createSignal<string | null>(null)
 
   const handleFile = async (file: File) => {
     setNotice(null)
@@ -17,31 +17,37 @@ export function ShelfRoute() {
 
   return (
     <>
-      {isSample && (
+      <Show when={isSample()}>
         <p class="sample-banner">
           👋 <strong>샘플 데이터</strong>로 둘러보는 중이에요. 알라딘 보관함
           파일을 올리면 내 목록으로 바뀝니다.
         </p>
-      )}
+      </Show>
 
       <ImportDropzone onFile={handleFile} />
 
-      {error && <p class="message message--error">{error}</p>}
-      {notice && <p class="message message--notice">{notice}</p>}
+      <Show when={error()}>
+        {(message) => <p class="message message--error">{message()}</p>}
+      </Show>
+      <Show when={notice()}>
+        {(message) => <p class="message message--notice">{message()}</p>}
+      </Show>
 
-      {loading ? (
-        <p class="message">불러오는 중…</p>
-      ) : books.length === 0 ? (
-        <p class="message">
-          아직 저장된 책이 없어요. 알라딘 보관함 파일을 불러와보세요.
-        </p>
-      ) : (
-        <ShelfView
-          books={books}
-          onRemove={removeBook}
-          onClearAll={clearAll}
-        />
-      )}
+      <Show
+        when={!loading()}
+        fallback={<p class="message">불러오는 중…</p>}
+      >
+        <Show
+          when={books().length > 0}
+          fallback={
+            <p class="message">
+              아직 저장된 책이 없어요. 알라딘 보관함 파일을 불러와보세요.
+            </p>
+          }
+        >
+          <ShelfView books={books} onRemove={removeBook} onClearAll={clearAll} />
+        </Show>
+      </Show>
     </>
   )
 }
