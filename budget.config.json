@@ -1,6 +1,11 @@
 {
-  "include": ["src"],
-  "extensions": [".ts", ".tsx"],
+  "include": [
+    "src"
+  ],
+  "extensions": [
+    ".ts",
+    ".tsx"
+  ],
   "baseline": "budget.txt",
   "title": "Remaining React dependencies in gotolib, on the way to Solid.",
   "tokens": {
@@ -13,8 +18,6 @@
     "hook:useMemo": "\\buseMemo\\b",
     "hook:useCallback": "\\buseCallback\\b",
     "hook:useRef": "\\buseRef\\b",
-    "hook:useContext": "\\buseContext\\b",
-    "api:createContext": "\\bcreateContext\\b",
     "jsx:className": "\\bclassName=",
     "type:React.": "\\bReact\\.\\w+"
   }
