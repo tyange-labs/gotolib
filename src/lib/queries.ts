@@ -36,7 +36,7 @@ export const availabilityQuery = (isbn13: string, libCode: string) => ({
   staleTime: AVAILABILITY_STALE,
 })
 
-/** 명령형 조회(펼침·와치리스트): 캐시가 신선하면 요청 없이, 진행 중이면 합쳐서 돌려준다. */
+/** 명령형 조회(펼침·찜 목록): 캐시가 신선하면 요청 없이, 진행 중이면 합쳐서 돌려준다. */
 export const fetchAvailability = (isbn13: string, libCode: string) =>
   queryClient.fetchQuery(availabilityQuery(isbn13, libCode))
 

@@ -1,7 +1,7 @@
 import { createSignal, onMount } from 'solid-js'
 import { addWatchItem, getWatchlist, removeWatchItem } from '../lib/db'
 
-/** 와치리스트 최대 개수 (gotolib_0 기준) */
+/** 찜 목록 최대 개수 (gotolib_0 기준) */
 export const WATCHLIST_LIMIT = 5
 
 export function useWatchlist() {

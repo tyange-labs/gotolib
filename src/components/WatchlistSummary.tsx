@@ -13,8 +13,8 @@ type BookStatus =
   | { state: 'notHeld' }
   | { state: 'error' }
 
-/** 와치리스트 책들을 앱 진입 시 자주 가는 도서관에서 대출 가능 여부 조회 */
-export function WatchlistSummary() {
+/** 찜한 책들을 앱 진입 시 자주 가는 도서관에서 대출 가능 여부 조회. 항목을 누르면 목록의 그 책으로 간다 */
+export function WatchlistSummary(props: { onSelect?: (bookId: string) => void }) {
   const { books, watchlist, favorites } = useApp()
   const [expanded, setExpanded] = createSignal(false)
   const [statuses, setStatuses] = createSignal<Record<string, BookStatus>>({})
@@ -27,7 +27,7 @@ export function WatchlistSummary() {
 
   const favs = () => favorites.favorites()
 
-  // 조회 재실행 키 (와치 도서 집합 + 자주 가는 도서관 집합이 바뀔 때만).
+  // 조회 재실행 키 (찜한 도서 집합 + 자주 가는 도서관 집합이 바뀔 때만).
   // `on`으로 이 키 하나만 추적한다. 그냥 두면 아래에서 읽는 statuses까지
   // 의존이 되어 응답이 올 때마다 조회가 다시 돈다.
   const key = () =>
@@ -66,8 +66,8 @@ export function WatchlistSummary() {
           aria-expanded={expanded()}
         >
           <span class="watchlist__title">
-            <Heart size={15} fill="currentColor" />
-            와치리스트 {watched().length}권
+            <Heart size={12} fill="currentColor" aria-hidden />
+            찜 목록 {watched().length}권
           </span>
           <Show
             when={favs().length > 0}
@@ -78,8 +78,8 @@ export function WatchlistSummary() {
             <span class="watchlist__count">대출 가능 {availableCount()}권</span>
           </Show>
           <span class="watchlist__chevron" aria-hidden>
-            <Show when={expanded()} fallback={<ChevronDown size={16} />}>
-              <ChevronUp size={16} />
+            <Show when={expanded()} fallback={<ChevronDown size={14} />}>
+              <ChevronUp size={14} />
             </Show>
           </span>
         </button>
@@ -96,7 +96,12 @@ export function WatchlistSummary() {
               <For each={watched()}>
                 {(book) => (
                   <li class="watchlist__item">
-                    <span class="watchlist__book">{book.title}</span>
+                    <button
+                      class="watchlist__book"
+                      onClick={() => props.onSelect?.(book.id)}
+                    >
+                      {book.title}
+                    </button>
                     <StatusLabel status={statuses()[book.id]} />
                   </li>
                 )}

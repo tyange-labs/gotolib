@@ -22,7 +22,7 @@ export interface AppValue {
   coords: () => Coords | null
   locationStatus: ReturnType<typeof useGeolocation>['status']
   requestLocation: () => void
-  // 자주 가는 도서관 / 와치리스트
+  // 자주 가는 도서관 / 찜 목록
   favorites: ReturnType<typeof useFavoriteLibraries>
   watchlist: ReturnType<typeof useWatchlist>
 }

@@ -1,13 +1,19 @@
 import { Heart, X } from 'lucide-solid'
-import { Show, createSignal } from 'solid-js'
+import { Show, createEffect, createSignal, on } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'
 import type { Book } from '../types/book'
 import { FavoriteHoldingsPanel } from './FavoriteHoldingsPanel'
 
+/** 찜 목록 등에서 '이 책으로 가라'는 일회성 요청. 새 객체가 올 때마다 한 번 처리한다. */
+export interface FocusRequest {
+  id: string
+}
+
 interface Props {
   book: Book
   onRemove: (id: string) => void
+  focusRequest?: FocusRequest | null
 }
 
 // props를 구조분해하면 그 자리에서 값이 읽히고 굳는다. props.book으로 접근한다.
@@ -21,6 +27,23 @@ export function BookCard(props: Props) {
   const watched = () => watchlist.has(props.book.id)
   const watchDisabled = () => !watched() && watchlist.isFull()
 
+  let item!: HTMLLIElement
+
+  // 내 책에 대한 요청이면 펼치고(이미 펼쳐져 있으면 그대로) 그 위치로 스크롤한다.
+  createEffect(
+    on(
+      () => props.focusRequest,
+      (request) => {
+        if (request?.id !== props.book.id) return
+        if (!open()) {
+          setOpen(true)
+          lookup()
+        }
+        item.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      },
+    ),
+  )
+
   const toggleLookup = () => {
     if (open()) {
       setOpen(false)
@@ -32,7 +55,7 @@ export function BookCard(props: Props) {
   }
 
   return (
-    <li class="book-card">
+    <li class="book-card" ref={item}>
       <div class="book-card__row">
         <button
           class="book-card__body"
@@ -58,10 +81,10 @@ export function BookCard(props: Props) {
             onClick={() => watchlist.toggle(props.book.id)}
             disabled={watchDisabled()}
             aria-pressed={watched()}
-            aria-label={watched() ? '와치리스트에서 제거' : '와치리스트에 추가'}
+            aria-label={watched() ? '찜 목록에서 제거' : '찜 목록에 추가'}
             title={
               watchDisabled()
-                ? `와치리스트는 최대 ${watchlist.count()}권이에요`
+                ? `찜 목록은 최대 ${watchlist.count()}권이에요`
                 : undefined
             }
           >

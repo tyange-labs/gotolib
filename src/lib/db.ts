@@ -2,7 +2,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { Library } from './libraryApi'
 import type { Book } from '../types/book'
 
-/** 와치리스트 항목 */
+/** 찜 목록 항목 */
 export interface WatchItem {
   bookId: string
   addedAt: number
@@ -91,7 +91,7 @@ export async function removeFavLibrary(libCode: string): Promise<void> {
   await db.delete('favLibraries', libCode)
 }
 
-// ── 도서 와치리스트 ──────────────────────────────────
+// ── 도서 찜 목록 ──────────────────────────────────
 export async function getWatchlist(): Promise<WatchItem[]> {
   const db = await getDB()
   const rows = await db.getAll('watchlist')

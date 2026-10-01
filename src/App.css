@@ -230,6 +230,7 @@
 
 .book-card,
 .lib-row {
+  scroll-margin-top: var(--tl-space-6);
   padding: var(--tl-space-4) 0;
   border-bottom: 1px solid var(--tl-border);
 }
@@ -290,7 +291,7 @@
   color: var(--tl-warning);
 }
 
-/* ── 소장 도서관 패널 / 와치리스트 ───────────────────── */
+/* ── 소장 도서관 패널 / 찜 목록 ───────────────────── */
 .holdings {
   margin-top: var(--tl-space-3);
   padding-left: var(--tl-space-3);
@@ -343,13 +344,16 @@
 
 .watchlist__header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--tl-space-3);
   width: 100%;
   text-align: left;
 }
 
 .watchlist__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tl-space-1);
   font-weight: 500;
 }
 
@@ -376,6 +380,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: left;
+}
+
+.watchlist__book:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* ── 페이지 이동: 이전 · 3 / 12 · 다음 ───────────────── */
