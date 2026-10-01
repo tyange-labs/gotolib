@@ -45,6 +45,13 @@ export default defineConfig(({ mode }) => {
     // 배포 시에는 tyange-cms-api가 동일한 역할(키 주입)을 맡으면 클라 코드는 그대로다.
     server: {
       proxy: {
+        // 계정·동기화·패스키(tyange-cms-api). 운영에서는 nginx가 같은 경로를 프록시한다.
+        // 패스키는 origin이 맞아야 하므로 로컬 서버는 PASSKEY_RP_ID=localhost,
+        // PASSKEY_RP_ORIGIN=http://localhost:5199로 띄운다.
+        '/api/cms': {
+          target: env.CMS_API_TARGET || 'http://localhost:8080',
+          rewrite: (path) => path.replace(/^\/api\/cms/, ''),
+        },
         '/api/library': {
           target: 'https://data4library.kr',
           changeOrigin: true,

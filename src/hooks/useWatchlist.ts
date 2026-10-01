@@ -1,5 +1,6 @@
-import { createSignal, onMount } from 'solid-js'
+import { createSignal, onCleanup, onMount } from 'solid-js'
 import { addWatchItem, getWatchlist, removeWatchItem } from '../lib/db'
+import { onDataApplied } from '../lib/localEvents'
 
 /** 찜 목록 최대 개수 (gotolib_0 기준) */
 export const WATCHLIST_LIMIT = 5
@@ -7,10 +8,14 @@ export const WATCHLIST_LIMIT = 5
 export function useWatchlist() {
   const [ids, setIds] = createSignal<string[]>([])
 
-  onMount(() => {
+  const load = () =>
     getWatchlist()
       .then((items) => setIds(items.map((i) => i.bookId)))
       .catch(() => setIds([]))
+
+  onMount(() => {
+    void load()
+    onCleanup(onDataApplied(() => void load()))
   })
 
   const has = (bookId: string) => ids().includes(bookId)

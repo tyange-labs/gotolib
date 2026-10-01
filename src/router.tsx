@@ -1,4 +1,5 @@
 import { Route, Router } from '@solidjs/router'
+import { AccountRoute } from './routes/AccountRoute'
 import { AppLayout } from './routes/AppLayout'
 import { NearbyDetailRoute } from './routes/NearbyDetailRoute'
 import { NearbyLayout } from './routes/NearbyLayout'
@@ -13,6 +14,7 @@ export function AppRouter() {
   return (
     <Router root={AppLayout}>
       <Route path="/" component={ShelfRoute} />
+      <Route path="/account" component={AccountRoute} />
       <Route path="/nearby" component={NearbyLayout}>
         <Route path="/" component={NearbyList} />
         <Route path="/:libCode" component={NearbyDetailRoute} />

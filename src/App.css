@@ -544,3 +544,113 @@
   font-size: var(--tl-text-sm);
   color: var(--tl-fg-muted);
 }
+
+/* ── 계정 ────────────────────────────────────────────── */
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tl-space-6);
+}
+
+.account__lead,
+.account__hint {
+  margin: 0;
+  font-size: var(--tl-text-sm);
+  color: var(--tl-fg-muted);
+}
+
+.account__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tl-space-3);
+}
+
+.account__title {
+  margin: 0;
+  font-size: var(--tl-text-sm);
+  font-weight: 500;
+  color: var(--tl-fg-muted);
+}
+
+.account__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--tl-space-4);
+  font-size: var(--tl-text-sm);
+}
+
+.account__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tl-space-3);
+}
+
+.account__meta,
+.account__status {
+  color: var(--tl-fg-muted);
+}
+
+.account__password summary {
+  cursor: pointer;
+  font-size: var(--tl-text-sm);
+  color: var(--tl-fg-muted);
+}
+
+.account__password form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tl-space-3);
+  margin-top: var(--tl-space-4);
+}
+
+.account__password .account__hint {
+  margin-top: var(--tl-space-3);
+}
+
+.account__add {
+  display: flex;
+  align-items: center;
+  gap: var(--tl-space-4);
+}
+
+.account__add .field {
+  flex: 1;
+  min-width: 0;
+}
+
+.field {
+  padding: var(--tl-space-2) 0;
+  border: none;
+  border-bottom: 1px solid var(--tl-border-strong);
+  background: none;
+  outline: none;
+}
+
+.field:focus {
+  border-bottom-color: var(--tl-fg);
+}
+
+.field::placeholder {
+  color: var(--tl-fg-subtle);
+}
+
+/* 화면에서 유일하게 테두리가 있는 버튼: 주된 행동 하나에만 쓴다. */
+.primary-button {
+  align-self: flex-start;
+  padding: var(--tl-space-2) var(--tl-space-4);
+  border: 1px solid var(--tl-fg);
+  border-radius: var(--tl-radius-md);
+  font-size: var(--tl-text-sm);
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--tl-surface);
+}
+
+.primary-button:disabled {
+  opacity: 0.5;
+}

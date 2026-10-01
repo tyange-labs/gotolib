@@ -13,4 +13,6 @@ export interface Book {
   kdc?: string;
   /** 보관함에 담은 시각(ms). 같은 날은 파일 순서로 가른 값. 날짜가 없으면 가져온 시각 */
   addedAt: number;
+  /** 이 기기 저장소에 마지막으로 쓴 시각(ms). 동기화의 '마지막으로 바뀐 시각'. 가져올 때마다 갱신된다 */
+  updatedAt?: number;
 }

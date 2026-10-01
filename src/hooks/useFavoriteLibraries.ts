@@ -1,16 +1,23 @@
-import { createSignal, onMount } from 'solid-js'
+import { createSignal, onCleanup, onMount } from 'solid-js'
 import {
   addFavLibrary,
   getFavLibraries,
   removeFavLibrary,
 } from '../lib/db'
+import { onDataApplied } from '../lib/localEvents'
 import type { Library } from '../lib/libraryApi'
 
 export function useFavoriteLibraries() {
   const [favorites, setFavorites] = createSignal<Library[]>([])
 
+  const load = () =>
+    getFavLibraries()
+      .then(setFavorites)
+      .catch(() => setFavorites([]))
+
   onMount(() => {
-    getFavLibraries().then(setFavorites).catch(() => setFavorites([]))
+    void load()
+    onCleanup(onDataApplied(() => void load()))
   })
 
   const isFavorite = (libCode: string) =>

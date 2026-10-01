@@ -3,19 +3,9 @@
  * authKey는 Vite/백엔드 프록시가 붙이므로 여기서는 상대경로 /api/library/* 만 호출한다.
  */
 
-export interface Library {
-  libCode: string
-  libName: string
-  address: string
-  tel: string
-  latitude: number
-  longitude: number
-  homepage: string
-  closed: string
-  operatingTime: string
-  /** 장서 수 (libSrch 응답에만 존재) */
-  bookCount?: number
-}
+import type { Library } from '../types/library'
+
+export type { Library }
 
 export interface HoldingResult {
   numFound: number

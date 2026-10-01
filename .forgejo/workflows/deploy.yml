@@ -32,6 +32,10 @@ jobs:
       - name: Lint
         run: bun run lint
 
+      # 기기 간 동기화 합치기 규칙(순수 함수) 테스트.
+      - name: Test
+        run: bun run test
+
       # tsc -b를 겸한다. LIBRARY_API_KEY는 번들에 넣지 않는다(서버 프록시가 주입).
       - name: Build
         run: bun run build

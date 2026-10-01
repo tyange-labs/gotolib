@@ -1,6 +1,7 @@
-import { createSignal, onMount } from 'solid-js'
+import { createSignal, onCleanup, onMount } from 'solid-js'
 import { SAMPLE_BOOKS } from '../data/sampleBooks'
 import { clearBooks, deleteBook, getAllBooks, saveBooks } from '../lib/db'
+import { onDataApplied } from '../lib/localEvents'
 import { ParseError, parseAladinExport } from '../lib/parseAladin'
 import type { Book } from '../types/book'
 
@@ -15,7 +16,7 @@ export function useBooks() {
   // 저장된 도서가 없어 데모 샘플을 보여주는 중인지 (포트폴리오용, 비영속)
   const [isSample, setIsSample] = createSignal(false)
 
-  onMount(() => {
+  const load = () =>
     getAllBooks()
       .then((stored) => {
         if (stored.length === 0) {
@@ -23,10 +24,15 @@ export function useBooks() {
           setIsSample(true)
         } else {
           setBooks(stored)
+          setIsSample(false)
         }
       })
       .catch(() => setError('저장된 도서 목록을 불러오지 못했습니다.'))
-      .finally(() => setLoading(false))
+
+  onMount(() => {
+    void load().finally(() => setLoading(false))
+    // 다른 기기의 변경이 동기화로 들어오면 다시 읽는다.
+    onCleanup(onDataApplied(() => void load()))
   })
 
   const importFile = async (file: File): Promise<ImportResult | null> => {
