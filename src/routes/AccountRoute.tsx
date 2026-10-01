@@ -72,9 +72,12 @@ function SignedOut() {
           <input
             class="field"
             name="id"
-            type="email"
+            type="text"
             autocomplete="username"
-            placeholder="이메일"
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck={false}
+            placeholder="아이디"
             required
           />
           <input
