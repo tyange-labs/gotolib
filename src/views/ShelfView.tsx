@@ -1,6 +1,7 @@
 import { Show, createEffect, createMemo, on } from 'solid-js'
 import { BookList } from '../components/BookList'
 import { GenreTabs } from '../components/GenreTabs'
+import { ImportDropzone } from '../components/ImportDropzone'
 import { Pagination } from '../components/Pagination'
 import { SearchBar } from '../components/SearchBar'
 import { WatchlistSummary } from '../components/WatchlistSummary'
@@ -15,6 +16,7 @@ interface Props {
   books: Book[]
   onRemove: (id: string) => void
   onClearAll: () => void
+  onImport: (file: File) => void
 }
 
 export function ShelfView(props: Props) {
@@ -39,32 +41,37 @@ export function ShelfView(props: Props) {
   return (
     <div>
       <WatchlistSummary />
-      <SearchBar
-        value={query()}
-        onChange={setQuery}
-        placeholder="제목·저자·출판사 검색"
-      />
-      <GenreTabs
-        tabs={classTabs()}
-        total={props.books.length}
-        selected={kdcClass()}
-        onSelect={setKdcClass}
-      />
+      <div class="toolbar">
+        <SearchBar
+          value={query()}
+          onChange={setQuery}
+          placeholder="제목·저자·출판사 검색"
+        />
+        <GenreTabs
+          tabs={classTabs()}
+          total={props.books.length}
+          selected={kdcClass()}
+          onSelect={setKdcClass}
+        />
+      </div>
 
       <div class="list-header" ref={top}>
         <span class="list-header__count">
           {total() > 0
-            ? `${rangeStart()}–${rangeEnd()} / ${total()}권`
+            ? `${total()}권 중 ${rangeStart()}–${rangeEnd()}`
             : '0권'}
         </span>
-        <button
-          class="list-header__clear"
-          onClick={() => {
-            if (confirm('저장된 도서 목록을 모두 삭제할까요?')) props.onClearAll()
-          }}
-        >
-          전체 삭제
-        </button>
+        <div class="list-header__actions">
+          <ImportDropzone compact onFile={props.onImport} />
+          <button
+            class="text-button"
+            onClick={() => {
+              if (confirm('저장된 도서 목록을 모두 삭제할까요?')) props.onClearAll()
+            }}
+          >
+            비우기
+          </button>
+        </div>
       </div>
 
       <Show

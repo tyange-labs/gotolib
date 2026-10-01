@@ -10,7 +10,7 @@ export function FavoriteStar(props: { library: Library }) {
   return (
     <button
       type="button"
-      class={`fav-star${active() ? ' fav-star--active' : ''}`}
+      class="icon-button"
       aria-pressed={active()}
       aria-label={
         active() ? '자주 가는 도서관에서 제거' : '자주 가는 도서관에 추가'
@@ -22,7 +22,7 @@ export function FavoriteStar(props: { library: Library }) {
         favorites.toggle(props.library)
       }}
     >
-      <Star size={18} fill={active() ? 'currentColor' : 'none'} />
+      <Star size={16} fill={active() ? 'currentColor' : 'none'} />
     </button>
   )
 }

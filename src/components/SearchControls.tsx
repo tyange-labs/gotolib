@@ -14,9 +14,8 @@ interface Props {
 export function SearchControls(props: Props) {
   return (
     <div class="controls">
-      <label class="controls__field">
-        <span class="controls__label">지역</span>
-        <select
+      <label>
+                <select
           class="controls__select"
           value={props.region}
           onChange={(e) => props.onRegionChange(e.currentTarget.value)}
@@ -35,7 +34,7 @@ export function SearchControls(props: Props) {
           props.locationStatus === 'granted'
         }
       >
-        <MapPin size={15} aria-hidden />
+        <MapPin size={14} aria-hidden />
         {locationText(props.locationStatus)}
       </button>
     </div>
@@ -47,12 +46,12 @@ function locationText(status: LocationStatus): string {
     case 'loading':
       return '위치 확인 중…'
     case 'granted':
-      return '현재 위치 기준 정렬 중'
+      return '가까운 순'
     case 'denied':
-      return '위치 권한 거부됨 · 다시 시도'
+      return '위치 권한 없음 · 다시'
     case 'unavailable':
       return '위치 기능 없음'
     default:
-      return '가까운 순으로 보기'
+      return '내 위치로 정렬'
   }
 }

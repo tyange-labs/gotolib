@@ -6,6 +6,7 @@
       "name": "gotolib",
       "dependencies": {
         "@solidjs/router": "^1.0.0",
+        "@tyange-labs/design-system": "git+https://git.tyange.com/tyange-labs/design-system.git",
         "idb": "^8.0.3",
         "lucide-solid": "^1.38.0",
         "solid-js": "^1.9.15",
@@ -440,6 +441,8 @@
     "@solidjs/router": ["@solidjs/router@1.0.0", "", { "peerDependencies": { "solid-js": "^1.8.6" } }, "sha512-cCSk1hvgCowiMa9bzzYWHiLu1U4E22+DfJe6/rOwAyECKrxc3jrd5QnoW3sDDJtW+e077cz/M67bPl3DqOBw1Q=="],
 
     "@trickfilm400/rollup-plugin-off-main-thread": ["@trickfilm400/rollup-plugin-off-main-thread@3.0.0-pre1", "", { "dependencies": { "ejs": "^3.1.10", "json5": "^2.2.3", "magic-string": "^0.30.21", "string.prototype.matchall": "^4.0.12" } }, "sha512-/67zpWDBLV+oYAEL682s1ktXL0HgqX76f6gaVGkGnVZlBbm1zd0v4Bz8MFF2GGhoX9rvfq3KSQHubFHwa6w6/Q=="],
+
+    "@tyange-labs/design-system": ["@tyange-labs/design-system@git+https://git.tyange.com/tyange-labs/design-system.git#16d0aa97b144e2c072347c4bee5df00c0bbba4c7", {}, "16d0aa97b144e2c072347c4bee5df00c0bbba4c7"],
 
     "@types/babel__core": ["@types/babel__core@7.20.5", "", { "dependencies": { "@babel/parser": "^7.20.7", "@babel/types": "^7.20.7", "@types/babel__generator": "*", "@types/babel__template": "*", "@types/babel__traverse": "*" } }, "sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA=="],
 

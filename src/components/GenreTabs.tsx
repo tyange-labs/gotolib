@@ -9,45 +9,27 @@ interface Props {
   onSelect: (value: string) => void
 }
 
-/** KDC 주류 분류 탭 (가로 스크롤 칩) */
+/** KDC 주류 분류 필터: 칩 열 대신 select 하나 */
 export function GenreTabs(props: Props) {
   return (
-    <div class="genre-tabs" role="tablist" aria-label="분류">
-      <Chip
-        label={ALL_CLASSES}
-        count={props.total}
-        active={props.selected === ALL_CLASSES}
-        onClick={() => props.onSelect(ALL_CLASSES)}
-      />
-      <For each={props.tabs}>
-        {(tab) => (
-          <Chip
-            label={tab.label}
-            count={tab.count}
-            active={props.selected === tab.label}
-            onClick={() => props.onSelect(tab.label)}
-          />
-        )}
-      </For>
+    <div class="filter">
+      <select
+        class="filter__select"
+        aria-label="분류"
+        value={props.selected}
+        onChange={(e) => props.onSelect(e.currentTarget.value)}
+      >
+        <option value={ALL_CLASSES}>
+          {ALL_CLASSES} ({props.total})
+        </option>
+        <For each={props.tabs}>
+          {(tab) => (
+            <option value={tab.label}>
+              {tab.label} ({tab.count})
+            </option>
+          )}
+        </For>
+      </select>
     </div>
-  )
-}
-
-function Chip(props: {
-  label: string
-  count: number
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      role="tab"
-      aria-selected={props.active}
-      class={`genre-chip${props.active ? ' genre-chip--active' : ''}`}
-      onClick={() => props.onClick()}
-    >
-      {props.label}
-      <span class="genre-chip__count">{props.count}</span>
-    </button>
   )
 }

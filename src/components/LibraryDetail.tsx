@@ -58,14 +58,9 @@ export function LibraryDetail(props: Props) {
       </dl>
 
       <section class="detail__held">
-        <h3 class="detail__held-title">내 보관함 중 이 도서관 소장 도서</h3>
+        <h3 class="detail__held-title">이 도서관의 내 책</h3>
         <p class="detail__held-placeholder">
-          이 도서관이 소장한 내 책 목록은 백엔드 연동 후 제공됩니다.
-          <br />
-          <span class="detail__held-note">
-            (도서관별 소장 조회는 책마다 API 호출이 필요해 서버에서 인덱싱·캐시할
-            예정이에요.)
-          </span>
+          서버 연동 후 제공될 예정이에요.
         </p>
       </section>
     </div>

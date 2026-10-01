@@ -34,51 +34,47 @@ export function BookCard(props: Props) {
   return (
     <li class="book-card">
       <div class="book-card__row">
-        <div class="book-card__body">
-          <p class="book-card__title">{props.book.title}</p>
-          <p class="book-card__meta">
-            {[props.book.author, props.book.publisher, props.book.pubDate]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
-          <Show when={props.book.isbn13}>
-            <p class="book-card__isbn">ISBN {props.book.isbn13}</p>
-          </Show>
-        </div>
         <button
-          class="book-card__remove"
-          onClick={() => props.onRemove(props.book.id)}
-          aria-label={`${props.book.title} 삭제`}
-        >
-          <X size={16} />
-        </button>
-      </div>
-
-      <div class="book-card__actions">
-        <button
-          class="book-card__lookup"
+          class="book-card__body"
           onClick={toggleLookup}
           disabled={!props.book.isbn13}
-          title={props.book.isbn13 ? undefined : 'ISBN이 없어 조회할 수 없어요'}
-        >
-          {open() ? '닫기' : '도서관 찾기'}
-        </button>
-        <button
-          class={`book-card__watch${watched() ? ' book-card__watch--active' : ''}`}
-          onClick={() => watchlist.toggle(props.book.id)}
-          disabled={watchDisabled()}
-          aria-pressed={watched()}
+          aria-expanded={open()}
           title={
-            watchDisabled()
-              ? `와치리스트는 최대 ${watchlist.count()}권이에요`
-              : watched()
-                ? '와치리스트에서 제거'
-                : '와치리스트에 추가'
+            props.book.isbn13
+              ? '눌러서 자주 가는 도서관 소장 확인'
+              : 'ISBN이 없어 조회할 수 없어요'
           }
         >
-          <Heart size={15} fill={watched() ? 'currentColor' : 'none'} />
-          {watched() ? '와치중' : '와치'}
+          <span class="book-card__title">{props.book.title}</span>
+          <span class="book-card__meta">
+            {[props.book.author, props.book.publisher]
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
         </button>
+        <div class="book-card__tools">
+          <button
+            class="icon-button"
+            onClick={() => watchlist.toggle(props.book.id)}
+            disabled={watchDisabled()}
+            aria-pressed={watched()}
+            aria-label={watched() ? '와치리스트에서 제거' : '와치리스트에 추가'}
+            title={
+              watchDisabled()
+                ? `와치리스트는 최대 ${watchlist.count()}권이에요`
+                : undefined
+            }
+          >
+            <Heart size={16} fill={watched() ? 'currentColor' : 'none'} />
+          </button>
+          <button
+            class="icon-button"
+            onClick={() => props.onRemove(props.book.id)}
+            aria-label={`${props.book.title} 삭제`}
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       <Show when={open()}>

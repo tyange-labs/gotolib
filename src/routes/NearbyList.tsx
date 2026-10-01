@@ -1,14 +1,22 @@
 import { A } from '@solidjs/router'
-import { ChevronRight } from 'lucide-solid'
 import { For, Match, Show, Switch, createMemo, createSignal } from 'solid-js'
 import { FavoriteStar } from '../components/FavoriteStar'
 import { SearchBar } from '../components/SearchBar'
+import { SearchControls } from '../components/SearchControls'
 import { useApp } from '../context/appContext'
 import { useNearby } from '../context/nearbyContext'
 
 /** '/nearby' index — 도서관 목록 + 이름 검색 */
 export function NearbyList() {
-  const { regionName, coords, favorites } = useApp()
+  const {
+    regionName,
+    coords,
+    favorites,
+    region,
+    setRegion,
+    locationStatus,
+    requestLocation,
+  } = useApp()
   const { status, error, libraries, reload } = useNearby()
   const [query, setQuery] = createSignal('')
 
@@ -24,10 +32,17 @@ export function NearbyList() {
 
   return (
     <div>
+      <SearchControls
+        region={region()}
+        onRegionChange={setRegion}
+        locationStatus={locationStatus()}
+        onRequestLocation={requestLocation}
+      />
+
       <Show when={favorites.favorites().length > 0}>
         <section class="fav-section">
           <p class="fav-section__title">
-            ★ 자주 가는 도서관 {favorites.favorites().length}
+            자주 가는 도서관
           </p>
           <ul class="lib-list">
             <For each={favorites.favorites()}>
@@ -38,7 +53,6 @@ export function NearbyList() {
                       <span class="lib-card__name">{lib.libName}</span>
                       <span class="lib-card__addr">{lib.address}</span>
                     </div>
-                    <ChevronRight class="lib-card__chevron" size={18} aria-hidden />
                   </A>
                   <FavoriteStar library={lib} />
                 </li>
@@ -69,7 +83,7 @@ export function NearbyList() {
         <Match when={status() === 'loaded'}>
           <div class="list-header">
             <span class="list-header__count">
-              {regionName()} · {filtered().length}곳
+              {regionName()} {filtered().length}곳
               {coords() ? ' · 가까운 순' : ''}
             </span>
           </div>
@@ -95,9 +109,6 @@ export function NearbyList() {
                             km
                           </span>
                         </Show>
-                        <span class="lib-card__chevron" aria-hidden>
-                          ›
-                        </span>
                       </div>
                     </A>
                     <FavoriteStar library={lib} />

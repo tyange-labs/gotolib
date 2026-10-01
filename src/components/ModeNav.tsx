@@ -1,23 +1,14 @@
 import { A } from '@solidjs/router'
 
-/** 세그먼트 컨트롤 형태의 최상위 네비게이션 (라우트 링크 기반) */
+/** 최상위 네비게이션: 텍스트 링크 두 개, 현재 위치만 밑줄 */
 export function ModeNav() {
   return (
-    <nav class="segmented" role="tablist">
-      <A
-        href="/"
-        end
-        class="segmented__option"
-        activeClass="segmented__option--active"
-      >
-        내 서재
+    <nav class="nav">
+      <A href="/" end class="nav__link" activeClass="nav__link--active">
+        서재
       </A>
-      <A
-        href="/nearby"
-        class="segmented__option"
-        activeClass="segmented__option--active"
-      >
-        주변 도서관
+      <A href="/nearby" class="nav__link" activeClass="nav__link--active">
+        도서관
       </A>
     </nav>
   )
