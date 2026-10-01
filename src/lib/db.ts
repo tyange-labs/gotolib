@@ -22,12 +22,17 @@ interface GotolibDB extends DBSchema {
     key: string // bookId
     value: WatchItem
   }
+  /** 도서관 API 응답 캐시 (성공 응답만) */
+  apiCache: {
+    key: string
+    value: { key: string; savedAt: number; data: unknown }
+  }
 }
 
 let dbPromise: Promise<IDBPDatabase<GotolibDB>> | null = null
 
 function getDB() {
-  dbPromise ??= openDB<GotolibDB>('gotolib', 2, {
+  dbPromise ??= openDB<GotolibDB>('gotolib', 3, {
     upgrade(db, oldVersion) {
       if (oldVersion < 1) {
         const store = db.createObjectStore('books', { keyPath: 'id' })
@@ -36,6 +41,9 @@ function getDB() {
       if (oldVersion < 2) {
         db.createObjectStore('favLibraries', { keyPath: 'libCode' })
         db.createObjectStore('watchlist', { keyPath: 'bookId' })
+      }
+      if (oldVersion < 3) {
+        db.createObjectStore('apiCache', { keyPath: 'key' })
       }
     },
   })
@@ -97,4 +105,22 @@ export async function addWatchItem(bookId: string): Promise<void> {
 export async function removeWatchItem(bookId: string): Promise<void> {
   const db = await getDB()
   await db.delete('watchlist', bookId)
+}
+
+// ── API 응답 캐시 ────────────────────────────────────
+export async function getApiCache(
+  key: string,
+): Promise<{ savedAt: number; data: unknown } | undefined> {
+  const db = await getDB()
+  return db.get('apiCache', key)
+}
+
+export async function putApiCache(key: string, data: unknown): Promise<void> {
+  const db = await getDB()
+  await db.put('apiCache', { key, savedAt: Date.now(), data })
+}
+
+export async function removeApiCache(key: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('apiCache', key)
 }

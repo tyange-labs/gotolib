@@ -16,6 +16,9 @@
   },
   "dependencies": {
     "@solidjs/router": "^1.0.0",
+    "@tanstack/query-async-storage-persister": "^5.104.0",
+    "@tanstack/solid-query": "^5.104.0",
+    "@tanstack/solid-query-persist-client": "^5.104.0",
     "@tyange-labs/design-system": "git+https://git.tyange.com/tyange-labs/design-system.git",
     "idb": "^8.0.3",
     "lucide-solid": "^1.38.0",

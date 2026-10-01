@@ -2,7 +2,8 @@ import { A } from '@solidjs/router'
 import { ChevronDown, ChevronUp, Heart } from 'lucide-solid'
 import { For, Show, createEffect, createSignal, on, onCleanup } from 'solid-js'
 import { useApp } from '../context/appContext'
-import { checkAvailability, type Library } from '../lib/libraryApi'
+import type { Library } from '../lib/libraryApi'
+import { fetchAvailability } from '../lib/queries'
 import type { Book } from '../types/book'
 
 type BookStatus =
@@ -136,7 +137,7 @@ async function bestStatus(book: Book, favs: Library[]): Promise<BookStatus> {
     const results = await Promise.all(
       favs.map(async (lib) => ({
         lib,
-        ...(await checkAvailability(book.isbn13!, lib.libCode)),
+        ...(await fetchAvailability(book.isbn13!, lib.libCode)),
       })),
     )
     const available = results.find((r) => r.hasBook && r.loanAvailable)

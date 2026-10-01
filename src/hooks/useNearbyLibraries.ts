@@ -1,68 +1,35 @@
-import { createEffect, createSignal, on } from 'solid-js'
+import { createQuery } from '@tanstack/solid-query'
+import { createMemo } from 'solid-js'
 import { distanceKm, type Coords } from '../lib/geo'
-import {
-  LibraryApiError,
-  searchLibraries,
-  type Library,
-} from '../lib/libraryApi'
+import { LibraryApiError, type Library } from '../lib/libraryApi'
+import { librariesQuery } from '../lib/queries'
 
 export interface NearbyLibrary extends Library {
   distance?: number
-}
-
-interface State {
-  status: 'idle' | 'loading' | 'loaded' | 'error'
-  error?: string
-  libraries: NearbyLibrary[]
 }
 
 export function useNearbyLibraries(
   region: () => string,
   coords: () => Coords | null,
 ) {
-  const [state, setState] = createSignal<State>({
-    status: 'idle',
-    libraries: [],
-  })
+  // 지역이 키라서 바뀌면 알아서 다른 캐시를 본다. 좌표는 키가 아니므로
+  // 위치가 잡혀도 API를 다시 부르지 않고 아래 memo에서 재정렬만 한다.
+  const query = createQuery(() => librariesQuery(region()))
 
-  const load = async () => {
-    setState({ status: 'loading', libraries: [] })
-    try {
-      const libs = await searchLibraries(region())
-      setState({ status: 'loaded', libraries: sortByDistance(libs, coords()) })
-    } catch (e) {
-      setState({
-        status: 'error',
-        error:
-          e instanceof LibraryApiError
-            ? e.message
-            : '도서관 목록을 불러오지 못했습니다.',
-        libraries: [],
-      })
-    }
-  }
-
-  // 지역이 바뀌면 다시 불러온다. (좌표만 바뀌면 아래 재정렬 effect가 처리)
-  // `on`으로 의존을 region 하나로 못박는다. 그냥 두면 load 안에서 읽는
-  // coords()까지 추적돼 위치가 잡힐 때마다 API를 다시 부른다.
-  createEffect(on(region, () => void load()))
-
-  // 위치가 확보/변경되면 이미 불러온 목록을 재정렬한다 (추가 API 호출 없음).
-  createEffect(
-    on(coords, (next) => {
-      setState((prev) =>
-        prev.status === 'loaded'
-          ? { ...prev, libraries: sortByDistance(prev.libraries, next) }
-          : prev,
-      )
-    }),
-  )
+  const libraries = createMemo(() => sortByDistance(query.data ?? [], coords()))
 
   return {
-    status: () => state().status,
-    error: () => state().error,
-    libraries: () => state().libraries,
-    reload: load,
+    status: () =>
+      query.isError ? 'error' : query.isPending ? 'loading' : 'loaded',
+    error: () =>
+      query.error instanceof LibraryApiError
+        ? query.error.message
+        : query.error
+          ? '도서관 목록을 불러오지 못했습니다.'
+          : undefined,
+    libraries,
+    // 캐시가 신선해도 강제로 다시 받는다.
+    reload: () => void query.refetch(),
   }
 }
 

@@ -1,6 +1,7 @@
 import { createSignal } from 'solid-js'
 import { useApp } from '../context/appContext'
-import { checkAvailability, type Library } from '../lib/libraryApi'
+import type { Library } from '../lib/libraryApi'
+import { fetchAvailability } from '../lib/queries'
 
 export type LoanState =
   | 'loading'
@@ -58,7 +59,7 @@ async function fetchLoanState(
   libCode: string,
 ): Promise<LoanState> {
   try {
-    const { hasBook, loanAvailable } = await checkAvailability(isbn13, libCode)
+    const { hasBook, loanAvailable } = await fetchAvailability(isbn13, libCode)
     if (!hasBook) return 'notHeld'
     return loanAvailable ? 'available' : 'onLoan'
   } catch {
