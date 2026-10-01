@@ -51,9 +51,10 @@ function getDB() {
 }
 
 // ── 도서 ──────────────────────────────────────────────
+/** 보관함에 담은 최신순 */
 export async function getAllBooks(): Promise<Book[]> {
   const db = await getDB()
-  return db.getAllFromIndex('books', 'by-addedAt')
+  return (await db.getAllFromIndex('books', 'by-addedAt')).reverse()
 }
 
 export async function saveBooks(books: Book[]): Promise<void> {

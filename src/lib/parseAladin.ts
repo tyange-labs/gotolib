@@ -37,7 +37,11 @@ export function parseAladinExport(buffer: ArrayBuffer): Book[] {
   }
 
   const columnOf = mapColumns(rows[headerIndex])
-  const addedAt = Date.now()
+  const importedAt = Date.now()
+  // 내보내기 파일은 보관함에 최근 담은 책이 위에 온다. 담긴 날짜는 '일' 단위라
+  // 같은 날 담은 책끼리는 파일 순서로 가른다(앞선 행일수록 1ms씩 더 최신).
+  const rowCount = rows.length - headerIndex - 1
+  let lastDay: number | undefined
   const books: Book[] = []
 
   for (const row of rows.slice(headerIndex + 1)) {
@@ -55,6 +59,10 @@ export function parseAladinExport(buffer: ArrayBuffer): Book[] {
 
     // 제목만 있고 다른 정보가 전혀 없는 행은 도서가 아니다 (알라딘 푸터 문구 등)
     if (!author && !publisher && !pubDate && !isbn13 && !price) continue
+
+    // 날짜 칸이 비어 있으면 바로 앞 행의 날짜를 이어받아 파일 속 위치를 지킨다.
+    lastDay = parseDay(cellAt(row, columnOf.listedAt)) ?? lastDay
+    const addedAt = (lastDay ?? importedAt) + (rowCount - books.length)
 
     books.push({
       id: isbn13 ?? fallbackId(title, author),
@@ -112,6 +120,7 @@ const COLUMN_MATCHERS = {
   price: [/판매가|정가|가격/],
   genre: [/^분야$/, /분야|장르|카테고리/],
   bugah: [/^부가기호$/, /부가기호/],
+  listedAt: [/담긴\s*날짜|담은\s*날짜/],
 } satisfies Record<string, RegExp[]>
 
 type ColumnKey = keyof typeof COLUMN_MATCHERS
@@ -147,6 +156,12 @@ function cellAt(row: unknown[], index: number | undefined): string | undefined {
 function kdcFromBugah(value: string | undefined): string | undefined {
   const digits = value?.replace(/\D/g, '') ?? ''
   return digits.length >= 5 ? digits[2] : undefined
+}
+
+/** "20261001" 또는 "2026-10-01" → 그날 0시(UTC)의 ms. 형식이 다르면 undefined */
+function parseDay(value: string | undefined): number | undefined {
+  const m = value?.match(/^(\d{4})\D?(\d{2})\D?(\d{2})/)
+  return m ? Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : undefined
 }
 
 /** "20260715" 같은 YYYYMMDD 형식을 "2026-07-15"로 바꾼다 */

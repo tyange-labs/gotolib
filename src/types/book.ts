@@ -11,5 +11,6 @@ export interface Book {
   genre?: string;
   /** KDC 주류 기호 한 자리 '0'~'9' (부가기호 내용분류기호 첫자리에서 도출). 없으면 undefined */
   kdc?: string;
+  /** 보관함에 담은 시각(ms). 같은 날은 파일 순서로 가른 값. 날짜가 없으면 가져온 시각 */
   addedAt: number;
 }
