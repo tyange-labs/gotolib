@@ -202,10 +202,21 @@ export const deletePasskey = (id: string) =>
   api('/passkeys/' + encodeURIComponent(id), { method: 'DELETE' })
 
 /** 브라우저가 던지는 오류를 사람이 읽을 말로. 사용자가 취소한 건 오류로 보이지 않게 한다. */
+/** 사용자가 직접 닫은 경우(AbortError): 화면에 오류로 띄우지 않는다. */
+export const CANCELLED = '취소되었습니다.'
+
 function webauthnMessage(e: unknown): string {
+  // 폰에서 '눌러도 아무 일도 없다'가 되지 않도록 원인을 남긴다(개발자 도구가 없는 환경 대비).
+  console.error('[passkey]', e)
   const name = e instanceof Error ? e.name : ''
-  if (name === 'NotAllowedError' || name === 'AbortError') return '취소되었습니다.'
+  if (name === 'AbortError') return CANCELLED
+  // 브라우저는 '사용자가 취소'와 '막혀서 못 함'을 모두 NotAllowedError로 알려 주어 둘을 구분할 수 없다.
+  // 예전에는 이걸 '취소'로 보고 아무 메시지도 안 띄워서, 막힌 경우에도 사용자에게는 무반응으로 보였다.
+  if (name === 'NotAllowedError') {
+    return '패스키 인증이 끝나지 않았어요. 창을 닫았거나, 시크릿 모드 같은 브라우저 설정 때문에 막혔을 수 있어요. (NotAllowedError)'
+  }
   if (name === 'InvalidStateError') return '이 기기에는 이미 등록된 패스키입니다.'
   if (name === 'NotSupportedError') return '이 브라우저는 패스키를 지원하지 않습니다.'
-  return e instanceof Error ? e.message : '패스키 처리에 실패했습니다.'
+  const detail = e instanceof Error ? e.message : ''
+  return `패스키 처리에 실패했어요${name ? ` (${name}${detail ? `: ${detail}` : ''})` : ''}`
 }

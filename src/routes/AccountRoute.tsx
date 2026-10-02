@@ -2,6 +2,7 @@ import { useNavigate } from '@solidjs/router'
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { For, Match, Show, Switch, createResource, createSignal } from 'solid-js'
 import {
+  CANCELLED,
   deletePasskey,
   listPasskeys,
   loginWithPasskey,
@@ -56,8 +57,8 @@ function SignedOut() {
       await action()
     } catch (e) {
       const message = e instanceof Error ? e.message : '로그인하지 못했습니다.'
-      // 사용자가 직접 취소한 건 오류로 띄우지 않는다.
-      if (message !== '취소되었습니다.') setError(message)
+      // 사용자가 직접 닫은 건 오류로 띄우지 않는다.
+      if (message !== CANCELLED) setError(message)
     } finally {
       setBusy(false)
     }
@@ -120,7 +121,7 @@ function SignedIn() {
       await action()
     } catch (e) {
       const message = e instanceof Error ? e.message : '실패했습니다.'
-      if (message !== '취소되었습니다.') setError(message)
+      if (message !== CANCELLED) setError(message)
     } finally {
       setBusy(false)
     }
