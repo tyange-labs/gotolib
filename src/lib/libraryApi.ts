@@ -4,6 +4,7 @@
  */
 
 import type { Library } from '../types/library'
+import { toSearchResult, type SearchDoc, type SearchResult } from './bookSearch'
 
 export type { Library }
 
@@ -102,6 +103,36 @@ function mapLib(lib: Record<string, string>): Library {
   }
 }
 
+export interface BookSearchPage {
+  /** 검색어에 걸린 전체 건수(ISBN이 없어 건너뛴 결과도 포함) */
+  total: number
+  results: SearchResult[]
+}
+
+/**
+ * 도서 검색(srchBooks). 제목·저자 등 키워드로 찾고, 대출이 많은 순으로 돌려준다.
+ * 키워드 없이 부르면 전체(수백만 건)가 나오므로 호출하는 쪽이 빈 키워드를 막는다.
+ */
+export async function searchBooks(
+  keyword: string,
+  pageNo = 1,
+  pageSize = 20,
+): Promise<BookSearchPage> {
+  const params = new URLSearchParams({
+    keyword,
+    pageNo: String(pageNo),
+    pageSize: String(pageSize),
+  })
+  const data = await request(`/api/library/srchBooks?${params}`)
+  if (data.response?.error) {
+    throw new LibraryApiError(String(data.response.error))
+  }
+  const results = (data.response?.docs ?? [])
+    .map(({ doc }) => toSearchResult(doc))
+    .filter((result): result is SearchResult => result !== null)
+  return { total: Number(data.response?.numFound ?? 0), results }
+}
+
 /** 특정 도서관의 소장 및 대출 가능 여부를 조회한다. */
 export async function checkAvailability(
   isbn13: string,
@@ -122,6 +153,7 @@ async function request(url: string): Promise<{
     numFound?: number | string
     libs?: Array<{ lib: Record<string, string> }>
     result?: { hasBook?: string; loanAvailable?: string }
+    docs?: Array<{ doc: SearchDoc }>
   }
 }> {
   let res: Response

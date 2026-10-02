@@ -53,6 +53,13 @@ export function useBooks() {
     }
   }
 
+  /** 검색 등으로 책 한 권을 서재에 담는다. 샘플을 보던 중이면 내 목록으로 바뀐다. */
+  const addBook = async (book: Book) => {
+    await saveBooks([book])
+    setBooks(await getAllBooks())
+    setIsSample(false)
+  }
+
   const removeBook = async (id: string) => {
     if (!isSample()) await deleteBook(id)
     setBooks((prev) => prev.filter((book) => book.id !== id))
@@ -65,5 +72,14 @@ export function useBooks() {
     setIsSample(true)
   }
 
-  return { books, loading, error, isSample, importFile, removeBook, clearAll }
+  return {
+    books,
+    loading,
+    error,
+    isSample,
+    importFile,
+    addBook,
+    removeBook,
+    clearAll,
+  }
 }

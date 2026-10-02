@@ -1,5 +1,6 @@
 import { Show, createEffect, createMemo, createSignal, on } from 'solid-js'
 import type { FocusRequest } from '../components/BookCard'
+import { BookSearch } from '../components/BookSearch'
 import { BookList } from '../components/BookList'
 import { GenreTabs } from '../components/GenreTabs'
 import { ImportDropzone } from '../components/ImportDropzone'
@@ -18,6 +19,7 @@ interface Props {
   onRemove: (id: string) => void
   onClearAll: () => void
   onImport: (file: File) => void
+  onAdd: (book: Book) => Promise<void>
 }
 
 export function ShelfView(props: Props) {
@@ -35,6 +37,7 @@ export function ShelfView(props: Props) {
   createEffect(on([kdcClass, query], () => setPage(1), { defer: true }))
 
   const [focusRequest, setFocusRequest] = createSignal<FocusRequest | null>(null)
+  const [searching, setSearching] = createSignal(false)
 
   /** 찜 목록에서 책을 누르면: 가려져 있으면 필터를 풀고, 그 책의 페이지로 가서 펼친다. */
   const focusBook = (id: string) => {
@@ -80,6 +83,9 @@ export function ShelfView(props: Props) {
             : '0권'}
         </span>
         <div class="list-header__actions">
+          <button class="text-button" onClick={() => setSearching((v) => !v)}>
+            책 추가
+          </button>
           <ImportDropzone compact onFile={props.onImport} />
           <button
             class="text-button"
@@ -91,6 +97,14 @@ export function ShelfView(props: Props) {
           </button>
         </div>
       </div>
+
+      <Show when={searching()}>
+        <BookSearch
+          books={props.books}
+          onAdd={props.onAdd}
+          onClose={() => setSearching(false)}
+        />
+      </Show>
 
       <Show
         when={total() > 0}

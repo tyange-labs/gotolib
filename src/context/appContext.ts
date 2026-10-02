@@ -12,6 +12,7 @@ export interface AppValue {
   error: () => string | null
   isSample: () => boolean
   importFile: (file: File) => Promise<{ imported: number } | null>
+  addBook: (book: Book) => Promise<void>
   removeBook: (id: string) => Promise<void>
   clearAll: () => Promise<void>
   // 지역

@@ -5,8 +5,16 @@ import { ShelfView } from '../views/ShelfView'
 
 /** '/' — 내 서재: 도서 목록. 파일 불러오기는 목록 머리의 텍스트 버튼(비었을 땐 큰 영역) */
 export function ShelfRoute() {
-  const { books, loading, error, isSample, importFile, removeBook, clearAll } =
-    useApp()
+  const {
+    books,
+    loading,
+    error,
+    isSample,
+    importFile,
+    addBook,
+    removeBook,
+    clearAll,
+  } = useApp()
   const [notice, setNotice] = createSignal<string | null>(null)
 
   const handleFile = async (file: File) => {
@@ -40,6 +48,7 @@ export function ShelfRoute() {
             onRemove={removeBook}
             onClearAll={clearAll}
             onImport={handleFile}
+            onAdd={addBook}
           />
         </Show>
       </Show>

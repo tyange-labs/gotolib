@@ -564,6 +564,85 @@
   color: var(--tl-fg-muted);
 }
 
+/* ── 책 검색(정보나루로 찾아 담기) ───────────────────── */
+.book-search {
+  margin: var(--tl-space-4) 0 var(--tl-space-6);
+  padding: var(--tl-space-4);
+  border: 1px solid var(--tl-border);
+  border-radius: var(--tl-radius-md);
+  background: var(--tl-surface);
+}
+
+.book-search__form {
+  display: flex;
+  align-items: center;
+  gap: var(--tl-space-3);
+  border-bottom: 1px solid var(--tl-border-strong);
+}
+
+.book-search__form:focus-within {
+  border-bottom-color: var(--tl-fg);
+}
+
+.book-search__input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--tl-space-2) 0;
+  border: none;
+  background: none;
+  outline: none;
+}
+
+.book-search__input::placeholder {
+  color: var(--tl-fg-subtle);
+}
+
+.search-results {
+  list-style: none;
+  margin: var(--tl-space-3) 0 0;
+  padding: 0;
+}
+
+.search-result {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--tl-space-4);
+  padding: var(--tl-space-3) 0;
+  border-bottom: 1px solid var(--tl-border);
+}
+
+.search-result__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tl-space-1);
+  min-width: 0;
+}
+
+.search-result__title {
+  font-weight: 500;
+}
+
+.search-result__meta {
+  font-size: var(--tl-text-sm);
+  color: var(--tl-fg-muted);
+}
+
+.search-result__done {
+  flex-shrink: 0;
+  font-size: var(--tl-text-sm);
+  color: var(--tl-fg-subtle);
+}
+
+.search-footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: var(--tl-space-3);
+  font-size: var(--tl-text-sm);
+  color: var(--tl-fg-muted);
+}
+
 /* ── 안내 줄 ─────────────────────────────────────────── */
 .sample-note {
   margin: 0 0 var(--tl-space-4);

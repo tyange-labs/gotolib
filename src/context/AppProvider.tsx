@@ -9,8 +9,16 @@ import { startAutoSync } from '../lib/sync'
 import { AppContext, type AppValue } from './appContext'
 
 export function AppProvider(props: { children: JSX.Element }) {
-  const { books, loading, error, isSample, importFile, removeBook, clearAll } =
-    useBooks()
+  const {
+    books,
+    loading,
+    error,
+    isSample,
+    importFile,
+    addBook,
+    removeBook,
+    clearAll,
+  } = useBooks()
   const { coords, status: locationStatus, request: requestLocation } =
     useGeolocation()
   const [region, setRegion] = createSignal<string>(REGIONS[0].code)
@@ -30,6 +38,7 @@ export function AppProvider(props: { children: JSX.Element }) {
     error,
     isSample,
     importFile,
+    addBook,
     removeBook,
     clearAll,
     region,
