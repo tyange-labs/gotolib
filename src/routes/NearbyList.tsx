@@ -17,7 +17,7 @@ export function NearbyList() {
     locationStatus,
     requestLocation,
   } = useApp()
-  const { status, error, libraries, reload } = useNearby()
+  const { status, error, libraries, load, reload } = useNearby()
   const [query, setQuery] = createSignal('')
 
   const filtered = createMemo(() => {
@@ -32,11 +32,18 @@ export function NearbyList() {
 
   return (
     <div>
+      {/* 지역을 바꾸거나 위치로 정렬하는 건 목록을 보겠다는 뜻이라 그때 받는다. */}
       <SearchControls
         region={region()}
-        onRegionChange={setRegion}
+        onRegionChange={(next) => {
+          setRegion(next)
+          load()
+        }}
         locationStatus={locationStatus()}
-        onRequestLocation={requestLocation}
+        onRequestLocation={() => {
+          requestLocation()
+          load()
+        }}
       />
 
       <Show when={favorites.favorites().length > 0}>
@@ -62,13 +69,25 @@ export function NearbyList() {
         </section>
       </Show>
 
-      <SearchBar
-        value={query()}
-        onChange={setQuery}
-        placeholder="도서관 이름 검색"
-      />
+      <Show when={status() !== 'idle'}>
+        <SearchBar
+          value={query()}
+          onChange={setQuery}
+          placeholder="도서관 이름 검색"
+        />
+      </Show>
 
       <Switch>
+        <Match when={status() === 'idle'}>
+          <div class="nearby-prompt">
+            <p class="message">
+              {regionName()} 도서관 목록은 크기가 커서 직접 불러올 때만 받아요.
+            </p>
+            <button class="primary-button" onClick={load}>
+              {regionName()} 도서관 불러오기
+            </button>
+          </div>
+        </Match>
         <Match when={status() === 'loading'}>
           <p class="message">{regionName()} 도서관을 불러오는 중…</p>
         </Match>
@@ -86,6 +105,9 @@ export function NearbyList() {
               {regionName()} {filtered().length}곳
               {coords() ? ' · 가까운 순' : ''}
             </span>
+            <button class="text-button" onClick={reload}>
+              새로고침
+            </button>
           </div>
           <Show
             when={filtered().length > 0}

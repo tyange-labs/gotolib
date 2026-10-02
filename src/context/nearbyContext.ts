@@ -5,6 +5,8 @@ export interface NearbyValue {
   status: () => 'idle' | 'loading' | 'loaded' | 'error'
   error: () => string | undefined
   libraries: () => NearbyLibrary[]
+  /** 사용자가 직접 요청해서 목록을 받기 시작한다 */
+  load: () => void
   reload: () => void
 }
 

@@ -456,6 +456,19 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 목록을 아직 받지 않았을 때의 안내 */
+.nearby-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--tl-space-4);
+  margin-top: var(--tl-space-6);
+}
+
+.nearby-prompt .message {
+  margin: 0;
+}
+
 /* ── 도서관 상세 ─────────────────────────────────────── */
 .detail__bar {
   display: flex;

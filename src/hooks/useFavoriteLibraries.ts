@@ -9,11 +9,14 @@ import type { Library } from '../lib/libraryApi'
 
 export function useFavoriteLibraries() {
   const [favorites, setFavorites] = createSignal<Library[]>([])
+  // 처음 읽기가 끝났는지. 비어 있는 게 '없어서'인지 '아직 안 읽어서'인지 구분해야 할 때 쓴다.
+  const [ready, setReady] = createSignal(false)
 
   const load = () =>
     getFavLibraries()
       .then(setFavorites)
       .catch(() => setFavorites([]))
+      .finally(() => setReady(true))
 
   onMount(() => {
     void load()
@@ -32,5 +35,5 @@ export function useFavoriteLibraries() {
     setFavorites(await getFavLibraries())
   }
 
-  return { favorites, isFavorite, toggle }
+  return { favorites, ready, isFavorite, toggle }
 }
