@@ -84,12 +84,12 @@ export function NearbyList() {
               도서관 목록은 크기가 커서 직접 불러올 때만 받아요.
             </p>
             <button class="primary-button" onClick={load}>
-              {regionName()} 도서관 불러오기
+              도서관 불러오기
             </button>
           </div>
         </Match>
         <Match when={status() === 'loading'}>
-          <p class="message">{regionName()} 도서관을 불러오는 중…</p>
+          <p class="message">도서관을 불러오는 중…</p>
         </Match>
         <Match when={status() === 'error'}>
           <p class="message message--error">
