@@ -1,6 +1,7 @@
 import { A } from '@solidjs/router'
 import { For, Match, Show, Switch, createMemo, createSignal } from 'solid-js'
 import { FavoriteStar } from '../components/FavoriteStar'
+import { LoadingMessage } from '../components/Spinner'
 import { SearchBar } from '../components/SearchBar'
 import { SearchControls } from '../components/SearchControls'
 import { useApp } from '../context/appContext'
@@ -9,7 +10,6 @@ import { useNearby } from '../context/nearbyContext'
 /** '/nearby' index — 도서관 목록 + 이름 검색 */
 export function NearbyList() {
   const {
-    regionName,
     coords,
     favorites,
     region,
@@ -89,7 +89,7 @@ export function NearbyList() {
           </div>
         </Match>
         <Match when={status() === 'loading'}>
-          <p class="message">도서관을 불러오는 중…</p>
+          <LoadingMessage>도서관을 불러오는 중…</LoadingMessage>
         </Match>
         <Match when={status() === 'error'}>
           <p class="message message--error">
@@ -102,7 +102,7 @@ export function NearbyList() {
         <Match when={status() === 'loaded'}>
           <div class="list-header">
             <span class="list-header__count">
-              {regionName()} {filtered().length}곳
+              {filtered().length}곳
               {coords() ? ' · 가까운 순' : ''}
             </span>
             <button class="text-button" onClick={reload}>

@@ -1,6 +1,7 @@
 import { useParams } from '@solidjs/router'
 import { Show, createEffect } from 'solid-js'
 import { LibraryDetail } from '../components/LibraryDetail'
+import { LoadingMessage } from '../components/Spinner'
 import { useApp } from '../context/appContext'
 import { useNearby } from '../context/nearbyContext'
 
@@ -30,7 +31,7 @@ export function NearbyDetailRoute() {
   return (
     <Show
       when={!waiting()}
-      fallback={<p class="message">도서관 정보를 불러오는 중…</p>}
+      fallback={<LoadingMessage>도서관 정보를 불러오는 중…</LoadingMessage>}
     >
       <Show
         when={library()}

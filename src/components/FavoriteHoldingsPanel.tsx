@@ -1,6 +1,7 @@
 import { A } from '@solidjs/router'
 import { For, Show } from 'solid-js'
 import type { FavHolding, LoanState } from '../hooks/useFavoriteHoldings'
+import { Spinner } from './Spinner'
 
 interface Props {
   holdings: FavHolding[] | null
@@ -59,5 +60,11 @@ const LOAN_LABEL: Record<LoanState, string> = {
 function LoanBadge(props: { loan: LoanState }) {
   const tone = () =>
     props.loan === 'available' ? 'ok' : props.loan === 'onLoan' ? 'warn' : 'muted'
-  return <span class={`badge badge--${tone()}`}>{LOAN_LABEL[props.loan]}</span>
+  return (
+    <span class={`badge badge--${tone()}`}>
+      <Show when={props.loan !== 'loading'} fallback={<Spinner label="확인 중" />}>
+        {LOAN_LABEL[props.loan]}
+      </Show>
+    </span>
+  )
 }

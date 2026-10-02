@@ -14,6 +14,7 @@ import {
 import { lastSyncedAt, omittedBooks, syncError, syncNow, syncStatus } from '../lib/sync'
 import { SYNC_MAX_BOOKS } from '../lib/syncDoc'
 import { replayTour } from '../lib/tour'
+import { Spinner } from '../components/Spinner'
 
 /** '/account' — 로그인(패스키 우선), 이 기기에 패스키 등록, 동기화 상태 */
 export function AccountRoute() {
@@ -141,7 +142,12 @@ function SignedIn() {
         <div class="account__row">
           <span class="account__status">
             <Switch>
-              <Match when={syncStatus() === 'syncing'}>동기화 중…</Match>
+              <Match when={syncStatus() === 'syncing'}>
+                <span class="inline-loading">
+                  <Spinner />
+                  동기화 중…
+                </span>
+              </Match>
               <Match when={syncStatus() === 'error'}>
                 <span class="message--error">{syncError()}</span>
               </Match>

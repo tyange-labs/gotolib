@@ -1,5 +1,6 @@
 import { Show, createEffect, createSignal, on } from 'solid-js'
 import { ImportDropzone } from '../components/ImportDropzone'
+import { LoadingMessage } from '../components/Spinner'
 import { useApp } from '../context/appContext'
 import { startTourIfFirstRun } from '../lib/tour'
 import { ShelfView } from '../views/ShelfView'
@@ -43,7 +44,7 @@ export function ShelfRoute() {
         {(message) => <p class="message">{message()}</p>}
       </Show>
 
-      <Show when={!loading()} fallback={<p class="message">불러오는 중…</p>}>
+      <Show when={!loading()} fallback={<LoadingMessage>불러오는 중…</LoadingMessage>}>
         <Show
           when={books().length > 0}
           fallback={<ImportDropzone onFile={handleFile} />}

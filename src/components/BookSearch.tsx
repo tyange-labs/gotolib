@@ -3,6 +3,7 @@ import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
 import { toBook, type SearchResult } from '../lib/bookSearch'
 import { LibraryApiError } from '../lib/libraryApi'
 import { fetchBookSearch } from '../lib/queries'
+import { Spinner } from './Spinner'
 import type { Book } from '../types/book'
 
 interface Props {
@@ -144,7 +145,10 @@ export function BookSearch(props: Props) {
           <div class="search-footer">
             <span class="search-footer__count">
               <Show when={busy()} fallback={`총 ${total().toLocaleString()}건 중 ${results().length}건`}>
-                검색 중…
+                <span class="inline-loading">
+                  <Spinner />
+                  검색 중…
+                </span>
               </Show>
             </span>
             <Show when={hasMore() && !busy()}>

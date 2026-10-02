@@ -775,6 +775,63 @@
   margin: var(--tl-space-8) 0 0;
 }
 
+/* ── 로딩 표시 ────────────────────────────────────────── */
+/* 돌아가는 링. 색은 주변 글자색(currentColor)을 따라가서 라이트·다크 어디서든 맞는다. */
+.spinner {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  box-sizing: border-box;
+  border: 2px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  vertical-align: -0.12em;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 칩(배지) 안에서는 글자보다 살짝 작게 */
+.badge .spinner {
+  width: 0.95em;
+  height: 0.95em;
+}
+
+.message--loading,
+.inline-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tl-space-2);
+}
+
+.message--loading {
+  display: flex;
+}
+
+/* 모션 줄이기: 돌지 않고 천천히 숨 쉬듯 깜빡인다(진행 중이라는 신호는 남긴다) */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: spinner-fade 1.6s ease-in-out infinite;
+    border-top-color: color-mix(in srgb, currentColor 22%, transparent);
+    background: color-mix(in srgb, currentColor 35%, transparent);
+  }
+
+  @keyframes spinner-fade {
+    0%,
+    100% {
+      opacity: 0.35;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+}
+
 /* ── 안내 줄 ─────────────────────────────────────────── */
 .sample-note {
   margin: 0 0 var(--tl-space-4);

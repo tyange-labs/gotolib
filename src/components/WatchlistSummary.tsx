@@ -4,6 +4,7 @@ import { For, Show, createEffect, createSignal, on } from 'solid-js'
 import { useApp } from '../context/appContext'
 import type { Library } from '../lib/libraryApi'
 import { fetchAvailability } from '../lib/queries'
+import { Spinner } from './Spinner'
 import type { Book } from '../types/book'
 
 type BookStatus =
@@ -128,7 +129,10 @@ function StatusLabel(props: { status?: BookStatus }) {
 
   return (
     <span class={`badge badge--${tone()}`} title={title()}>
-      {STATUS_LABEL[state()]}
+      {/* 조회 중에는 글자 대신 스피너만(스크린리더에는 '확인 중'으로 읽힌다) */}
+      <Show when={state() !== 'loading'} fallback={<Spinner label="확인 중" />}>
+        {STATUS_LABEL[state()]}
+      </Show>
     </span>
   )
 }

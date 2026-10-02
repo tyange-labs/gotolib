@@ -1,6 +1,7 @@
 import { MapPin } from 'lucide-solid'
-import { For } from 'solid-js'
+import { For, Show } from 'solid-js'
 import { REGIONS } from '../lib/libraryApi'
+import { Spinner } from './Spinner'
 
 type LocationStatus = 'idle' | 'loading' | 'granted' | 'denied' | 'unavailable'
 
@@ -34,7 +35,12 @@ export function SearchControls(props: Props) {
           props.locationStatus === 'granted'
         }
       >
-        <MapPin size={14} aria-hidden />
+        <Show
+          when={props.locationStatus !== 'loading'}
+          fallback={<Spinner />}
+        >
+          <MapPin size={14} aria-hidden />
+        </Show>
         {locationText(props.locationStatus)}
       </button>
     </div>
