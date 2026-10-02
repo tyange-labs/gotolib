@@ -16,6 +16,11 @@ interface Props {
   focusRequest?: FocusRequest | null
 }
 
+/** 판본이 다른 같은 제목을 구분하려고 발행연도를 보여준다. 알라딘은 '2016-01-15'·'20160115' 꼴이라 앞 4자리만. */
+function publishedYear(book: Book): string | undefined {
+  return book.pubDate?.match(/^\d{4}/)?.[0]
+}
+
 // props를 구조분해하면 그 자리에서 값이 읽히고 굳는다. props.book으로 접근한다.
 export function BookCard(props: Props) {
   const { watchlist } = useApp()
@@ -77,7 +82,7 @@ export function BookCard(props: Props) {
         >
           <span class="book-card__title">{props.book.title}</span>
           <span class="book-card__meta">
-            {[props.book.author, props.book.publisher]
+            {[props.book.author, props.book.publisher, publishedYear(props.book)]
               .filter(Boolean)
               .join(' · ')}
           </span>

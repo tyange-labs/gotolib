@@ -19,7 +19,7 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     selector: '.list-header__actions',
-    body: "'책 추가'로 도서관 정보나루에서 제목·저자를 검색해 담고, '불러오기'로 알라딘 보관함 파일(xls, csv)을 한꺼번에 가져와요.",
+    body: "'책 추가'로 국립중앙도서관에서 제목·저자를 검색해 담고, '불러오기'로 알라딘 보관함 파일(xls, csv)을 한꺼번에 가져와요.",
   },
   {
     selector: '.book-card',

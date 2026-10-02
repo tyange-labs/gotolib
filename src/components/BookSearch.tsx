@@ -13,7 +13,7 @@ interface Props {
   onClose: () => void
 }
 
-/** 정보나루로 책을 찾아 서재에 담는다. 검색은 엔터(검색 버튼)를 눌렀을 때만 한다. */
+/** 국립중앙도서관으로 책을 찾아 서재에 담는다. 검색은 엔터(검색 버튼)를 눌렀을 때만 한다. */
 export function BookSearch(props: Props) {
   // Solid의 ref는 변수에 직접 대입된다. 동적으로 들어온 요소는 autofocus가 먹지 않아 직접 포커스한다.
   let field!: HTMLInputElement
@@ -25,6 +25,8 @@ export function BookSearch(props: Props) {
   const [results, setResults] = createSignal<SearchResult[]>([])
   const [total, setTotal] = createSignal(0)
   const [page, setPage] = createSignal(0)
+  // 이번 쪽에서 받은 레코드 수. 같은 책의 중복 레코드가 합쳐져 화면 권수보다 많을 수 있어 '더 보기' 판단은 이걸로 한다.
+  const [fetched, setFetched] = createSignal(0)
   const [busy, setBusy] = createSignal(false)
   const [error, setError] = createSignal<string | null>(null)
   // 이 화면에서 방금 담은 책(서재 갱신이 오기 전에도 바로 '담김'으로 보이게)
@@ -40,7 +42,13 @@ export function BookSearch(props: Props) {
       const result = await fetchBookSearch(word, pageNo)
       setTotal(result.total)
       setPage(pageNo)
-      setResults((prev) => (pageNo === 1 ? result.results : [...prev, ...result.results]))
+      setFetched(result.fetched)
+      setResults((prev) => {
+        if (pageNo === 1) return result.results
+        // 쪽 경계에서 같은 책(ISBN)이 다시 나올 수 있다.
+        const seen = new Set(prev.map((item) => item.id))
+        return [...prev, ...result.results.filter((item) => !seen.has(item.id))]
+      })
     } catch (e) {
       setError(
         e instanceof LibraryApiError ? e.message : '검색하지 못했어요. 잠시 후 다시 시도해 주세요.',
@@ -53,7 +61,7 @@ export function BookSearch(props: Props) {
   const submit = (e: SubmitEvent) => {
     e.preventDefault()
     const word = input().trim()
-    // 키워드 없이 부르면 정보나루 전체(수백만 건)가 나온다.
+    // 키워드 없이 부르면 전체(수백만 건)가 나온다.
     if (!word || busy()) return
     setKeyword(word)
     setResults([])
@@ -76,7 +84,7 @@ export function BookSearch(props: Props) {
     }
   }
 
-  const hasMore = () => page() > 0 && page() * 20 < total()
+  const hasMore = () => page() > 0 && fetched() >= 20 && page() * 20 < total()
 
   return (
     <section class="book-search" aria-label="책 검색">
@@ -124,9 +132,14 @@ export function BookSearch(props: Props) {
                   <div class="search-result__body">
                     <span class="search-result__title">{result.title}</span>
                     <span class="search-result__meta">
-                      {[result.author, result.publisher, result.pubDate]
+                      {[
+                        result.author,
+                        result.publisher,
+                        result.pubDate && `${result.pubDate.slice(0, 4)}년`,
+                      ]
                         .filter(Boolean)
                         .join(' · ')}
+                      <Show when={!result.isbn13}> · ISBN 없음</Show>
                     </span>
                   </div>
                   <Show
@@ -144,7 +157,7 @@ export function BookSearch(props: Props) {
 
           <div class="search-footer">
             <span class="search-footer__count">
-              <Show when={busy()} fallback={`총 ${total().toLocaleString()}건 중 ${results().length}건`}>
+              <Show when={busy()} fallback={`국립중앙도서관 · ${results().length}권 표시`}>
                 <span class="inline-loading">
                   <Spinner />
                   검색 중…

@@ -30,13 +30,15 @@ function splitKey(key: string): [Domain, string] | null {
 }
 
 /**
- * 문서에 넣는 책 값: 화면이 읽는 필드만 명시적으로 고른다. updatedAt은 `at`이 대신하고, 가격·분야
- * 원문·출간일은 가져오기(parseAladin)가 저장은 하지만 아무 화면도 읽지 않아서 뺀다 — 서버 문서를
- * 4분의 1쯤 줄인다. 새 필드를 화면에서 읽게 되면 여기에 추가해야 다른 기기에서도 보인다.
+ * 문서에 넣는 책 값: 화면이 읽는 필드만 명시적으로 고른다. updatedAt은 `at`이 대신하고, 가격·분야 원문은
+ * 가져오기(parseAladin)가 저장은 하지만 아무 화면도 읽지 않아서 뺀다 — 서버 문서를 줄인다.
+ * 발행연도(pubDate)는 판본이 다른 같은 제목을 구분하려고 카드에 보여주므로 포함한다(연도 4자리만 올린다).
+ * 새 필드를 화면에서 읽게 되면 여기에 추가해야 다른 기기에서도 보인다.
  */
 function bookValue(book: Book): Book {
   const { id, title, author, publisher, isbn13, kdc, addedAt } = book
-  return { id, title, author, publisher, isbn13, kdc, addedAt }
+  const pubDate = book.pubDate?.match(/^\d{4}/)?.[0]
+  return { id, title, author, publisher, pubDate, isbn13, kdc, addedAt }
 }
 
 export async function readSyncDoc(): Promise<SyncDoc> {

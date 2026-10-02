@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx'
 // 코드페이지 테이블: 레거시 xls 파일의 한글(CP949) 텍스트 디코딩에 필요
 import * as cptable from 'xlsx/dist/cpexcel.full.mjs'
 import type { Book } from '../types/book'
+import { fallbackId } from './bookId'
 
 XLSX.set_cptable(cptable)
 
@@ -175,13 +176,4 @@ function formatDate(value: string | undefined): string | undefined {
 function extractIsbn13(value: string | undefined): string | undefined {
   const digits = value?.replace(/[^\dXx]/g, '') ?? ''
   return /^97[89]\d{10}$/.test(digits) ? digits : undefined
-}
-
-function fallbackId(title: string, author?: string): string {
-  const source = `${title}|${author ?? ''}`
-  let hash = 0
-  for (let i = 0; i < source.length; i++) {
-    hash = (hash * 31 + source.charCodeAt(i)) | 0
-  }
-  return `local-${(hash >>> 0).toString(36)}`
 }

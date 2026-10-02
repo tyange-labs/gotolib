@@ -4,7 +4,7 @@
  */
 
 import type { Library } from '../types/library'
-import { toSearchResult, type SearchDoc, type SearchResult } from './bookSearch'
+import { toSearchResults, type NlDoc, type SearchResult } from './bookSearch'
 
 export type { Library }
 
@@ -104,14 +104,17 @@ function mapLib(lib: Record<string, string>): Library {
 }
 
 export interface BookSearchPage {
-  /** 검색어에 걸린 전체 건수(ISBN이 없어 건너뛴 결과도 포함) */
+  /** 검색어에 걸린 전체 레코드 수(같은 책의 중복 레코드도 센다 — 화면의 권수와 다를 수 있다) */
   total: number
   results: SearchResult[]
+  /** 이번에 받은 레코드 수. 다음 쪽이 더 있는지 가늠하는 데 쓴다 */
+  fetched: number
 }
 
 /**
- * 도서 검색(srchBooks). 제목·저자 등 키워드로 찾고, 대출이 많은 순으로 돌려준다.
- * 키워드 없이 부르면 전체(수백만 건)가 나오므로 호출하는 쪽이 빈 키워드를 막는다.
+ * 도서 검색: 국립중앙도서관 Open API(`/api/nl/`, 서버가 키를 붙인다). 도서관 정보나루는 도서관이 소장한
+ * 책만 찾아서 신간·절판본이 검색되지 않았다. category=도서로 논문·기사를 뺀다.
+ * 키워드 없이 부르면 전체가 나오므로 호출하는 쪽이 빈 키워드를 막는다.
  */
 export async function searchBooks(
   keyword: string,
@@ -119,18 +122,32 @@ export async function searchBooks(
   pageSize = 20,
 ): Promise<BookSearchPage> {
   const params = new URLSearchParams({
-    keyword,
-    pageNo: String(pageNo),
+    kwd: keyword,
+    category: '도서',
+    pageNum: String(pageNo),
     pageSize: String(pageSize),
   })
-  const data = await request(`/api/library/srchBooks?${params}`)
-  if (data.response?.error) {
-    throw new LibraryApiError(String(data.response.error))
+  let res: Response
+  try {
+    res = await fetch(`/api/nl/search.do?${params}`)
+  } catch {
+    throw new LibraryApiError('국립중앙도서관에 연결하지 못했습니다.')
   }
-  const results = (data.response?.docs ?? [])
-    .map(({ doc }) => toSearchResult(doc))
-    .filter((result): result is SearchResult => result !== null)
-  return { total: Number(data.response?.numFound ?? 0), results }
+  if (!res.ok) {
+    throw new LibraryApiError(`요청 실패 (HTTP ${res.status})`)
+  }
+  let data: { total?: number | string; result?: unknown }
+  try {
+    data = await res.json()
+  } catch {
+    throw new LibraryApiError('응답을 해석하지 못했습니다.')
+  }
+  const docs = Array.isArray(data.result) ? (data.result as NlDoc[]) : []
+  return {
+    total: Number(data.total ?? 0),
+    results: toSearchResults(docs),
+    fetched: docs.length,
+  }
 }
 
 /** 특정 도서관의 소장 및 대출 가능 여부를 조회한다. */
@@ -153,7 +170,6 @@ async function request(url: string): Promise<{
     numFound?: number | string
     libs?: Array<{ lib: Record<string, string> }>
     result?: { hasBook?: string; loanAvailable?: string }
-    docs?: Array<{ doc: SearchDoc }>
   }
 }> {
   let res: Response
