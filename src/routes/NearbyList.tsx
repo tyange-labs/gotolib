@@ -81,7 +81,7 @@ export function NearbyList() {
         <Match when={status() === 'idle'}>
           <div class="nearby-prompt">
             <p class="message">
-              {regionName()} 도서관 목록은 크기가 커서 직접 불러올 때만 받아요.
+              도서관 목록은 크기가 커서 직접 불러올 때만 받아요.
             </p>
             <button class="primary-button" onClick={load}>
               {regionName()} 도서관 불러오기
