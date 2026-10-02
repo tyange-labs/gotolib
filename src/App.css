@@ -644,9 +644,13 @@
 }
 
 /* ── 첫 실행 안내(튜토리얼) ───────────────────────────── */
+/* 문서(페이지) 좌표 기준: fixed가 아니라 absolute. 높이는 문서 높이로 컴포넌트가 정한다.
+   iOS에서 fixed와 getBoundingClientRect의 기준이 어긋나 점선이 밀리던 문제를 피한다. */
 .tour {
-  position: fixed;
-  inset: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
   z-index: var(--tl-z-modal);
 }
 
@@ -681,11 +685,12 @@
   }
 }
 
-/* 단계가 바뀔 때 구멍·점선·설명이 새 위치로 부드럽게 이동한다 */
-.tour__shade,
-.tour__block,
-.tour__focus,
-.tour__tip {
+/* 단계가 바뀐 직후에만 구멍·점선·설명이 새 위치로 부드럽게 이동한다. 그 뒤에는 대상을 매 프레임
+   따라가므로 전환을 끈다(켜 두면 따라가기가 한 박자 늦는다). */
+.tour--moving .tour__shade,
+.tour--moving .tour__block,
+.tour--moving .tour__focus,
+.tour--moving .tour__tip {
   transition:
     top 260ms ease,
     left 260ms ease,
