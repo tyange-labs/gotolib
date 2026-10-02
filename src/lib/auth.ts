@@ -108,7 +108,20 @@ export async function api<T>(
   return (await res.json()) as T
 }
 
+/** 잠시 뒤 다시 하면 풀릴 수 있는 오류: 네트워크 단절, 프록시의 502·504(서버가 다시 뜨는 중 등) */
+export function isTransient(e: unknown): boolean {
+  return (
+    e instanceof AuthError &&
+    (e.status === 0 || e.status === 502 || e.status === 504)
+  )
+}
+
 function messageFor(status: number, body: string): string {
+  // nginx 등이 HTML 오류 페이지(502 Bad Gateway…)를 돌려주면 그 본문을 사용자에게 그대로 보이지 않는다.
+  // 서버가 다시 뜨는 몇십 초 동안 화면에 태그 덩어리가 나오던 문제.
+  if (/^\s*<(?:!doctype|html)/i.test(body) || status === 502 || status === 504) {
+    return '서버가 잠시 응답하지 않아요. 잠시 후 다시 시도해 주세요.'
+  }
   if (status === 401) return '로그인 정보가 맞지 않습니다.'
   if (status === 429) return '요청이 너무 많습니다. 잠시 후 다시 시도하세요.'
   // 503은 두 가지다: 패스키 설정이 꺼진 서버, 계정 상한에 닿은 서버. 서버가 보낸 문구를 우선한다.

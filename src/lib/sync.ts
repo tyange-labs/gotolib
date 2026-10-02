@@ -3,7 +3,7 @@
  * 달라졌으면 다시 올린다. 서버는 내용을 해석하지 않고 `version`으로 충돌만 막는다.
  */
 import { createSignal } from 'solid-js'
-import { AuthError, api, session } from './auth'
+import { AuthError, api, isTransient, session } from './auth'
 import { onLocalChange } from './localEvents'
 import {
   canonical,
@@ -71,6 +71,10 @@ async function syncOnce(): Promise<void> {
 let running: Promise<void> | null = null
 let rerun = false
 
+/** 일시적인 오류(서버가 다시 뜨는 중 등)면 이 간격으로 몇 번 다시 시도한다. 성공하면 처음으로. */
+const RETRY_DELAYS_MS = [10_000, 30_000, 60_000]
+let retries = 0
+
 /** 지금 동기화한다. 이미 돌고 있으면 끝난 뒤 한 번 더 돈다(그 사이의 변경을 놓치지 않게). */
 export function syncNow(): Promise<void> {
   if (!session()) return Promise.resolve()
@@ -82,12 +86,17 @@ export function syncNow(): Promise<void> {
   running = (async () => {
     try {
       await syncOnce()
+      retries = 0
       setLastSyncedAt(Date.now())
       setSyncError(null)
       setSyncStatus('idle')
     } catch (e) {
       setSyncError(e instanceof Error ? e.message : '동기화에 실패했습니다.')
       setSyncStatus('error')
+      // 배포로 서버가 잠깐 내려간 경우처럼 곧 풀릴 오류는 사용자가 누르지 않아도 다시 시도한다.
+      if (isTransient(e) && retries < RETRY_DELAYS_MS.length) {
+        setTimeout(() => void syncNow(), RETRY_DELAYS_MS[retries++])
+      }
     } finally {
       running = null
       if (rerun) {

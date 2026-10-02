@@ -170,7 +170,13 @@ function SignedIn() {
         <Show
           when={passkeys()?.length}
           fallback={
-            <p class="account__hint">등록된 패스키가 없어요.</p>
+            // 읽기가 끝났는데 0개일 때만 경고한다(읽는 중에는 아무것도 보이지 않는다).
+            <Show when={passkeys() !== undefined}>
+              <p class="message message--error account__warn">
+                패스키가 하나도 없어요. 이 상태에서 로그아웃하면 이 계정으로 다시 로그인할 수 없어요.
+                지금 이 기기에 패스키를 추가하세요.
+              </p>
+            </Show>
           }
         >
           <ul class="account__list">
@@ -192,7 +198,13 @@ function SignedIn() {
                   </span>
                   <button
                     class="text-button"
-                    disabled={busy()}
+                    // 마지막 패스키를 지우면 로그아웃 뒤 이 계정에 다시 들어올 방법이 없다(비밀번호가 없다).
+                    disabled={busy() || (passkeys()?.length ?? 0) <= 1}
+                    title={
+                      (passkeys()?.length ?? 0) <= 1
+                        ? '마지막 패스키는 지울 수 없어요'
+                        : undefined
+                    }
                     onClick={() => {
                       if (confirm(`'${item.label}' 패스키를 삭제할까요?`)) {
                         void guard(async () => {
@@ -208,6 +220,11 @@ function SignedIn() {
               )}
             </For>
           </ul>
+          <Show when={passkeys()?.length === 1}>
+            <p class="account__hint">
+              패스키가 하나뿐이라 지울 수 없어요. 바꾸려면 새 패스키를 먼저 추가하세요.
+            </p>
+          </Show>
         </Show>
 
         <Show
