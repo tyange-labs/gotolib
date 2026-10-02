@@ -71,6 +71,15 @@ export function BookSearch(props: Props) {
   }
 
   const add = async (result: SearchResult) => {
+    // 이미 서재에 있는 책이면 확인을 받는다. 같은 id로 다시 저장하면 기존 항목이 사라지고 새로 담은 시각(최신순 맨 앞)으로 바뀐다.
+    if (
+      has(result.id) &&
+      !confirm(
+        `'${result.title}'은(는) 이미 서재에 있어요.\n기존 항목을 지우고 지금 담은 책으로 다시 등록할까요? (최신순 맨 앞으로 이동해요)`,
+      )
+    ) {
+      return
+    }
     setAdded((prev) => new Set(prev).add(result.id))
     try {
       await props.onAdd(toBook(result))
@@ -135,21 +144,20 @@ export function BookSearch(props: Props) {
                       {[
                         result.author,
                         result.publisher,
-                        result.pubDate && `${result.pubDate.slice(0, 4)}년`,
+                        result.pubDate?.slice(0, 4),
                       ]
                         .filter(Boolean)
                         .join(' · ')}
-                      <Show when={!result.isbn13}> · ISBN 없음</Show>
+                      <Show when={!result.isbn13}> · ISBN 없음 (소장 조회 불가)</Show>
                     </span>
                   </div>
-                  <Show
-                    when={!has(result.id)}
-                    fallback={<span class="search-result__done">담김</span>}
+                  <button
+                    class="text-button"
+                    classList={{ 'text-button--done': has(result.id) }}
+                    onClick={() => void add(result)}
                   >
-                    <button class="text-button" onClick={() => void add(result)}>
-                      추가
-                    </button>
-                  </Show>
+                    {has(result.id) ? '담김 · 다시 담기' : '추가'}
+                  </button>
                 </li>
               )}
             </For>
