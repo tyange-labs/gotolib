@@ -5,7 +5,14 @@
 import { createSignal } from 'solid-js'
 import { AuthError, api, session } from './auth'
 import { onLocalChange } from './localEvents'
-import { canonical, mergeDocs, normalizeDoc, parseDoc, type SyncDoc } from './syncDoc'
+import {
+  canonical,
+  limitDoc,
+  mergeDocs,
+  normalizeDoc,
+  parseDoc,
+  type SyncDoc,
+} from './syncDoc'
 import { applySyncDoc, readSyncDoc } from './syncStore'
 
 interface RemoteDocument {
@@ -19,7 +26,9 @@ export type SyncStatus = 'idle' | 'syncing' | 'error'
 const [syncStatus, setSyncStatus] = createSignal<SyncStatus>('idle')
 const [lastSyncedAt, setLastSyncedAt] = createSignal<number | null>(null)
 const [syncError, setSyncError] = createSignal<string | null>(null)
-export { lastSyncedAt, syncError, syncStatus }
+/** 상한(SYNC_MAX_BOOKS) 때문에 서버에 올리지 않은 책 수. 0이면 전부 올라간 것. */
+const [omittedBooks, setOmittedBooks] = createSignal(0)
+export { lastSyncedAt, omittedBooks, syncError, syncStatus }
 
 /** 다른 기기와 동시에 올려 409가 나면 최신 문서와 다시 합쳐 재시도하는 최대 횟수. */
 const MAX_ATTEMPTS = 4
@@ -36,7 +45,10 @@ async function syncOnce(): Promise<void> {
     const remoteDoc = parseDoc(remote.data)
 
     const local = await readSyncDoc()
-    const { doc } = await applySyncDoc(normalizeDoc(mergeDocs(local, remoteDoc)))
+    const applied = await applySyncDoc(normalizeDoc(mergeDocs(local, remoteDoc)))
+    // 이 기기에는 전부 반영하되, 서버에는 상한까지 줄인 문서만 올린다.
+    const { doc, omittedBooks: omitted } = limitDoc(applied.doc)
+    setOmittedBooks(omitted)
 
     // 서버에 이미 같은 내용이 있거나, 양쪽 다 비어 있어 올릴 게 없으면 끝.
     if (canonical(doc) === canonical(remoteDoc)) return

@@ -4,12 +4,13 @@ import {
   deletePasskey,
   listPasskeys,
   loginWithPasskey,
-  loginWithPassword,
   logout,
   registerPasskey,
   session,
+  signUpWithPasskey,
 } from '../lib/auth'
-import { lastSyncedAt, syncError, syncNow, syncStatus } from '../lib/sync'
+import { lastSyncedAt, omittedBooks, syncError, syncNow, syncStatus } from '../lib/sync'
+import { SYNC_MAX_BOOKS } from '../lib/syncDoc'
 
 /** '/account' — 로그인(패스키 우선), 이 기기에 패스키 등록, 동기화 상태 */
 export function AccountRoute() {
@@ -42,61 +43,38 @@ function SignedOut() {
   return (
     <div class="account">
       <p class="account__lead">
-        로그인하면 책 목록과 찜 목록이 내 기기들 사이에 동기화돼요.
+        기기들 사이에 책 목록과 찜 목록을 동기화해요. 이메일이나 비밀번호는 없고, 이 기기의
+        패스키(생체인증) 하나로 가입도 로그인도 해요.
       </p>
 
       <Show
         when={supported}
-        fallback={<p class="message">이 브라우저는 패스키를 지원하지 않아요. 비밀번호로 로그인하세요.</p>}
+        fallback={
+          <p class="message">이 브라우저는 패스키를 지원하지 않아요. 다른 브라우저로 열어 주세요.</p>
+        }
       >
-        <button
-          class="primary-button"
-          disabled={busy()}
-          onClick={() => run(loginWithPasskey)}
-        >
-          패스키로 로그인
-        </button>
-      </Show>
-
-      <details class="account__password" open={!supported}>
-        <summary>비밀번호로 로그인</summary>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            const form = new FormData(e.currentTarget)
-            void run(() =>
-              loginWithPassword(String(form.get('id')), String(form.get('password'))),
-            )
-          }}
-        >
-          <input
-            class="field"
-            name="id"
-            type="text"
-            autocomplete="username"
-            autocapitalize="none"
-            autocorrect="off"
-            spellcheck={false}
-            placeholder="아이디"
-            required
-          />
-          <input
-            class="field"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="비밀번호"
-            required
-          />
-          <button class="primary-button" type="submit" disabled={busy()}>
-            로그인
+        <div class="account__actions">
+          <button
+            class="primary-button"
+            disabled={busy()}
+            onClick={() => run(loginWithPasskey)}
+          >
+            패스키로 로그인
           </button>
-        </form>
+          <button
+            class="text-button"
+            disabled={busy()}
+            onClick={() => run(() => signUpWithPasskey(guessDeviceLabel()))}
+          >
+            처음이에요 · 새로 시작하기
+          </button>
+        </div>
         <p class="account__hint">
-          처음 한 번은 비밀번호로 들어와서 이 기기에 패스키를 등록해 두면, 다음부터는 패스키만으로
-          로그인돼요.
+          쓰던 계정이 있으면 '패스키로 로그인'을, 처음이면 '새로 시작하기'를 누르세요. 동기화되는 건
+          책 목록(최근 담은 {SYNC_MAX_BOOKS.toLocaleString()}권)과 찜 목록, 자주 가는 도서관뿐이에요.
+          동기화하지 않아도 앱은 그대로 쓸 수 있어요.
         </p>
-      </details>
+      </Show>
 
       <Show when={error()}>
         {(message) => <p class="message message--error">{message()}</p>}
@@ -128,7 +106,7 @@ function SignedIn() {
   return (
     <div class="account">
       <div class="account__row">
-        <span>{session()?.userId || '로그인됨'}</span>
+        <span>이 기기에서 로그인됨</span>
         <button class="text-button" onClick={logout}>
           로그아웃
         </button>
@@ -155,16 +133,20 @@ function SignedIn() {
             지금 동기화
           </button>
         </div>
+        <Show when={omittedBooks() > 0}>
+          <p class="account__hint">
+            책이 {omittedBooks().toLocaleString()}권 더 있어서 최근 담은{' '}
+            {SYNC_MAX_BOOKS.toLocaleString()}권까지만 동기화했어요. 나머지는 이 기기에만 있어요.
+          </p>
+        </Show>
       </section>
 
       <section class="account__section">
-        <h2 class="account__title">패스키</h2>
+        <h2 class="account__title">이 계정의 패스키</h2>
         <Show
           when={passkeys()?.length}
           fallback={
-            <p class="account__hint">
-              패스키를 등록하면 다음부터 비밀번호 없이 로그인할 수 있어요.
-            </p>
+            <p class="account__hint">등록된 패스키가 없어요.</p>
           }
         >
           <ul class="account__list">
@@ -226,6 +208,11 @@ function SignedIn() {
               이 기기에 패스키 추가
             </button>
           </form>
+          <p class="account__hint">
+            패스키가 iCloud나 Google 비밀번호 관리자에 저장되면 다른 기기에서도 자동으로 쓸 수 있어요.
+            그렇지 않으면 다른 기기에서 로그인할 때 '다른 기기의 패스키 사용'을 고르세요. 패스키를
+            모두 잃으면 이 계정을 되찾을 수 없지만, 책 목록은 알라딘 파일로 다시 만들 수 있어요.
+          </p>
         </Show>
       </section>
 

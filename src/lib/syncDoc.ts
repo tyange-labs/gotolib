@@ -11,6 +11,13 @@ import type { Book } from '../types/book'
 export const SYNC_VERSION = 1
 /** 찜 목록 최대 개수. useWatchlist의 한도와 같아야 한다. */
 export const WATCHLIST_LIMIT = 5
+/**
+ * 서버에 올리는 책 수 상한(가장 최근에 담은 순). 서버 문서 상한은 512KB이고 책은 권당 200~300바이트라
+ * 1,000권이면 약 300KB다. 넘는 책은 이 기기에만 남는다(지운 것으로 취급하지 않는다).
+ */
+export const SYNC_MAX_BOOKS = 1000
+/** 서버에 올리는 삭제 표시 상한(가장 최근 것부터). 지운 책이 쌓여 문서가 커지는 걸 막는다. */
+export const SYNC_MAX_TOMBSTONES = 1500
 
 export interface WatchEntryValue {
   bookId: string
@@ -114,3 +121,55 @@ export function parseDoc(raw: unknown): SyncDoc {
     favLibraries: record(doc.favLibraries),
   }
 }
+
+/**
+ * 서버에 올릴 문서로 줄인다: 책은 가장 최근에 담은 SYNC_MAX_BOOKS권까지, 삭제 표시는 가장 최근
+ * SYNC_MAX_TOMBSTONES개까지. 줄이는 건 '올리는 것'뿐이다 — 이 기기의 데이터는 건드리지 않고,
+ * 올리지 않은 책이 다른 기기에서 지워지는 일도 없다(삭제 표시를 만들지 않는다).
+ */
+export function limitDoc(doc: SyncDoc): { doc: SyncDoc; omittedBooks: number } {
+  const liveBooks = Object.entries(doc.books)
+    .filter(([, entry]) => !entry.deleted)
+    // '담은 시각'(addedAt) 기준 최신순. 수정 시각(at)이 아니다 — 다시 가져와서 at이 전부 같아져도
+    // 담은 순서는 유지돼야 한다.
+    .sort(
+      ([ka, a], [kb, b]) =>
+        (b.value?.addedAt ?? 0) - (a.value?.addedAt ?? 0) || (ka < kb ? -1 : 1),
+    )
+  const dropBooks = new Set(liveBooks.slice(SYNC_MAX_BOOKS).map(([key]) => key))
+
+  const tombstones: Array<[Domain, string, number]> = []
+  for (const domain of ['books', 'watchlist', 'favLibraries'] as const) {
+    for (const [key, entry] of Object.entries(doc[domain])) {
+      if (entry.deleted) tombstones.push([domain, key, entry.at])
+    }
+  }
+  tombstones.sort((a, b) => b[2] - a[2] || (a[1] < b[1] ? -1 : 1))
+  const dropTombstones = new Set(
+    tombstones.slice(SYNC_MAX_TOMBSTONES).map(([domain, key]) => `${domain}:${key}`),
+  )
+
+  if (dropBooks.size === 0 && dropTombstones.size === 0) {
+    return { doc, omittedBooks: 0 }
+  }
+
+  const keep = <T>(domain: Domain, record: Record<string, SyncEntry<T>>) =>
+    Object.fromEntries(
+      Object.entries(record).filter(
+        ([key]) =>
+          !(domain === 'books' && dropBooks.has(key)) &&
+          !dropTombstones.has(`${domain}:${key}`),
+      ),
+    )
+  return {
+    doc: {
+      v: SYNC_VERSION,
+      books: keep('books', doc.books),
+      watchlist: keep('watchlist', doc.watchlist),
+      favLibraries: keep('favLibraries', doc.favLibraries),
+    },
+    omittedBooks: dropBooks.size,
+  }
+}
+
+type Domain = 'books' | 'watchlist' | 'favLibraries'

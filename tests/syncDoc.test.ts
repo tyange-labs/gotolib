@@ -1,8 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  SYNC_MAX_BOOKS,
+  SYNC_MAX_TOMBSTONES,
   WATCHLIST_LIMIT,
   canonical,
   emptyDoc,
+  limitDoc,
   mergeDocs,
   normalizeDoc,
   parseDoc,
@@ -119,5 +122,64 @@ describe('parseDoc', () => {
   test('맞는 문서는 그대로 읽는다', () => {
     const d = doc({ books: { x: live(1, book('x')) } })
     expect(parseDoc(JSON.parse(JSON.stringify(d)))).toEqual(d)
+  })
+})
+
+describe('limitDoc', () => {
+  const manyBooks = (count: number) =>
+    Object.fromEntries(
+      Array.from({ length: count }, (_, i) => {
+        // i가 클수록 최근에 담은 책. at(수정 시각)은 전부 같게 해서 담은 순서(addedAt)만 단서가 되게 한다.
+        const id = `k${String(i).padStart(5, '0')}`
+        return [id, live(5, { ...book(id), addedAt: 1000 + i })]
+      }),
+    )
+
+  test('한도 이하면 문서를 그대로 돌려준다', () => {
+    const d = doc({ books: manyBooks(SYNC_MAX_BOOKS) })
+    const out = limitDoc(d)
+    expect(out.doc).toBe(d)
+    expect(out.omittedBooks).toBe(0)
+  })
+
+  test('한도를 넘으면 가장 최근에 담은 책만 남기고 몇 권 빠졌는지 알려준다', () => {
+    const out = limitDoc(doc({ books: manyBooks(SYNC_MAX_BOOKS + 120) }))
+    expect(Object.keys(out.doc.books)).toHaveLength(SYNC_MAX_BOOKS)
+    expect(out.omittedBooks).toBe(120)
+    // 가장 오래된 120권(k00000~k00119)이 빠지고 가장 최근 책은 남는다.
+    expect(out.doc.books.k00000).toBeUndefined()
+    expect(out.doc.books.k00119).toBeUndefined()
+    expect(out.doc.books.k00120).toBeDefined()
+    expect(out.doc.books[`k${String(SYNC_MAX_BOOKS + 119).padStart(5, '0')}`]).toBeDefined()
+  })
+
+  test('올리지 않은 책은 지운 게 아니다: 삭제 표시를 만들지 않고, 로컬과 합쳐도 그대로 남는다', () => {
+    const local = doc({ books: manyBooks(SYNC_MAX_BOOKS + 50) })
+    const pushed = limitDoc(local).doc
+    expect(Object.values(pushed.books).some((e) => e.deleted)).toBe(false)
+    // 서버에 올라간 문서를 다시 받아 합쳐도 이 기기의 책은 그대로다.
+    const merged = mergeDocs(local, pushed)
+    expect(Object.keys(merged.books)).toHaveLength(SYNC_MAX_BOOKS + 50)
+    // 그리고 다시 줄이면 같은 문서가 나온다(안정적이라 매번 다시 올리지 않는다).
+    expect(canonical(limitDoc(merged).doc)).toBe(canonical(pushed))
+  })
+
+  test('삭제 표시는 가장 최근 것부터 상한까지만 남긴다', () => {
+    const tombs = Object.fromEntries(
+      Array.from({ length: SYNC_MAX_TOMBSTONES + 30 }, (_, i) => [`t${i}`, gone(100 + i)]),
+    )
+    const out = limitDoc(doc({ books: tombs })).doc
+    const keys = Object.keys(out.books)
+    expect(keys).toHaveLength(SYNC_MAX_TOMBSTONES)
+    expect(out.books.t0).toBeUndefined() // 가장 오래된 삭제 표시가 빠진다
+    expect(out.books[`t${SYNC_MAX_TOMBSTONES + 29}`]).toBeDefined()
+  })
+
+  test('찜·자주 가는 도서관은 책 상한의 영향을 받지 않는다', () => {
+    const d = doc({
+      books: manyBooks(SYNC_MAX_BOOKS + 10),
+      watchlist: { w: live(9, { bookId: 'w', addedAt: 9 }) },
+    })
+    expect(limitDoc(d).doc.watchlist.w).toBeDefined()
   })
 })

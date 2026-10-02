@@ -1,5 +1,5 @@
 /**
- * 계정(tyange-cms-api) 로그인: 패스키가 기본, 비밀번호는 첫 패스키 등록과 복구용.
+ * 계정(tyange-cms-api): 패스키만 쓴다. 가입도 로그인도 패스키 하나로 하고 이메일·비밀번호는 없다.
  * 같은 출처의 `/api/cms/*`로 부른다(nginx·Vite 프록시). 토큰은 서버가 쓰는 대로 Bearer 없이
  * `Authorization` 헤더에 그대로 넣는다.
  *
@@ -109,7 +109,8 @@ export async function api<T>(
 function messageFor(status: number, body: string): string {
   if (status === 401) return '로그인 정보가 맞지 않습니다.'
   if (status === 429) return '요청이 너무 많습니다. 잠시 후 다시 시도하세요.'
-  if (status === 503) return '이 서버에서는 패스키를 쓸 수 없습니다.'
+  // 503은 두 가지다: 패스키 설정이 꺼진 서버, 계정 상한에 닿은 서버. 서버가 보낸 문구를 우선한다.
+  if (status === 503) return body.trim().slice(0, 120) || '지금은 이 기능을 쓸 수 없습니다.'
   return body.trim().slice(0, 120) || `요청에 실패했습니다 (${status})`
 }
 
@@ -118,21 +119,34 @@ interface LoginResponse {
   user_role: string
 }
 
-function adopt(response: LoginResponse, fallbackUserId = '') {
+function adopt(response: LoginResponse) {
   save({
     token: response.access_token,
-    userId: subjectOf(response.access_token) || fallbackUserId,
+    userId: subjectOf(response.access_token),
     role: response.user_role,
   })
 }
 
-export async function loginWithPassword(userId: string, password: string) {
-  const response = await api<LoginResponse>('/login', {
+/** 가입: 이 기기에서 패스키를 만들면서 계정이 생긴다. 이메일·비밀번호는 없다. */
+export async function signUpWithPasskey(label: string) {
+  const start = await api<{
+    challenge_id: string
+    options: { publicKey: PublicKeyCredentialCreationOptionsJSON }
+  }>('/passkeys/signup/start', { method: 'POST', auth: false })
+
+  let credential
+  try {
+    credential = await startRegistration({ optionsJSON: start.options.publicKey })
+  } catch (e) {
+    throw new AuthError(webauthnMessage(e))
+  }
+
+  const response = await api<LoginResponse>('/passkeys/signup/finish', {
     method: 'POST',
-    json: { user_id: userId, password },
+    json: { challenge_id: start.challenge_id, label, credential },
     auth: false,
   })
-  adopt(response, userId)
+  adopt(response)
 }
 
 /** 사용자명 없이: 브라우저가 이 사이트의 패스키를 골라준다. */

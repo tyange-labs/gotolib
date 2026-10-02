@@ -29,11 +29,14 @@ function splitKey(key: string): [Domain, string] | null {
   return domain ? [domain, key.slice(2)] : null
 }
 
-/** 책 값에서 updatedAt은 `at`이 대신하므로 문서에는 넣지 않는다(두 군데에 같은 값을 두지 않는다). */
+/**
+ * 문서에 넣는 책 값: 화면이 읽는 필드만 명시적으로 고른다. updatedAt은 `at`이 대신하고, 가격·분야
+ * 원문·출간일은 가져오기(parseAladin)가 저장은 하지만 아무 화면도 읽지 않아서 뺀다 — 서버 문서를
+ * 4분의 1쯤 줄인다. 새 필드를 화면에서 읽게 되면 여기에 추가해야 다른 기기에서도 보인다.
+ */
 function bookValue(book: Book): Book {
-  const { updatedAt: _updatedAt, ...rest } = book
-  void _updatedAt
-  return rest
+  const { id, title, author, publisher, isbn13, kdc, addedAt } = book
+  return { id, title, author, publisher, isbn13, kdc, addedAt }
 }
 
 export async function readSyncDoc(): Promise<SyncDoc> {
