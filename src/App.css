@@ -628,6 +628,10 @@
   color: var(--tl-fg-muted);
 }
 
+.text-button--done {
+  color: var(--tl-fg-subtle);
+}
+
 .search-result__done {
   flex-shrink: 0;
   font-size: var(--tl-text-sm);
