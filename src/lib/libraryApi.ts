@@ -4,7 +4,7 @@
  */
 
 import type { Library } from '../types/library'
-import { toSearchResults, type NlDoc, type SearchResult } from './bookSearch'
+import { toSearchResults, type SeojiDoc, type SearchResult } from './bookSearch'
 
 export type { Library }
 
@@ -104,49 +104,70 @@ function mapLib(lib: Record<string, string>): Library {
 }
 
 export interface BookSearchPage {
-  /** 검색어에 걸린 전체 레코드 수(같은 책의 중복 레코드도 센다 — 화면의 권수와 다를 수 있다) */
+  /** 검색에 걸린 전체 건수(제목 검색 + 저자 검색의 합) */
   total: number
   results: SearchResult[]
-  /** 이번에 받은 레코드 수. 다음 쪽이 더 있는지 가늠하는 데 쓴다 */
+  /** 이번 쪽에서 받은 레코드 수. 다음 쪽이 더 있는지 가늠하는 데 쓴다 */
   fetched: number
 }
 
+interface SeojiResponse {
+  TOTAL_COUNT?: string | number
+  docs?: SeojiDoc[]
+}
+
+async function seoji(
+  field: 'title' | 'author' | 'isbn',
+  value: string,
+  pageNo: number,
+  pageSize: number,
+): Promise<{ total: number; docs: SeojiDoc[] }> {
+  const params = new URLSearchParams({
+    [field]: value,
+    page_no: String(pageNo),
+    page_size: String(pageSize),
+  })
+  let res: Response
+  try {
+    res = await fetch(`/api/seoji/search?${params}`)
+  } catch {
+    throw new LibraryApiError('국립중앙도서관에 연결하지 못했습니다.')
+  }
+  if (!res.ok) throw new LibraryApiError(`요청 실패 (HTTP ${res.status})`)
+  let data: SeojiResponse
+  try {
+    data = await res.json()
+  } catch {
+    throw new LibraryApiError('응답을 해석하지 못했습니다.')
+  }
+  return { total: Number(data.TOTAL_COUNT ?? 0), docs: Array.isArray(data.docs) ? data.docs : [] }
+}
+
 /**
- * 도서 검색: 국립중앙도서관 Open API(`/api/nl/`, 서버가 키를 붙인다). 도서관 정보나루는 도서관이 소장한
- * 책만 찾아서 신간·절판본이 검색되지 않았다. category=도서로 논문·기사를 뺀다.
- * 키워드 없이 부르면 전체가 나오므로 호출하는 쪽이 빈 키워드를 막는다.
+ * 도서 검색: 국립중앙도서관 서지정보 API(`/api/seoji/`, 서버가 키를 붙인다). 신간·개정판까지 나오고 모든
+ * 결과가 ISBN을 가진다. 이 API는 통합 검색어가 없어서, ISBN을 입력하면 ISBN으로, 아니면 제목과 저자로 각각
+ * 찾아 제목 결과를 앞에 둔다. 키워드 없이 부르면 전체가 나오므로 호출하는 쪽이 빈 키워드를 막는다.
  */
 export async function searchBooks(
   keyword: string,
   pageNo = 1,
   pageSize = 20,
 ): Promise<BookSearchPage> {
-  const params = new URLSearchParams({
-    kwd: keyword,
-    category: '도서',
-    pageNum: String(pageNo),
-    pageSize: String(pageSize),
-  })
-  let res: Response
-  try {
-    res = await fetch(`/api/nl/search.do?${params}`)
-  } catch {
-    throw new LibraryApiError('국립중앙도서관에 연결하지 못했습니다.')
+  const word = keyword.trim()
+  const isbn = word.replace(/[-\s]/g, '')
+  if (/^(?:97[89])?\d{9}[\dXx]$/.test(isbn) && isbn.length >= 10) {
+    const found = await seoji('isbn', isbn, pageNo, pageSize)
+    return { total: found.total, results: toSearchResults(found.docs), fetched: found.docs.length }
   }
-  if (!res.ok) {
-    throw new LibraryApiError(`요청 실패 (HTTP ${res.status})`)
-  }
-  let data: { total?: number | string; result?: unknown }
-  try {
-    data = await res.json()
-  } catch {
-    throw new LibraryApiError('응답을 해석하지 못했습니다.')
-  }
-  const docs = Array.isArray(data.result) ? (data.result as NlDoc[]) : []
+  const [byTitle, byAuthor] = await Promise.all([
+    seoji('title', word, pageNo, pageSize),
+    seoji('author', word, pageNo, pageSize),
+  ])
   return {
-    total: Number(data.total ?? 0),
-    results: toSearchResults(docs),
-    fetched: docs.length,
+    total: byTitle.total + byAuthor.total,
+    // 제목에 맞는 책을 먼저, 그다음 저자가 맞는 책. 같은 ISBN은 앞쪽만 남긴다.
+    results: toSearchResults([...byTitle.docs, ...byAuthor.docs]),
+    fetched: byTitle.docs.length + byAuthor.docs.length,
   }
 }
 

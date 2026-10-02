@@ -1,135 +1,100 @@
 import { describe, expect, test } from 'bun:test'
-import {
-  isbn10to13,
-  isbn13Of,
-  toBook,
-  toSearchResults,
-  type NlDoc,
-} from '../src/lib/bookSearch'
-import conifer from './fixtures/nl-conifer.json'
-import places from './fixtures/nl-places.json'
-import risky from './fixtures/nl-risky.json'
-import tight from './fixtures/nl-tight.json'
+import { authorsOf, toBook, toSearchResults, type SeojiDoc } from '../src/lib/bookSearch'
+import risky from './fixtures/seoji-risky.json'
+import conifer from './fixtures/seoji-conifer.json'
+import byAuthor from './fixtures/seoji-author.json'
 
-// fixtures는 국립중앙도서관 Open API 실제 응답(2026-10, category=도서)에서 가져왔다.
-const docs = (fixture: { result: unknown[] }) => fixture.result as NlDoc[]
+// 실제 국립중앙도서관 서지정보 API 응답(키 없음)을 그대로 쓴다.
+const docsOf = (fixture: { docs: unknown[] }) => fixture.docs as SeojiDoc[]
 
-describe('isbn', () => {
-  test('ISBN-10을 ISBN-13으로 바꾼다(검증된 쌍)', () => {
-    expect(isbn10to13('8960210188')).toBe('9788960210189') // 박현수 시집
-    expect(isbn10to13('898557728X')).toBe('9788985577281') // 권여선, 끝이 X인 ISBN-10
-    expect(isbn10to13('012345')).toBeUndefined()
+describe('authorsOf', () => {
+  test('역할 접두를 벗긴다', () => {
+    expect(authorsOf('지은이: 엄원태')).toBe('엄원태')
+    expect(authorsOf('저자 : 아포리아에듀')).toBe('아포리아에듀')
+    expect(authorsOf('집필인: 임종환,김은숙')).toBe('임종환, 김은숙')
   })
-
-  test('ISBN-13이 있으면 그대로, 없으면 ISBN-10을 변환, 둘 다 없으면 undefined', () => {
-    expect(isbn13Of('9788954697866')).toBe('9788954697866')
-    expect(isbn13Of('8960210188')).toBe('9788960210189')
-    expect(isbn13Of('9788954697866 8954697860')).toBe('9788954697866')
-    expect(isbn13Of('')).toBeUndefined()
-    expect(isbn13Of(undefined)).toBeUndefined()
-    expect(isbn13Of('1234567890123')).toBeUndefined() // 978/979로 시작하지 않는 13자리
+  test('뒤에 붙은 지음·저·공저를 뗀다', () => {
+    expect(authorsOf('김현경 지음')).toBe('김현경')
+    expect(authorsOf('김경욱 저')).toBe('김경욱')
+    expect(authorsOf('김선희,김경욱,오지현,김영원 공저')).toBe('김선희,김경욱,오지현,김영원')
+  })
+  test('옮긴이·그린이를 구분한다', () => {
+    expect(authorsOf('지은이: 유발 하라리 ;옮긴이: 조현욱')).toBe('유발 하라리, 조현욱 옮김')
+    expect(authorsOf('지은이: 가 ;그린이: 나')).toBe('가, 나 그림')
+  })
+  test('비었으면 undefined', () => {
+    expect(authorsOf('')).toBeUndefined()
+    expect(authorsOf(undefined)).toBeUndefined()
   })
 })
 
-describe('toSearchResults: 실제 응답', () => {
-  test('같은 ISBN의 여러 레코드를 하나로 합치고, 깔끔한 레코드를 쓴다(위험한 독서)', () => {
-    const results = toSearchResults(docs(risky))
-    const kim = results.filter((r) => r.isbn13 === '9788954606752')
-    expect(kim).toHaveLength(1) // 김경욱 소설: 응답에는 2건
-    expect(kim[0]).toMatchObject({
-      title: '위험한 독서',
-      author: '김경욱',
-      publisher: '문학동네', // '파주 : 문학동네, 2008'이 아니라 깔끔한 레코드의 값
-      pubDate: '2008',
-      kdc: '8',
-    })
-
-    const park = results.filter((r) => r.isbn13 === '9788960210189')
-    expect(park).toHaveLength(1) // 박현수 시집: 응답에는 4건, ISBN-10을 13으로 변환
-    expect(park[0]).toMatchObject({ title: '위험한 독서', author: '박현수', publisher: '천년의시작' })
-
-    // 판본이 다른 같은 제목은 발행연도로 구분된다(서로 다른 책)
-    expect(new Set(results.map((r) => r.id)).size).toBe(results.length)
+describe('toSearchResults', () => {
+  test('통합 검색에 없던 2026년 2판(종이책)이 나오고, 전자책판은 빠진다', () => {
+    const results = toSearchResults(docsOf(risky))
+    const isbns = results
+      .filter((r) => r.author === '김경욱' && r.title === '위험한 독서')
+      .map((r) => r.isbn13)
+    expect(isbns).toEqual(['9788954606752', '9791141603779']) // 2008, 2026 2판
+    expect(results.map((r) => r.isbn13)).not.toContain('9791141691240') // 전자책 개정판
+    expect(results.map((r) => r.isbn13)).not.toContain('9788954627870') // 전자책 2011
   })
 
-  test('제목의 강조 태그·부제를 떼고, 저자 표기를 정리한다(침엽수림에서)', () => {
-    const [first] = toSearchResults(docs(conifer))
-    expect(first).toMatchObject({
-      id: '9788954697866',
-      title: '침엽수림에서',
-      author: '엄원태', // '지은이: 엄원태'
-      publisher: '문학동네',
-      pubDate: '2023',
-      kdc: '8',
-    })
-    expect(first.title).not.toMatch(/[<>]/)
+  test('모든 결과가 13자리 ISBN을 id로 갖는다', () => {
+    for (const r of toSearchResults(docsOf(risky))) {
+      expect(r.id).toBe(r.isbn13!)
+      expect(r.isbn13).toMatch(/^97[89]\d{10}$/)
+    }
   })
 
-  test('ISBN이 없는 오래된 책도 담을 수 있게 남기고, 같은 책은 하나로 합친다', () => {
-    const old = toSearchResults(docs(conifer)).filter((r) => r.pubDate === '1991')
-    expect(old).toHaveLength(1) // 엄원태 詩集(1991): 응답에는 2건(저자 표기가 다름)
-    expect(old[0].isbn13).toBeUndefined()
-    expect(old[0].id.startsWith('local-')).toBe(true)
-    expect(old[0].title).toBe('(엄원태 詩集)침엽수림에서')
-  })
-
-  test('판본이 여러 개인 책은 각각의 발행연도로 남는다(푸르른 틈새 2007·2024)', () => {
-    const results = toSearchResults(docs(tight))
-    const years = results.filter((r) => r.title === '푸르른 틈새').map((r) => r.pubDate)
-    expect(years.sort()).toEqual(['2007', '2024'])
-  })
-
-  test('사람, 장소, 환대: 판본 3개가 서로 다른 ISBN으로 구분된다', () => {
-    const results = toSearchResults(docs(places))
-    expect(results.map((r) => r.pubDate).sort()).toEqual(['2015', '2025', '2026'])
-    expect(results.every((r) => r.author === '김현경 지음' || r.author === '김현경')).toBe(true)
-  })
-})
-
-describe('toSearchResults: 표기 정리', () => {
-  const base: NlDoc = { titleInfo: '제목', isbn: '9788954697866', mediaName: '인쇄자료(책자형)' }
-
-  test('저자: 생몰년·역할 접두·중복 이름', () => {
-    const author = (authorInfo: string) => toSearchResults([{ ...base, authorInfo }])[0].author
-    expect(author('김경욱[1971-]')).toBe('김경욱')
-    expect(author('지은이: 유발 하라리 ;옮긴이: 조현욱')).toBe('유발 하라리, 조현욱 옮김')
-    expect(author('권여선 권여선[1965-]')).toBe('권여선')
-    expect(author('슈테판 볼만 지음;조이한,김정근 옮김')).toBe('슈테판 볼만 지음, 조이한,김정근 옮김')
-    expect(author('')).toBeUndefined()
-  })
-
-  test('출판사: 발행지 꼴만 벗기고 발행처 이름의 콜론은 둔다', () => {
-    const publisher = (pubInfo: string) => toSearchResults([{ ...base, pubInfo }])[0].publisher
-    expect(publisher('파주 : 문학동네, 2008')).toBe('문학동네')
-    expect(publisher('서울 : 천년의시작, 20070410 (')).toBe('천년의시작')
-    expect(publisher('웅진지식하우스 : 웅진씽크빅')).toBe('웅진지식하우스 : 웅진씽크빅')
-    expect(publisher('문학동네')).toBe('문학동네')
-  })
-
-  test('발행연도는 앞 4자리, 제목의 HTML 엔티티는 되돌린다', () => {
-    expect(toSearchResults([{ ...base, pubYearInfo: '20070410' }])[0].pubDate).toBe('2007')
-    expect(toSearchResults([{ ...base, pubYearInfo: '' }])[0].pubDate).toBeUndefined()
-    expect(
-      toSearchResults([{ ...base, titleInfo: '<span class="searching_txt">A &amp; B</span> : 부제' }])[0].title,
-    ).toBe('A & B')
-  })
-
-  test('제목이 없으면 건너뛰고, 처음 나온 순서를 지킨다', () => {
-    const out = toSearchResults([
-      { ...base, titleInfo: '', isbn: '9788954697866' },
-      { ...base, titleInfo: '둘째', isbn: '9788932027265' },
-      { ...base, titleInfo: '첫째', isbn: '9788934956051' },
+  test('발행연도는 4자리, 실제 출간일이 예정일보다 우선', () => {
+    const r = toSearchResults(docsOf(risky)).find((x) => x.isbn13 === '9791141603779')!
+    expect(r.pubDate).toBe('2026')
+    expect(r.edition).toBe('2판')
+    const withReal = toSearchResults([
+      { TITLE: 'a', EA_ISBN: '9788954606752', PUBLISH_PREDATE: '20250101', REAL_PUBLISH_DATE: '20260301' },
     ])
-    expect(out.map((r) => r.title)).toEqual(['둘째', '첫째'])
+    expect(withReal[0].pubDate).toBe('2026')
+  })
+
+  test('전자책·ISBN 없는 레코드·제목 없는 레코드는 뺀다', () => {
+    const results = toSearchResults([
+      { TITLE: '전자', EA_ISBN: '9788954606752', EBOOK_YN: 'Y' },
+      { TITLE: '번호없음' },
+      { EA_ISBN: '9788954627870' },
+      { TITLE: '종이', EA_ISBN: '9788954627870', EBOOK_YN: 'N' },
+    ])
+    expect(results.map((r) => r.title)).toEqual(['종이'])
+  })
+
+  test('같은 ISBN은 하나로, 받은 순서 유지', () => {
+    const results = toSearchResults([
+      { TITLE: 'B', EA_ISBN: '9788954627870' },
+      { TITLE: 'A', EA_ISBN: '9788954606752' },
+      { TITLE: 'B again', EA_ISBN: '9788954627870' },
+    ])
+    expect(results.map((r) => r.title)).toEqual(['B', 'A'])
+  })
+
+  test('침엽수림에서: 저자·출판사가 정리된다', () => {
+    const r = toSearchResults(docsOf(conifer)).find((x) => x.isbn13 === '9788954697866')!
+    expect(r.title).toBe('침엽수림에서')
+    expect(r.author).toBe('엄원태')
+    expect(r.publisher).toBeTruthy()
+  })
+
+  test('저자 검색 결과도 같은 모양으로 읽힌다', () => {
+    const results = toSearchResults(docsOf(byAuthor))
+    expect(results.length).toBeGreaterThan(0)
+    for (const r of results) expect(r.author).not.toMatch(/^(지은이|저자)\s*:/)
   })
 })
 
 describe('toBook', () => {
-  test('검색 결과에 담은 시각을 붙인다(서재의 최신순 맨 위로 간다)', () => {
-    const result = toSearchResults(docs(conifer))[0]
-    const book = toBook(result, 1_790_000_000_000)
-    expect(book.addedAt).toBe(1_790_000_000_000)
-    expect(book.id).toBe(result.id)
-    expect(book.updatedAt).toBeUndefined() // 저장할 때 saveBooks가 붙인다
+  test('판 표시는 서재에 저장하지 않고 담은 시각을 붙인다', () => {
+    const [result] = toSearchResults([{ TITLE: 'a', EA_ISBN: '9788954606752', EDITION_STMT: '개정판' }])
+    const book = toBook(result, 123)
+    expect(book.addedAt).toBe(123)
+    expect('edition' in book).toBe(false)
+    expect(book.id).toBe('9788954606752')
   })
 })

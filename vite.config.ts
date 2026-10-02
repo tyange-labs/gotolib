@@ -48,18 +48,16 @@ export default defineConfig(({ mode }) => {
         // 계정·동기화·패스키(tyange-cms-api). 운영에서는 nginx가 같은 경로를 프록시한다.
         // 패스키는 origin이 맞아야 하므로 로컬 서버는 PASSKEY_RP_ID=localhost,
         // PASSKEY_RP_ORIGIN=http://localhost:5199로 띄운다.
-        // 국립중앙도서관 Open API(도서 검색). 키는 .env의 NL_API_KEY(git에 올리지 않음). 운영은 nginx가 같은 일을 한다.
-        '/api/nl': {
+        // 국립중앙도서관 서지정보 API(도서 검색). 키는 .env의 NL_API_KEY(git에 올리지 않음). 운영은 nginx가 같은 일을 한다.
+        '/api/seoji': {
           target: 'https://www.nl.go.kr',
           changeOrigin: true,
           rewrite: (path) => {
-            const [pathname, query = ''] = path
-              .replace(/^\/api\/nl/, '/NL/search/openApi')
-              .split('?')
+            const query = path.split('?')[1] ?? ''
             const params = new URLSearchParams(query)
-            params.set('key', env.NL_API_KEY ?? '')
-            params.set('apiType', 'json')
-            return `${pathname}?${params.toString()}`
+            params.set('cert_key', env.NL_API_KEY ?? '')
+            params.set('result_style', 'json')
+            return `/seoji/SearchApi.do?${params.toString()}`
           },
         },
         '/api/cms': {

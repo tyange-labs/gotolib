@@ -23,7 +23,6 @@ export function BookSearch(props: Props) {
   // 실제로 검색한 키워드. 입력 중인 값(input)과 분리해야 '더 보기'가 같은 검색어로 이어진다.
   const [keyword, setKeyword] = createSignal('')
   const [results, setResults] = createSignal<SearchResult[]>([])
-  const [total, setTotal] = createSignal(0)
   const [page, setPage] = createSignal(0)
   // 이번 쪽에서 받은 레코드 수. 같은 책의 중복 레코드가 합쳐져 화면 권수보다 많을 수 있어 '더 보기' 판단은 이걸로 한다.
   const [fetched, setFetched] = createSignal(0)
@@ -40,7 +39,6 @@ export function BookSearch(props: Props) {
     setError(null)
     try {
       const result = await fetchBookSearch(word, pageNo)
-      setTotal(result.total)
       setPage(pageNo)
       setFetched(result.fetched)
       setResults((prev) => {
@@ -65,7 +63,6 @@ export function BookSearch(props: Props) {
     if (!word || busy()) return
     setKeyword(word)
     setResults([])
-    setTotal(0)
     setPage(0)
     void load(word, 1)
   }
@@ -93,7 +90,7 @@ export function BookSearch(props: Props) {
     }
   }
 
-  const hasMore = () => page() > 0 && fetched() >= 20 && page() * 20 < total()
+  const hasMore = () => page() > 0 && fetched() >= 20
 
   return (
     <section class="book-search" aria-label="책 검색">
@@ -105,7 +102,7 @@ export function BookSearch(props: Props) {
           type="search"
           value={input()}
           onInput={(e) => setInput(e.currentTarget.value)}
-          placeholder="제목이나 저자로 검색 (엔터)"
+          placeholder="제목·저자·ISBN으로 검색 (엔터)"
           aria-label="책 검색어"
         />
         <button class="text-button" type="submit" disabled={busy() || !input().trim()}>
@@ -145,10 +142,10 @@ export function BookSearch(props: Props) {
                         result.author,
                         result.publisher,
                         result.pubDate?.slice(0, 4),
+                        result.edition,
                       ]
                         .filter(Boolean)
                         .join(' · ')}
-                      <Show when={!result.isbn13}> · ISBN 없음 (소장 조회 불가)</Show>
                     </span>
                   </div>
                   <button
@@ -165,7 +162,7 @@ export function BookSearch(props: Props) {
 
           <div class="search-footer">
             <span class="search-footer__count">
-              <Show when={busy()} fallback={`국립중앙도서관 · ${results().length}권 표시`}>
+              <Show when={busy()} fallback={`${results().length}권 표시 · 국립중앙도서관`}>
                 <span class="inline-loading">
                   <Spinner />
                   검색 중…
