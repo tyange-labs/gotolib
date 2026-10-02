@@ -1,6 +1,6 @@
 import { A } from '@solidjs/router'
 import { ChevronDown, ChevronUp, Heart } from 'lucide-solid'
-import { For, Show, createEffect, createSignal, on, onCleanup } from 'solid-js'
+import { For, Show, createEffect, createSignal, on } from 'solid-js'
 import { useApp } from '../context/appContext'
 import type { Library } from '../lib/libraryApi'
 import { fetchAvailability } from '../lib/queries'
@@ -13,7 +13,10 @@ type BookStatus =
   | { state: 'notHeld' }
   | { state: 'error' }
 
-/** 찜한 책들을 앱 진입 시 자주 가는 도서관에서 대출 가능 여부 조회. 항목을 누르면 목록의 그 책으로 간다 */
+/**
+ * 찜한 책들의 대출 가능 여부(자주 가는 도서관 기준). 조회는 **펼쳤을 때만** 한다 — 찜 5권 × 자주 가는
+ * 도서관 수만큼 요청이 나가므로, 서재에 들어왔다고 미리 보내지 않는다. 항목을 누르면 목록의 그 책으로 간다.
+ */
 export function WatchlistSummary(props: { onSelect?: (bookId: string) => void }) {
   const { books, watchlist, favorites } = useApp()
   const [expanded, setExpanded] = createSignal(false)
@@ -28,34 +31,43 @@ export function WatchlistSummary(props: { onSelect?: (bookId: string) => void })
   const favs = () => favorites.favorites()
 
   // 조회 재실행 키 (찜한 도서 집합 + 자주 가는 도서관 집합이 바뀔 때만).
-  // `on`으로 이 키 하나만 추적한다. 그냥 두면 아래에서 읽는 statuses까지
+  // `on`으로 이 키와 펼침 여부만 추적한다. 그냥 두면 아래에서 읽는 statuses까지
   // 의존이 되어 응답이 올 때마다 조회가 다시 돈다.
   const key = () =>
     `${watchlist.ids().join(',')}|${favs().map((f) => f.libCode).join(',')}`
 
+  // 접었다 펴거나 찜이 바뀌어 조회가 겹칠 수 있다. 가장 최근 조회의 결과만 반영한다.
+  // (접을 때 조회를 취소하지 않는다: 이미 나간 요청은 캐시에 남아 다시 펼 때 쓰인다.)
+  let run = 0
+
   createEffect(
-    on(key, () => {
+    on([key, expanded], ([, open]) => {
+      if (!open) return
       const list = watched()
       const libs = favs()
       if (list.length === 0 || libs.length === 0) return
 
-      let cancelled = false
-      onCleanup(() => {
-        cancelled = true
-      })
-
-      setStatuses(
-        Object.fromEntries(list.map((b) => [b.id, { state: 'loading' }])),
+      const mine = ++run
+      // 이미 알고 있는 책의 상태는 그대로 두고(다시 펼 때 깜빡이지 않게), 새 책만 '확인 중'으로.
+      setStatuses((prev) =>
+        Object.fromEntries(
+          list.map((b) => [b.id, prev[b.id] ?? { state: 'loading' as const }]),
+        ),
       )
       list.forEach(async (book) => {
         const status = await bestStatus(book, libs)
-        if (!cancelled) setStatuses((prev) => ({ ...prev, [book.id]: status }))
+        if (mine === run) setStatuses((prev) => ({ ...prev, [book.id]: status }))
       })
     }),
   )
 
-  const availableCount = () =>
-    Object.values(statuses()).filter((s) => s.state === 'available').length
+  // 헤더 요약: 한 번도 조회하지 않았으면 안내, 조회 중이면 '확인 중', 끝났으면 개수.
+  const summary = () => {
+    const all = Object.values(statuses())
+    if (all.length === 0) return '펼쳐서 대출 상태 확인'
+    if (all.some((s) => s.state === 'loading')) return '확인 중…'
+    return `대출 가능 ${all.filter((s) => s.state === 'available').length}권`
+  }
 
   return (
     <Show when={watched().length > 0}>
@@ -75,7 +87,7 @@ export function WatchlistSummary(props: { onSelect?: (bookId: string) => void })
               <span class="watchlist__hint">자주 가는 도서관 등록 필요</span>
             }
           >
-            <span class="watchlist__count">대출 가능 {availableCount()}권</span>
+            <span class="watchlist__count">{summary()}</span>
           </Show>
           <span class="watchlist__chevron" aria-hidden>
             <Show when={expanded()} fallback={<ChevronDown size={14} />}>
