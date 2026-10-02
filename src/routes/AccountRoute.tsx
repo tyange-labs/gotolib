@@ -1,3 +1,4 @@
+import { useNavigate } from '@solidjs/router'
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { For, Match, Show, Switch, createResource, createSignal } from 'solid-js'
 import {
@@ -11,13 +12,35 @@ import {
 } from '../lib/auth'
 import { lastSyncedAt, omittedBooks, syncError, syncNow, syncStatus } from '../lib/sync'
 import { SYNC_MAX_BOOKS } from '../lib/syncDoc'
+import { replayTour } from '../lib/tour'
 
 /** '/account' — 로그인(패스키 우선), 이 기기에 패스키 등록, 동기화 상태 */
 export function AccountRoute() {
   return (
-    <Show when={session()} fallback={<SignedOut />}>
-      <SignedIn />
-    </Show>
+    <>
+      <Show when={session()} fallback={<SignedOut />}>
+        <SignedIn />
+      </Show>
+      <ReplayTour />
+    </>
+  )
+}
+
+/** 처음 실행할 때 보여준 사용법 안내를 서재에서 다시 본다. */
+function ReplayTour() {
+  const navigate = useNavigate()
+  return (
+    <p class="account__replay">
+      <button
+        class="text-button"
+        onClick={() => {
+          navigate('/')
+          replayTour()
+        }}
+      >
+        사용법 다시 보기
+      </button>
+    </p>
   )
 }
 

@@ -1,6 +1,7 @@
-import { Show, createSignal } from 'solid-js'
+import { Show, createEffect, createSignal, on } from 'solid-js'
 import { ImportDropzone } from '../components/ImportDropzone'
 import { useApp } from '../context/appContext'
+import { startTourIfFirstRun } from '../lib/tour'
 import { ShelfView } from '../views/ShelfView'
 
 /** '/' — 내 서재: 도서 목록. 파일 불러오기는 목록 머리의 텍스트 버튼(비었을 땐 큰 영역) */
@@ -16,6 +17,16 @@ export function ShelfRoute() {
     clearAll,
   } = useApp()
   const [notice, setNotice] = createSignal<string | null>(null)
+
+  // 내 책이 없어 샘플이 보이는 첫 실행이면, 서재가 그려진 뒤 안내를 시작한다.
+  createEffect(
+    on(
+      () => !loading() && isSample(),
+      (ready) => {
+        if (ready) requestAnimationFrame(() => startTourIfFirstRun())
+      },
+    ),
+  )
 
   const handleFile = async (file: File) => {
     setNotice(null)
