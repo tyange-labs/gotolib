@@ -155,11 +155,15 @@ function SignedIn() {
                 <li class="account__row">
                   <span>
                     {item.label}
+                    <Show when={item.id === session()?.credentialId}>
+                      <span class="account__current"> · 지금 사용 중</span>
+                    </Show>
                     <span class="account__meta">
                       {' · '}
+                      {`등록 ${item.created_at?.slice(0, 10) ?? ''}`}
                       {item.last_used_at
-                        ? `마지막 사용 ${item.last_used_at.slice(0, 10)}`
-                        : `등록 ${item.created_at?.slice(0, 10) ?? ''}`}
+                        ? ` · 마지막 사용 ${item.last_used_at.slice(0, 10)}`
+                        : ' · 아직 사용 안 함'}
                     </span>
                   </span>
                   <button
@@ -223,14 +227,36 @@ function SignedIn() {
   )
 }
 
+/**
+ * 패스키 이름 기본값: 기기 + 브라우저. 같은 Mac이라도 브라우저마다 따로 만들 수 있어서(Firefox,
+ * Chrome, Safari…) 기기 이름만 쓰면 목록에서 서로 구분이 안 된다.
+ */
 function guessDeviceLabel(): string {
   const ua = navigator.userAgent
-  if (/iPhone/.test(ua)) return 'iPhone'
-  if (/iPad/.test(ua)) return 'iPad'
-  if (/Android/.test(ua)) return 'Android'
-  if (/Mac/.test(ua)) return 'Mac'
-  if (/Windows/.test(ua)) return 'Windows PC'
-  return '이 기기'
+  const device = /iPhone/.test(ua)
+    ? 'iPhone'
+    : /iPad/.test(ua)
+      ? 'iPad'
+      : /Android/.test(ua)
+        ? 'Android'
+        : /Mac/.test(ua)
+          ? 'Mac'
+          : /Windows/.test(ua)
+            ? 'Windows PC'
+            : '이 기기'
+  // 순서 주의: Edge·Opera·iOS 변종 UA에는 Chrome/Safari 문자열이 함께 들어 있다.
+  const browser = /Edg\//.test(ua)
+    ? 'Edge'
+    : /OPR\//.test(ua)
+      ? 'Opera'
+      : /Firefox|FxiOS/.test(ua)
+        ? 'Firefox'
+        : /CriOS|Chrome\//.test(ua)
+          ? 'Chrome'
+          : /Safari\//.test(ua)
+            ? 'Safari'
+            : ''
+  return browser ? `${device} · ${browser}` : device
 }
 
 function timeAgo(at: number): string {

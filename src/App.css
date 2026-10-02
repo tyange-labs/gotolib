@@ -70,6 +70,24 @@
   opacity: 0.4;
 }
 
+.text-button--danger {
+  color: var(--tl-danger);
+}
+
+.text-button--danger:hover:not(:disabled) {
+  color: var(--tl-danger);
+  text-decoration: underline;
+}
+
+.book-card__confirm {
+  display: flex;
+  align-items: baseline;
+  gap: var(--tl-space-3);
+  font-size: var(--tl-text-sm);
+  color: var(--tl-fg-muted);
+  white-space: nowrap;
+}
+
 .icon-button {
   display: inline-flex;
   align-items: center;
@@ -357,11 +375,6 @@
   font-weight: 500;
 }
 
-.watchlist__count,
-.watchlist__hint {
-  color: var(--tl-fg-muted);
-}
-
 .watchlist__chevron {
   display: inline-flex;
   margin-left: auto;
@@ -600,6 +613,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--tl-space-3);
+}
+
+.account__current {
+  color: var(--tl-success);
+  font-size: var(--tl-text-xs);
 }
 
 .account__meta,

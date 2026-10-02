@@ -21,6 +21,8 @@ export interface Session {
   token: string
   userId: string
   role: string
+  /** 이 로그인에 쓴 패스키의 id(브라우저가 알려준 값, 서버 목록의 id와 같다). 목록에서 '지금 사용 중'을 표시한다. */
+  credentialId?: string
 }
 
 export interface PasskeyInfo {
@@ -119,11 +121,12 @@ interface LoginResponse {
   user_role: string
 }
 
-function adopt(response: LoginResponse) {
+function adopt(response: LoginResponse, credentialId?: string) {
   save({
     token: response.access_token,
     userId: subjectOf(response.access_token),
     role: response.user_role,
+    credentialId,
   })
 }
 
@@ -146,7 +149,7 @@ export async function signUpWithPasskey(label: string) {
     json: { challenge_id: start.challenge_id, label, credential },
     auth: false,
   })
-  adopt(response)
+  adopt(response, credential.id)
 }
 
 /** 사용자명 없이: 브라우저가 이 사이트의 패스키를 골라준다. */
@@ -170,7 +173,7 @@ export async function loginWithPasskey() {
     json: { challenge_id: start.challenge_id, credential },
     auth: false,
   })
-  adopt(response)
+  adopt(response, credential.id)
 }
 
 /** 로그인한 상태에서 이 기기에 패스키를 등록한다. */

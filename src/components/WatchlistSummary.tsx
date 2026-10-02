@@ -61,13 +61,6 @@ export function WatchlistSummary(props: { onSelect?: (bookId: string) => void })
     }),
   )
 
-  // 헤더 요약: 한 번도 조회하지 않았으면 안내, 조회 중이면 '확인 중', 끝났으면 개수.
-  const summary = () => {
-    const all = Object.values(statuses())
-    if (all.length === 0) return '펼쳐서 대출 상태 확인'
-    if (all.some((s) => s.state === 'loading')) return '확인 중…'
-    return `대출 가능 ${all.filter((s) => s.state === 'available').length}권`
-  }
 
   return (
     <Show when={watched().length > 0}>
@@ -81,14 +74,6 @@ export function WatchlistSummary(props: { onSelect?: (bookId: string) => void })
             <Heart size={12} fill="currentColor" aria-hidden />
             찜 목록 {watched().length}권
           </span>
-          <Show
-            when={favs().length > 0}
-            fallback={
-              <span class="watchlist__hint">자주 가는 도서관 등록 필요</span>
-            }
-          >
-            <span class="watchlist__count">{summary()}</span>
-          </Show>
           <span class="watchlist__chevron" aria-hidden>
             <Show when={expanded()} fallback={<ChevronDown size={14} />}>
               <ChevronUp size={14} />

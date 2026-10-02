@@ -1,5 +1,5 @@
 import { Heart, X } from 'lucide-solid'
-import { Show, createEffect, createSignal, on } from 'solid-js'
+import { Show, createEffect, createSignal, on, onCleanup } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'
 import type { Book } from '../types/book'
@@ -23,6 +23,13 @@ export function BookCard(props: Props) {
     () => props.book.isbn13,
   )
   const [open, setOpen] = createSignal(false)
+  // 삭제는 되돌릴 수 없어서(다시 가져오기 전까지) 한 번 더 확인한다. 아무것도 안 하면 저절로 닫힌다.
+  const [confirming, setConfirming] = createSignal(false)
+  createEffect(() => {
+    if (!confirming()) return
+    const timer = setTimeout(() => setConfirming(false), 5000)
+    onCleanup(() => clearTimeout(timer))
+  })
 
   const watched = () => watchlist.has(props.book.id)
   const watchDisabled = () => !watched() && watchlist.isFull()
@@ -76,27 +83,45 @@ export function BookCard(props: Props) {
           </span>
         </button>
         <div class="book-card__tools">
-          <button
-            class="icon-button"
-            onClick={() => watchlist.toggle(props.book.id)}
-            disabled={watchDisabled()}
-            aria-pressed={watched()}
-            aria-label={watched() ? '찜 목록에서 제거' : '찜 목록에 추가'}
-            title={
-              watchDisabled()
-                ? `찜 목록은 최대 ${watchlist.count()}권이에요`
-                : undefined
+          <Show
+            when={!confirming()}
+            fallback={
+              <div class="book-card__confirm" role="alert">
+                <span>삭제할까요?</span>
+                <button
+                  class="text-button text-button--danger"
+                  onClick={() => props.onRemove(props.book.id)}
+                >
+                  삭제
+                </button>
+                <button class="text-button" onClick={() => setConfirming(false)}>
+                  취소
+                </button>
+              </div>
             }
           >
-            <Heart size={16} fill={watched() ? 'currentColor' : 'none'} />
-          </button>
-          <button
-            class="icon-button"
-            onClick={() => props.onRemove(props.book.id)}
-            aria-label={`${props.book.title} 삭제`}
-          >
-            <X size={16} />
-          </button>
+            <button
+              class="icon-button"
+              onClick={() => watchlist.toggle(props.book.id)}
+              disabled={watchDisabled()}
+              aria-pressed={watched()}
+              aria-label={watched() ? '찜 목록에서 제거' : '찜 목록에 추가'}
+              title={
+                watchDisabled()
+                  ? `찜 목록은 최대 ${watchlist.count()}권이에요`
+                  : undefined
+              }
+            >
+              <Heart size={16} fill={watched() ? 'currentColor' : 'none'} />
+            </button>
+            <button
+              class="icon-button"
+              onClick={() => setConfirming(true)}
+              aria-label={`${props.book.title} 삭제`}
+            >
+              <X size={16} />
+            </button>
+          </Show>
         </div>
       </div>
 
