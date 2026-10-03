@@ -117,6 +117,8 @@ function SignedIn() {
   const supported = browserSupportsWebAuthn()
 
   const guard = async (action: () => Promise<unknown>) => {
+    // 이미 진행 중이면 무시한다: 엔터와 버튼 클릭이 겹치면 같은 등록이 두 번 나가 패스키가 중복으로 생겼다.
+    if (busy()) return
     setError(null)
     setBusy(true)
     try {
@@ -210,7 +212,7 @@ function SignedIn() {
                     {item.label}
                     <span class="account__meta">
                       {' · '}
-                      {`등록 ${item.created_at?.slice(0, 10) ?? ''}`}
+                      {`등록 ${registeredAt(item.created_at)}`}
                     </span>
                   </span>
                   <button
@@ -252,6 +254,16 @@ function SignedIn() {
             class="account__add"
             onSubmit={(e) => {
               e.preventDefault()
+              const existing = passkeys()?.length ?? 0
+              // 비밀번호 관리자(1Password 등)는 같은 계정의 패스키가 이미 있어도 새로 만들어 주므로, 중복을 앱이 막는다.
+              if (
+                existing > 0 &&
+                !confirm(
+                  `이미 패스키가 ${existing}개 있어요.\n\n1Password·iCloud 같은 비밀번호 관리자에 저장된 패스키는 여러 기기에서 함께 쓰여서, 같은 곳에 또 만들면 중복이 돼요. 다른 저장소에 백업으로 두려는 게 아니라면 필요 없어요.\n\n그래도 추가할까요?`,
+                )
+              ) {
+                return
+              }
               void guard(async () => {
                 await registerPasskey(label().trim())
                 await refetch()
@@ -310,6 +322,15 @@ function guessDeviceLabel(): string {
             ? 'Safari'
             : ''
   return browser ? `${device} · ${browser}` : device
+}
+
+/** 같은 이름의 패스키가 여럿일 때 구분되도록 날짜와 시각까지 보인다(서버는 UTC 문자열을 준다). */
+function registeredAt(iso: string | null): string {
+  if (!iso) return ''
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime())
+    ? iso.slice(0, 10)
+    : date.toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 function timeAgo(at: number): string {
