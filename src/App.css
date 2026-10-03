@@ -412,13 +412,19 @@
   gap: var(--tl-space-2);
 }
 
+/* 도서관 이름 | 소장 여부 | 펼침 화살표 — 열 너비를 고정해서 어느 줄이든 소장 여부가 같은 자리에 선다 */
 .holdings__summary {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--tl-space-3);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.5rem 1rem;
+  align-items: center;
+  column-gap: var(--tl-space-3);
   width: 100%;
   text-align: left;
+}
+
+.holdings__summary .badge {
+  justify-self: end;
+  text-align: right;
 }
 
 .holdings__summary:hover .holdings__name,
@@ -581,10 +587,21 @@
   flex-direction: column;
 }
 
+/* 책 | 대출 상태 | 찜 해제 — 같은 열 정렬 */
 .watchlist__row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.5rem 1.25rem;
   align-items: center;
-  gap: var(--tl-space-3);
+  column-gap: var(--tl-space-3);
+}
+
+.watchlist__row .badge {
+  justify-self: end;
+  text-align: right;
+}
+
+.watchlist .pagination {
+  margin-top: var(--tl-space-4);
 }
 
 .watchlist__book {

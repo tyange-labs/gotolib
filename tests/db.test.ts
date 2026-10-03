@@ -2,6 +2,7 @@ import { IDBFactory } from 'fake-indexeddb'
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, test } from 'bun:test'
 import { openDB } from 'idb'
+import { WATCHLIST_LIMIT } from '../src/lib/syncDoc'
 import type { Book } from '../src/types/book'
 
 /** 테스트마다 비어 있는 IndexedDB로 바꾼다. */
@@ -50,13 +51,14 @@ describe('찜과 서재는 겹치지 않는다', () => {
     expect((await db.getWatchlist()).map((w: Book) => w.id)).toEqual(['a'])
   })
 
-  test('한도(5권)가 차면 더 찜하지 못하고 서재는 그대로다', async () => {
-    const ids = ['a', 'b', 'c', 'd', 'e', 'f']
+  test('한도가 차면 더 찜하지 못하고 서재는 그대로다', async () => {
+    const ids = Array.from({ length: WATCHLIST_LIMIT + 1 }, (_, i) => `k${i}`)
     await db.saveBooks(ids.map((id) => book(id)))
-    for (const id of ids.slice(0, 5)) expect(await db.watchBook(book(id))).toBe(true)
-    expect(await db.watchBook(book('f'))).toBe(false)
-    expect((await db.getAllBooks()).map((b: Book) => b.id)).toEqual(['f'])
-    expect(await db.getWatchlist()).toHaveLength(5)
+    for (const id of ids.slice(0, WATCHLIST_LIMIT)) expect(await db.watchBook(book(id))).toBe(true)
+    const extra = ids[WATCHLIST_LIMIT]
+    expect(await db.watchBook(book(extra))).toBe(false)
+    expect((await db.getAllBooks()).map((b: Book) => b.id)).toEqual([extra])
+    expect(await db.getWatchlist()).toHaveLength(WATCHLIST_LIMIT)
   })
 
   test('서재에 없는 책도 찜할 수 있고, 풀면 서재로 돌아온다', async () => {

@@ -2,6 +2,7 @@ import { Heart, X } from 'lucide-solid'
 import { Show, createEffect, createSignal, onCleanup } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'
+import { WATCHLIST_LIMIT } from '../hooks/useWatchlist'
 import { flyToWatchlist } from '../lib/motion'
 import type { Book } from '../types/book'
 import { FavoriteHoldingsPanel } from './FavoriteHoldingsPanel'
@@ -104,7 +105,7 @@ export function BookCard(props: Props) {
               aria-label="찜 목록에 추가"
               title={
                 watchDisabled()
-                  ? `찜 목록은 최대 ${watchlist.count()}권이에요`
+                  ? `찜 목록은 최대 ${WATCHLIST_LIMIT}권이에요`
                   : '찜 목록으로 옮기기'
               }
             >

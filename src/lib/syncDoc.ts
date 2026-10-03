@@ -10,7 +10,7 @@ import type { Book } from '../types/book'
 
 export const SYNC_VERSION = 2
 /** 찜 목록 최대 개수. useWatchlist의 한도와 같아야 한다. */
-export const WATCHLIST_LIMIT = 5
+export const WATCHLIST_LIMIT = 23
 /**
  * 서버에 올리는 책 수 상한(가장 최근에 담은 순). 서버 문서 상한은 512KB이고 책은 권당 200~300바이트라
  * 1,000권이면 약 300KB다. 넘는 책은 이 기기에만 남는다(지운 것으로 취급하지 않는다).

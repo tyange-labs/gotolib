@@ -1,14 +1,18 @@
 import { A } from '@solidjs/router'
 import { ChevronDown, ChevronUp, Heart } from 'lucide-solid'
-import { For, Show, createEffect, createSignal, on, onCleanup } from 'solid-js'
+import { For, Show, createEffect, createMemo, createSignal, on, onCleanup } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'
 import type { Library } from '../lib/libraryApi'
 import { fadeOut } from '../lib/motion'
 import { fetchAvailability } from '../lib/queries'
 import { FavoriteHoldingsPanel } from './FavoriteHoldingsPanel'
+import { Pagination } from './Pagination'
 import { Spinner } from './Spinner'
 import type { Book } from '../types/book'
+
+/** 찜 목록은 이만큼씩 나눠 보여준다: 펼칠 때 이 쪽의 책만 도서관에 조회하므로 요청 수도 이만큼으로 묶인다. */
+const WATCH_PAGE_SIZE = 5
 
 type BookStatus =
   | { state: 'loading' }
@@ -29,6 +33,17 @@ export function WatchlistSummary() {
   const [statuses, setStatuses] = createSignal<Record<string, BookStatus>>({})
 
   const watched = () => watchlist.items()
+  // 가장 최근에 찜한 책이 맨 앞(첫 쪽)에 오게 한다.
+  const newestFirst = createMemo(() => [...watched()].reverse())
+  const [page, setPage] = createSignal(1)
+  const pageCount = () => Math.max(1, Math.ceil(newestFirst().length / WATCH_PAGE_SIZE))
+  const shown = createMemo(() =>
+    newestFirst().slice((page() - 1) * WATCH_PAGE_SIZE, page() * WATCH_PAGE_SIZE),
+  )
+  // 찜을 풀어 쪽 수가 줄면 마지막 쪽으로 당긴다.
+  createEffect(() => {
+    if (page() > pageCount()) setPage(pageCount())
+  })
   const favs = () => favorites.favorites()
 
   // 찜이 늘면 머리를 살짝 튕겨서 책이 여기로 들어왔음을 알린다.
@@ -48,7 +63,7 @@ export function WatchlistSummary() {
   // `on`으로 이 키와 펼침 여부만 추적한다. 그냥 두면 아래에서 읽는 statuses까지
   // 의존이 되어 응답이 올 때마다 조회가 다시 돈다.
   const key = () =>
-    `${watched().map((b) => b.id).join(',')}|${favs().map((f) => f.libCode).join(',')}`
+    `${shown().map((b) => b.id).join(',')}|${favs().map((f) => f.libCode).join(',')}`
 
   // 접었다 펴거나 찜이 바뀌어 조회가 겹칠 수 있다. 가장 최근 조회의 결과만 반영한다.
   // (접을 때 조회를 취소하지 않는다: 이미 나간 요청은 캐시에 남아 다시 펼 때 쓰인다.)
@@ -57,7 +72,8 @@ export function WatchlistSummary() {
   createEffect(
     on([key, expanded], ([, open]) => {
       if (!open) return
-      const list = watched()
+      // eslint-disable-next-line solid/reactivity -- 이 효과가 돌 때의 쪽을 한 번 읽어 쓴다(쪽이 바뀌면 효과가 다시 돈다).
+      const list = shown()
       const libs = favs()
       if (list.length === 0 || libs.length === 0) return
 
@@ -107,7 +123,7 @@ export function WatchlistSummary() {
                 등록하면 대출 가능 여부를 볼 수 있어요.
               </li>
             </Show>
-            <For each={watched()}>
+            <For each={shown()}>
               {(book) => (
                 <WatchRow
                   book={book}
@@ -116,6 +132,12 @@ export function WatchlistSummary() {
               )}
             </For>
           </ul>
+          <Pagination
+            page={page()}
+            pageCount={pageCount()}
+            onChange={setPage}
+            label="찜 목록 페이지"
+          />
         </Show>
       </section>
     </Show>
@@ -164,7 +186,10 @@ function WatchRow(props: { book: Book; status?: BookStatus }) {
             {[props.book.author, props.book.pubDate?.slice(0, 4)].filter(Boolean).join(' · ')}
           </span>
         </button>
-        <Show when={props.status}>{(status) => <StatusLabel status={status()} />}</Show>
+        {/* 상태가 없어도 칸은 비워 둬서(격자) 하트가 항상 같은 열에 선다 */}
+        <Show when={props.status} fallback={<span />}>
+          {(status) => <StatusLabel status={status()} />}
+        </Show>
         <button
           class="icon-button"
           onClick={() => void unwatch()}

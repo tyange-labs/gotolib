@@ -98,7 +98,10 @@ describe('normalizeDoc', () => {
       .filter(([, e]) => !e.deleted)
       .map(([k]) => k)
       .sort()
-    expect(liveKeys).toEqual(['b2', 'b3', 'b4', 'b5', 'b6'])
+    // 가장 최근에 찜한 WATCHLIST_LIMIT개(b2부터)가 남는다.
+    expect(liveKeys).toEqual(
+      Array.from({ length: WATCHLIST_LIMIT }, (_, i) => `b${i + 2}`).sort(),
+    )
     expect(out.watchlist.b0).toEqual({ at: 101, deleted: true })
     expect(out.watchlist.b1).toEqual({ at: 102, deleted: true })
   })
