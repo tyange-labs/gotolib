@@ -5,6 +5,14 @@ import { openDB } from 'idb'
 import { WATCHLIST_LIMIT } from '../src/lib/syncDoc'
 import type { Book } from '../src/types/book'
 
+/** 조건이 참이 될 때까지 짧게 반복해서 확인한다(시간 초과면 그대로 돌아가고, 호출한 쪽의 expect가 실패를 알린다). */
+async function waitFor(condition: () => boolean, timeoutMs = 3000) {
+  const deadline = Date.now() + timeoutMs
+  while (!condition() && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
+}
+
 /** 테스트마다 비어 있는 IndexedDB로 바꾼다. */
 const resetIndexedDB = () => {
   Object.assign(globalThis, { indexedDB: new IDBFactory() })
@@ -132,7 +140,8 @@ describe('다른 탭이 구버전 연결을 쥐고 있을 때', () => {
     const pending = db.getAllBooks().then(() => {
       opened = true
     })
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    // 막힘 알림이 올 때까지 기다린다. 고정 시간만 기다리면 느린 CI에서 알림이 오기 전에 검사해 실패한다.
+    await waitFor(() => blocked > 0)
     expect(blocked).toBeGreaterThan(0)
     expect(opened).toBe(false)
     oldTab.close()
