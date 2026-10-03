@@ -194,8 +194,12 @@ export async function signUpWithPasskey(label: string) {
   adopt(response, credential.id)
 }
 
-/** 사용자명 없이: 브라우저가 이 사이트의 패스키를 골라준다. */
-export async function loginWithPasskey() {
+/**
+ * 사용자명 없이: 브라우저가 이 사이트의 패스키를 골라준다.
+ * `onlyCredentialId`를 주면 그 패스키로만 인증하게 한다 — 로그아웃 없이 '이 패스키가 이 기기에 있나' 확인하는 데
+ * 쓴다(성공하면 이 기기의 패스키로 기억되고 서버에 사용 시각이 남는다).
+ */
+export async function loginWithPasskey(onlyCredentialId?: string) {
   const start = await api<{
     challenge_id: string
     options: { publicKey: PublicKeyCredentialRequestOptionsJSON }
@@ -204,7 +208,12 @@ export async function loginWithPasskey() {
   let credential
   try {
     credential = await startAuthentication({
-      optionsJSON: start.options.publicKey,
+      optionsJSON: onlyCredentialId
+        ? {
+            ...start.options.publicKey,
+            allowCredentials: [{ id: onlyCredentialId, type: 'public-key' }],
+          }
+        : start.options.publicKey,
     })
   } catch (e) {
     throw new AuthError(webauthnMessage(e))
@@ -230,6 +239,9 @@ export async function loginWithPasskey() {
   }
   adopt(response, credential.id)
 }
+
+/** 이 패스키가 이 기기에 있는지 확인한다(로그인된 상태 그대로, 생체인증 한 번). 이 기능 전에 만든 패스키를 이 기기 것으로 알아보게 한다. */
+export const confirmPasskeyHere = (id: string) => loginWithPasskey(id)
 
 /** 로그인한 상태에서 이 기기에 패스키를 등록한다. */
 export async function registerPasskey(label: string) {

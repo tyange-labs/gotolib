@@ -3,6 +3,7 @@ import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { For, Match, Show, Switch, createResource, createSignal } from 'solid-js'
 import {
   CANCELLED,
+  confirmPasskeyHere,
   deletePasskey,
   isThisDevice,
   listPasskeys,
@@ -202,6 +203,20 @@ function SignedIn() {
                         ? ` · 마지막 로그인 ${item.last_used_at.slice(0, 10)}`
                         : ' · 이 패스키로 로그인한 적 없음'}
                     </span>
+                    <Show when={!isThisDevice(item.id) && supported}>
+                      <button
+                        class="text-button account__verify"
+                        disabled={busy()}
+                        onClick={() => {
+                          void guard(async () => {
+                            await confirmPasskeyHere(item.id)
+                            await refetch()
+                          })
+                        }}
+                      >
+                        이 기기의 패스키인지 확인
+                      </button>
+                    </Show>
                   </span>
                   <button
                     class="text-button"
