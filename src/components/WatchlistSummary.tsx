@@ -176,7 +176,11 @@ function WatchRow(props: { book: Book; status?: BookStatus }) {
         </button>
       </div>
       <Show when={open()}>
-        <FavoriteHoldingsPanel holdings={holdings()} favoritesCount={favoritesCount()} />
+        <FavoriteHoldingsPanel
+          holdings={holdings()}
+          favoritesCount={favoritesCount()}
+          isbn13={props.book.isbn13}
+        />
       </Show>
     </li>
   )

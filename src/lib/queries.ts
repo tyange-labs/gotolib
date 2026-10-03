@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/solid-query'
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
 import { getApiCache, putApiCache, removeApiCache } from './db'
-import { checkAvailability, searchBooks, searchLibraries } from './libraryApi'
+import { checkAvailability, fetchHoldingInfo, searchBooks, searchLibraries } from './libraryApi'
 
 const HOUR = 60 * 60 * 1000
 
@@ -35,6 +35,16 @@ export const availabilityQuery = (isbn13: string, libCode: string) => ({
   queryFn: () => checkAvailability(isbn13, libCode),
   staleTime: AVAILABILITY_STALE,
 })
+
+/** 소장 도서관의 분류번호·청구기호는 장서 정리 때만 바뀌어서 오래 둔다(펼칠 때 한 번만 부른다). */
+export const holdingInfoQuery = (isbn13: string, libCode: string) => ({
+  queryKey: ['holdingInfo', isbn13, libCode] as const,
+  queryFn: () => fetchHoldingInfo(isbn13, libCode),
+  staleTime: 6 * HOUR,
+})
+
+export const fetchHolding = (isbn13: string, libCode: string) =>
+  queryClient.fetchQuery(holdingInfoQuery(isbn13, libCode))
 
 /** 도서 검색: 같은 검색어·쪽은 잠시 다시 부르지 않는다(더 보기·되돌아오기에서 호출을 아낀다). */
 export const fetchBookSearch = (keyword: string, pageNo: number) =>

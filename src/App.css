@@ -374,6 +374,37 @@
   color: var(--tl-fg-muted);
 }
 
+.holdings__where {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tl-space-1);
+  padding-bottom: var(--tl-space-2);
+  border-bottom: 1px dashed var(--tl-border);
+}
+
+.holdings__callsign {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tl-space-1) var(--tl-space-3);
+  margin: 0;
+}
+
+.holdings__callsign-label {
+  color: var(--tl-fg-subtle);
+}
+
+.holdings__callsign strong {
+  color: var(--tl-fg);
+  font-size: var(--tl-text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.holdings__kdc {
+  margin: 0;
+}
+
 .holdings__meta {
   display: flex;
   flex-direction: column;

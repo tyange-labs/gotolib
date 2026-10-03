@@ -5,6 +5,7 @@
 
 import type { Library } from '../types/library'
 import { toSearchResults, type SeojiDoc, type SearchResult } from './bookSearch'
+import { toHoldingInfo, type HoldingInfo, type ItemDoc } from './holdingInfo'
 
 export type { Library }
 
@@ -185,11 +186,38 @@ export async function checkAvailability(
   }
 }
 
+/** 도서관별 장서 조회가 볼 수 있는 가장 이른 등록일(이전에 등록된 책은 응답에 없다). */
+const ITEM_SEARCH_FROM = '2016-01-01'
+
+/**
+ * 도서관 한 곳이 소장한 이 책의 분류번호·청구기호·자료실. 못 찾으면 null(2016년 이전 등록이거나 도서관이
+ * 이 정보를 안 줄 때). 소장 여부(bookExist)와 다른 API라서 소장하는데도 null일 수 있다.
+ */
+export async function fetchHoldingInfo(
+  isbn13: string,
+  libCode: string,
+): Promise<HoldingInfo | null> {
+  const today = new Date()
+  const params = new URLSearchParams({
+    libCode,
+    isbn13,
+    startDt: ITEM_SEARCH_FROM,
+    endDt: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`,
+  })
+  const data = await request(`/api/library/itemSrch?${params}`)
+  const response = data.response
+  if (response?.error) {
+    throw new LibraryApiError(String(response.error))
+  }
+  return toHoldingInfo(response?.docs?.[0]?.doc)
+}
+
 async function request(url: string): Promise<{
   response?: {
     error?: unknown
     numFound?: number | string
     libs?: Array<{ lib: Record<string, string> }>
+    docs?: Array<{ doc: ItemDoc }>
     result?: { hasBook?: string; loanAvailable?: string }
   }
 }> {

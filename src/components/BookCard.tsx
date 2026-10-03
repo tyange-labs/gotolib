@@ -125,6 +125,7 @@ export function BookCard(props: Props) {
         <FavoriteHoldingsPanel
           holdings={holdings()}
           favoritesCount={favoritesCount()}
+          isbn13={props.book.isbn13}
         />
       </Show>
     </li>

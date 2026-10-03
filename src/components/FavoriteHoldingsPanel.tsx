@@ -1,13 +1,17 @@
 import { A } from '@solidjs/router'
 import { ChevronDown, ChevronUp } from 'lucide-solid'
-import { For, Show, createSignal } from 'solid-js'
+import { For, Show, createResource, createSignal } from 'solid-js'
 import type { FavHolding, LoanState } from '../hooks/useFavoriteHoldings'
+import { callSignOf } from '../lib/holdingInfo'
 import { mapLinks, telHref, webUrl } from '../lib/libraryLinks'
+import { fetchHolding } from '../lib/queries'
 import { Spinner } from './Spinner'
 
 interface Props {
   holdings: FavHolding[] | null
   favoritesCount: number
+  /** 도서관별 분류번호·청구기호를 찾는 데 쓴다 */
+  isbn13?: string
 }
 
 export function FavoriteHoldingsPanel(props: Props) {
@@ -27,7 +31,9 @@ export function FavoriteHoldingsPanel(props: Props) {
         {(holdings) => (
           <div class="holdings">
             <ul class="holdings__list">
-              <For each={holdings()}>{(entry) => <HoldingItem entry={entry} />}</For>
+              <For each={holdings()}>
+                {(entry) => <HoldingItem entry={entry} isbn13={props.isbn13} />}
+              </For>
             </ul>
             <p class="holdings__note">
               대출 가능 여부는 도서관정보나루 자료라 실제와 다를 수 있어요. 가기 전에 도서관에
@@ -41,12 +47,18 @@ export function FavoriteHoldingsPanel(props: Props) {
 }
 
 /** 도서관 한 곳. 누르면 찾아가는 데 필요한 정보(주소·전화·홈페이지·운영시간·길찾기)가 펼쳐진다. */
-function HoldingItem(props: { entry: FavHolding }) {
+function HoldingItem(props: { entry: FavHolding; isbn13?: string }) {
   const [open, setOpen] = createSignal(false)
   const library = () => props.entry.library
   const homepage = () => webUrl(library().homepage)
   const tel = () => telHref(library().tel)
   const maps = () => mapLinks(library())
+  // 소장하는 곳만, 펼쳤을 때 한 번 조회한다(도서관마다 요청이 나가므로 미리 부르지 않는다).
+  const held = () => props.entry.loan === 'available' || props.entry.loan === 'onLoan'
+  const [holding] = createResource(
+    () => (open() && held() && props.isbn13 ? props.isbn13 : undefined),
+    (isbn) => fetchHolding(isbn, library().libCode),
+  )
 
   return (
     <li
@@ -71,6 +83,55 @@ function HoldingItem(props: { entry: FavHolding }) {
 
       <Show when={open()}>
         <div class="holdings__detail">
+          <Show when={held()}>
+            <div class="holdings__where">
+              <Show
+                when={!holding.loading}
+                fallback={
+                  <span class="inline-loading">
+                    <Spinner />
+                    청구기호 찾는 중…
+                  </span>
+                }
+              >
+                <Show
+                  when={!holding.error}
+                  fallback={<span>청구기호를 불러오지 못했어요.</span>}
+                >
+                  <Show
+                    when={holding()}
+                    fallback={
+                      <span>
+                        이 도서관이 청구기호를 알려주지 않았어요(2016년 이전에 들어온 책이면 조회되지
+                        않아요). 자료실 서가나 도서관 검색대에서 찾아보세요.
+                      </span>
+                    }
+                  >
+                    {(info) => (
+                      <>
+                        <For each={info().copies}>
+                          {(copy) => (
+                            <p class="holdings__callsign">
+                              <span class="holdings__callsign-label">청구기호</span>
+                              <strong>{callSignOf(info().classNo, copy) || '—'}</strong>
+                              <Show when={copy.location}>
+                                <span class="holdings__location">{copy.location}</span>
+                              </Show>
+                            </p>
+                          )}
+                        </For>
+                        <Show when={info().className}>
+                          <p class="holdings__kdc">
+                            십진분류 {info().classNo} · {info().className}
+                          </p>
+                        </Show>
+                      </>
+                    )}
+                  </Show>
+                </Show>
+              </Show>
+            </div>
+          </Show>
           <dl class="holdings__meta">
             <Show when={library().operatingTime}>
               <div>
