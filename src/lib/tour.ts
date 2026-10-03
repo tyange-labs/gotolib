@@ -18,8 +18,8 @@ export const TOUR_STEPS: TourStep[] = [
     body: '검색으로 담은 책이 이렇게 서재에 쌓여요. 가장 최근에 담은 책이 맨 위예요.',
   },
   {
-    selector: '.list-header__actions',
-    body: "'책 추가'로 제목·저자·ISBN을 검색해 담아요. PC라면 '파일 불러오기'로 알라딘 보관함 파일(xls, csv)을 한꺼번에 가져올 수도 있어요.",
+    selector: '.toolbar',
+    body: "검색창에 제목·저자·ISBN을 입력하면 서재가 걸러지고, 엔터를 누르면 국립중앙도서관에서 새 책을 찾아 담을 수 있어요. PC라면 '파일 불러오기'로 알라딘 보관함 파일(xls, csv)을 가져올 수도 있어요.",
   },
   {
     selector: '.book-card',

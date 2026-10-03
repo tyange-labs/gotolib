@@ -1,5 +1,5 @@
-import { Search, X } from 'lucide-solid'
-import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
+import { X } from 'lucide-solid'
+import { For, Show, createEffect, createMemo, createSignal, on } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { toBook, type SearchResult } from '../lib/bookSearch'
 import { LibraryApiError } from '../lib/libraryApi'
@@ -8,21 +8,16 @@ import { Spinner } from './Spinner'
 import type { Book } from '../types/book'
 
 interface Props {
+  /** 검색어. 서재 검색창에서 엔터를 눌러 넘어온다. 바뀌면 처음부터 다시 검색한다 */
+  keyword: string
   /** 지금 서재의 책. 이미 담은 책은 '담김'으로 보여준다 */
   books: Book[]
   onAdd: (book: Book) => Promise<void>
   onClose: () => void
 }
 
-/** 국립중앙도서관으로 책을 찾아 서재에 담는다. 검색은 엔터(검색 버튼)를 눌렀을 때만 한다. */
+/** 국립중앙도서관으로 책을 찾아 서재에 담는다. 입력창은 서재 검색창과 하나다(엔터를 누르면 이 결과가 열린다). */
 export function BookSearch(props: Props) {
-  // Solid의 ref는 변수에 직접 대입된다. 동적으로 들어온 요소는 autofocus가 먹지 않아 직접 포커스한다.
-  let field!: HTMLInputElement
-  onMount(() => field.focus())
-
-  const [input, setInput] = createSignal('')
-  // 실제로 검색한 키워드. 입력 중인 값(input)과 분리해야 '더 보기'가 같은 검색어로 이어진다.
-  const [keyword, setKeyword] = createSignal('')
   const [results, setResults] = createSignal<SearchResult[]>([])
   const [page, setPage] = createSignal(0)
   // 이번 쪽에서 받은 레코드 수. 같은 책의 중복 레코드가 합쳐져 화면 권수보다 많을 수 있어 '더 보기' 판단은 이걸로 한다.
@@ -59,16 +54,17 @@ export function BookSearch(props: Props) {
     }
   }
 
-  const submit = (e: SubmitEvent) => {
-    e.preventDefault()
-    const word = input().trim()
-    // 키워드 없이 부르면 전체(수백만 건)가 나온다.
-    if (!word || busy()) return
-    setKeyword(word)
-    setResults([])
-    setPage(0)
-    void load(word, 1)
-  }
+  // 검색어가 바뀔 때마다 처음부터 다시 찾는다. 키워드 없이 부르면 전체(수백만 건)가 나오므로 빈 값은 넘어오지 않는다.
+  createEffect(
+    on(
+      () => props.keyword,
+      (word) => {
+        setResults([])
+        setPage(0)
+        void load(word, 1)
+      },
+    ),
+  )
 
   const add = async (result: SearchResult) => {
     // 찜 목록에 있는 책은 다시 담지 않는다(서재와 찜 목록에 같은 책이 있으면 안 된다).
@@ -98,94 +94,82 @@ export function BookSearch(props: Props) {
   const hasMore = () => page() > 0 && fetched() >= 20
 
   return (
-    <section class="book-search" aria-label="책 검색">
-      <form class="book-search__form" onSubmit={submit}>
-        <Search class="searchbar__icon" size={16} aria-hidden />
-        <input
-          ref={field}
-          class="book-search__input"
-          type="search"
-          value={input()}
-          onInput={(e) => setInput(e.currentTarget.value)}
-          placeholder="제목·저자·ISBN으로 검색 (엔터)"
-          aria-label="책 검색어"
-        />
-        <button class="text-button" type="submit" disabled={busy() || !input().trim()}>
-          검색
-        </button>
+    <section class="book-search" aria-label="새 책 검색 결과">
+      <div class="book-search__head">
+        <span class="book-search__title">
+          ‘{props.keyword}’ 새 책 검색 <span class="book-search__source">국립중앙도서관</span>
+        </span>
         <button
           class="icon-button"
           type="button"
           onClick={() => props.onClose()}
-          aria-label="책 검색 닫기"
+          aria-label="새 책 검색 닫기"
         >
           <X size={16} />
         </button>
-      </form>
+      </div>
 
       <Show when={error()}>
         {(message) => <p class="message message--error">{message()}</p>}
       </Show>
 
-      <Show when={keyword()}>
-        <Show
-          when={results().length > 0 || busy()}
-          fallback={
-            <Show when={!error()}>
-              <p class="message">'{keyword()}'에 맞는 책이 없어요.</p>
-            </Show>
-          }
-        >
-          <ul class="search-results">
-            <For each={results()}>
-              {(result) => (
-                <li class="search-result">
-                  <div class="search-result__body">
-                    <span class="search-result__title">{result.title}</span>
-                    <span class="search-result__meta">
-                      {[
-                        result.author,
-                        result.publisher,
-                        result.pubDate?.slice(0, 4),
-                        result.edition,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </span>
-                  </div>
-                  <button
-                    class="text-button"
-                    classList={{ 'text-button--done': has(result.id) }}
-                    disabled={watchlist.has(result.id)}
-                    onClick={() => void add(result)}
-                  >
-                    {watchlist.has(result.id)
-                      ? '찜 목록에 있음'
-                      : has(result.id)
-                        ? '담김 · 다시 담기'
-                        : '추가'}
-                  </button>
-                </li>
-              )}
-            </For>
-          </ul>
+      <Show
+        when={results().length > 0 || busy()}
+        fallback={
+          <Show when={!error()}>
+            <p class="message">'{props.keyword}'에 맞는 책이 없어요.</p>
+          </Show>
+        }
+      >
+        <ul class="search-results">
+          <For each={results()}>
+            {(result) => (
+              <li class="search-result">
+                <div class="search-result__body">
+                  <span class="search-result__title">{result.title}</span>
+                  <span class="search-result__meta">
+                    {[
+                      result.author,
+                      result.publisher,
+                      result.pubDate?.slice(0, 4),
+                      result.edition,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </span>
+                </div>
+                <button
+                  class="text-button"
+                  classList={{ 'text-button--done': has(result.id) }}
+                  disabled={watchlist.has(result.id)}
+                  onClick={() => void add(result)}
+                >
+                  {watchlist.has(result.id)
+                    ? '찜 목록에 있음'
+                    : has(result.id)
+                      ? '담김 · 다시 담기'
+                      : '추가'}
+                </button>
+              </li>
+            )}
+          </For>
+        </ul>
 
-          <div class="search-footer">
-            <span class="search-footer__count">
-              <Show when={busy()} fallback={`${results().length}권 표시 · 국립중앙도서관`}>
-                <span class="inline-loading">
-                  <Spinner />
-                  검색 중…
-                </span>
-              </Show>
-            </span>
-            <Show when={hasMore() && !busy()}>
-              <button class="text-button" onClick={() => void load(keyword(), page() + 1)}>
-                더 보기
-              </button>
+        <div class="search-footer">
+          <span class="search-footer__count">
+            <Show when={busy()} fallback={`${results().length}권 표시`}>
+              <span class="inline-loading">
+                <Spinner />
+                검색 중…
+              </span>
             </Show>
-          </div>
-        </Show>
+          </span>
+          <Show when={hasMore() && !busy()}>
+            <button class="text-button" onClick={() => void load(props.keyword, page() + 1)}>
+              더 보기
+            </button>
+          </Show>
+        </div>
       </Show>
     </section>
   )
