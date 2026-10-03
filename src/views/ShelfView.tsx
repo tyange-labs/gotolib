@@ -6,13 +6,15 @@ import { ImportDropzone } from '../components/ImportDropzone'
 import { Pagination } from '../components/Pagination'
 import { SearchBar } from '../components/SearchBar'
 import { WatchlistSummary } from '../components/WatchlistSummary'
-import { useBookFilter } from '../hooks/useBookFilter'
+import { ALL_CLASSES, useBookFilter } from '../hooks/useBookFilter'
 import { usePagination } from '../hooks/usePagination'
 import { buildClassTabs } from '../lib/kdc'
 import { tourStep } from '../lib/tour'
 import type { Book } from '../types/book'
 
 const PAGE_SIZE = 20
+/** 분류 필터는 책이 이만큼 쌓였을 때부터 보인다(적을 땐 검색으로 충분하고 칸만 차지한다). */
+const GENRE_FILTER_MIN_BOOKS = 10
 
 /** '내 서재': 입력으로 서재를 거른다. '책 추가': 엔터로 국립중앙도서관에서 새 책을 찾는다. */
 type Mode = 'shelf' | 'add'
@@ -39,6 +41,15 @@ export function ShelfView(props: Props) {
   // 분류·검색이 바뀌면 첫 페이지로 되돌린다.
   // `on`이 없으면 setPage가 읽는 것까지 추적돼 매 페이지 이동마다 1로 되돌아간다.
   createEffect(on([kdcClass, query], () => setPage(1), { defer: true }))
+
+  const showGenreFilter = () =>
+    mode() === 'shelf' &&
+    props.books.length >= GENRE_FILTER_MIN_BOOKS &&
+    classTabs().length > 1
+  // 필터 칸이 사라졌는데(책을 지워 줄어듦 등) 고른 분류가 남아 있으면 안 보이는 필터가 목록을 가린다.
+  createEffect(() => {
+    if (!showGenreFilter() && kdcClass() !== ALL_CLASSES) setKdcClass(ALL_CLASSES)
+  })
 
   // 입력창은 하나지만 모드마다 하는 일이 하나뿐이다(palim의 격자·흐름처럼). 서재 필터 글자와 새 책 검색어는 따로 둔다.
   // eslint-disable-next-line solid/reactivity -- 처음 그릴 때의 값만 필요하다(이후는 사용자가 고른다).
@@ -127,11 +138,10 @@ export function ShelfView(props: Props) {
             placeholder="제목·저자·ISBN으로 새 책 찾기"
           />
         </Show>
-        {/* 분류 탭은 서재를 거를 때만 쓴다 */}
-        <Show when={mode() === 'shelf' && props.books.length > 0}>
+        {/* 분류 필터는 서재를 거를 때만, 책이 충분하고 분류가 둘 이상일 때만 쓴다 */}
+        <Show when={showGenreFilter()}>
           <GenreTabs
             tabs={classTabs()}
-            total={props.books.length}
             selected={kdcClass()}
             onSelect={setKdcClass}
           />

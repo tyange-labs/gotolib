@@ -4,7 +4,6 @@ import type { ClassTab } from '../lib/kdc'
 
 interface Props {
   tabs: ClassTab[]
-  total: number
   selected: string
   onSelect: (value: string) => void
 }
@@ -19,9 +18,7 @@ export function GenreTabs(props: Props) {
         value={props.selected}
         onChange={(e) => props.onSelect(e.currentTarget.value)}
       >
-        <option value={ALL_CLASSES}>
-          {ALL_CLASSES} ({props.total})
-        </option>
+        <option value={ALL_CLASSES}>전체 분류</option>
         <For each={props.tabs}>
           {(tab) => (
             <option value={tab.label}>
