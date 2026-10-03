@@ -63,6 +63,17 @@ export default defineConfig(({ mode }) => {
         '/api/cms': {
           target: env.CMS_API_TARGET || 'http://localhost:8080',
           rewrite: (path) => path.replace(/^\/api\/cms/, ''),
+          // 개발 서버가 계정 API에 못 닿으면(로컬 cms-api가 꺼져 있을 때) 이유를 화면에 보인다. 그냥 두면 이유 없는 500이다.
+          configure: (proxy) => {
+            proxy.on('error', (_err, _req, res) => {
+              if ('writeHead' in res && !res.headersSent) {
+                res.writeHead(503, { 'content-type': 'text/plain; charset=utf-8' })
+              }
+              res.end(
+                `계정 서버(${env.CMS_API_TARGET || 'localhost:8080'})에 연결할 수 없어요. 로컬 cms-api를 켜 주세요(패스키는 로컬 서버를 PASSKEY_RP_ID=localhost로 띄워야 해요).`,
+              )
+            })
+          },
         },
         '/api/library': {
           target: 'https://data4library.kr',
