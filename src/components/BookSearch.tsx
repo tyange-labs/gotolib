@@ -1,5 +1,6 @@
 import { Search, X } from 'lucide-solid'
 import { For, Show, createMemo, createSignal, onMount } from 'solid-js'
+import { useApp } from '../context/appContext'
 import { toBook, type SearchResult } from '../lib/bookSearch'
 import { LibraryApiError } from '../lib/libraryApi'
 import { fetchBookSearch } from '../lib/queries'
@@ -31,8 +32,10 @@ export function BookSearch(props: Props) {
   // 이 화면에서 방금 담은 책(서재 갱신이 오기 전에도 바로 '담김'으로 보이게)
   const [added, setAdded] = createSignal<ReadonlySet<string>>(new Set())
 
+  const { watchlist } = useApp()
   const shelfIds = createMemo(() => new Set(props.books.map((book) => book.id)))
-  const has = (id: string) => shelfIds().has(id) || added().has(id)
+  // 찜한 책은 서재에서 빠져 찜 목록에 있다. 둘 다 '이미 담은 책'이다.
+  const has = (id: string) => shelfIds().has(id) || watchlist.has(id) || added().has(id)
 
   const load = async (word: string, pageNo: number) => {
     setBusy(true)
@@ -68,6 +71,8 @@ export function BookSearch(props: Props) {
   }
 
   const add = async (result: SearchResult) => {
+    // 찜 목록에 있는 책은 다시 담지 않는다(서재와 찜 목록에 같은 책이 있으면 안 된다).
+    if (watchlist.has(result.id)) return
     // 이미 서재에 있는 책이면 확인을 받는다. 같은 id로 다시 저장하면 기존 항목이 사라지고 새로 담은 시각(최신순 맨 앞)으로 바뀐다.
     if (
       has(result.id) &&
@@ -151,9 +156,14 @@ export function BookSearch(props: Props) {
                   <button
                     class="text-button"
                     classList={{ 'text-button--done': has(result.id) }}
+                    disabled={watchlist.has(result.id)}
                     onClick={() => void add(result)}
                   >
-                    {has(result.id) ? '담김 · 다시 담기' : '추가'}
+                    {watchlist.has(result.id)
+                      ? '찜 목록에 있음'
+                      : has(result.id)
+                        ? '담김 · 다시 담기'
+                        : '추가'}
                   </button>
                 </li>
               )}

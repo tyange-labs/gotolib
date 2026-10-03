@@ -2,7 +2,7 @@
  * IndexedDB ↔ 동기화 문서. 합치기 규칙(syncDoc.ts)은 여기서 모른다: 읽어서 문서로 만들고,
  * 합쳐진 문서와 달라진 항목만 저장소에 반영한다.
  */
-import { TOMB, getDB } from './db'
+import { TOMB, getDB, type WatchItem } from './db'
 import {
   canonical,
   emptyDoc,
@@ -41,6 +41,11 @@ function bookValue(book: Book): Book {
   return { id, title, author, publisher, pubDate, isbn13, kdc, addedAt }
 }
 
+/** 찜 항목의 문서 값: 책 값 + 찜한 시각 */
+function watchValue(item: WatchItem): WatchEntryValue {
+  return { ...bookValue(item), watchedAt: item.watchedAt }
+}
+
 export async function readSyncDoc(): Promise<SyncDoc> {
   const db = await getDB()
   const [books, watch, favs, tombs] = await Promise.all([
@@ -54,9 +59,9 @@ export async function readSyncDoc(): Promise<SyncDoc> {
   for (const book of books) {
     doc.books[book.id] = { at: book.updatedAt ?? book.addedAt, value: bookValue(book) }
   }
-  // 찜·자주 가는 도서관은 담은 시각(addedAt)이 곧 마지막으로 바뀐 시각이다.
+  // 찜은 찜한 시각(watchedAt), 자주 가는 도서관은 담은 시각(addedAt)이 곧 마지막으로 바뀐 시각이다.
   for (const item of watch) {
-    doc.watchlist[item.bookId] = { at: item.addedAt, value: item }
+    doc.watchlist[item.id] = { at: item.watchedAt, value: watchValue(item) }
   }
   for (const lib of favs) {
     doc.favLibraries[lib.libCode] = { at: lib.addedAt, value: lib }

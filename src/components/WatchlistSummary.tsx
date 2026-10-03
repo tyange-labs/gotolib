@@ -1,9 +1,12 @@
 import { A } from '@solidjs/router'
 import { ChevronDown, ChevronUp, Heart } from 'lucide-solid'
-import { For, Show, createEffect, createSignal, on } from 'solid-js'
+import { For, Show, createEffect, createSignal, on, onCleanup } from 'solid-js'
 import { useApp } from '../context/appContext'
+import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'
 import type { Library } from '../lib/libraryApi'
+import { fadeOut } from '../lib/motion'
 import { fetchAvailability } from '../lib/queries'
+import { FavoriteHoldingsPanel } from './FavoriteHoldingsPanel'
 import { Spinner } from './Spinner'
 import type { Book } from '../types/book'
 
@@ -15,27 +18,37 @@ type BookStatus =
   | { state: 'error' }
 
 /**
- * 찜한 책들의 대출 가능 여부(자주 가는 도서관 기준). 조회는 **펼쳤을 때만** 한다 — 찜 5권 × 자주 가는
- * 도서관 수만큼 요청이 나가므로, 서재에 들어왔다고 미리 보내지 않는다. 항목을 누르면 목록의 그 책으로 간다.
+ * 찜 목록. 찜한 책은 서재에서 빠져 여기에만 있다. 조회는 **펼쳤을 때만** 한다 — 찜 5권 × 자주 가는 도서관
+ * 수만큼 요청이 나가므로, 서재에 들어왔다고 미리 보내지 않는다. 책을 누르면 도서관별 소장을 보고,
+ * 하트를 누르면 찜을 풀어 서재로 돌려보낸다(흐려지며 사라질 뿐 날아가지 않는다).
  */
-export function WatchlistSummary(props: { onSelect?: (bookId: string) => void }) {
-  const { books, watchlist, favorites } = useApp()
+export function WatchlistSummary() {
+  const { watchlist, favorites } = useApp()
   const [expanded, setExpanded] = createSignal(false)
+  const [bump, setBump] = createSignal(false)
   const [statuses, setStatuses] = createSignal<Record<string, BookStatus>>({})
 
-  const watched = () =>
-    watchlist
-      .ids()
-      .map((id) => books().find((b) => b.id === id))
-      .filter((b): b is Book => Boolean(b))
-
+  const watched = () => watchlist.items()
   const favs = () => favorites.favorites()
+
+  // 찜이 늘면 머리를 살짝 튕겨서 책이 여기로 들어왔음을 알린다.
+  createEffect(
+    on(
+      () => watched().length,
+      (count, prev) => {
+        if (prev === undefined || count <= prev) return
+        setBump(true)
+        const timer = setTimeout(() => setBump(false), 500)
+        onCleanup(() => clearTimeout(timer))
+      },
+    ),
+  )
 
   // 조회 재실행 키 (찜한 도서 집합 + 자주 가는 도서관 집합이 바뀔 때만).
   // `on`으로 이 키와 펼침 여부만 추적한다. 그냥 두면 아래에서 읽는 statuses까지
   // 의존이 되어 응답이 올 때마다 조회가 다시 돈다.
   const key = () =>
-    `${watchlist.ids().join(',')}|${favs().map((f) => f.libCode).join(',')}`
+    `${watched().map((b) => b.id).join(',')}|${favs().map((f) => f.libCode).join(',')}`
 
   // 접었다 펴거나 찜이 바뀌어 조회가 겹칠 수 있다. 가장 최근 조회의 결과만 반영한다.
   // (접을 때 조회를 취소하지 않는다: 이미 나간 요청은 캐시에 남아 다시 펼 때 쓰인다.)
@@ -62,12 +75,16 @@ export function WatchlistSummary(props: { onSelect?: (bookId: string) => void })
     }),
   )
 
-
   return (
-    <Show when={watched().length > 0}>
-      <section class="watchlist">
+    <Show
+      when={watched().length > 0}
+      // 찜이 아직 없을 때도 '날아갈 곳'을 표시해 둔다(첫 찜이 들어갈 자리).
+      fallback={<div class="watchlist-anchor" data-watch-target />}
+    >
+      <section class="watchlist" classList={{ 'watchlist--bump': bump() }}>
         <button
           class="watchlist__header"
+          data-watch-target
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded()}
         >
@@ -85,30 +102,83 @@ export function WatchlistSummary(props: { onSelect?: (bookId: string) => void })
         <Show when={expanded()}>
           <ul class="watchlist__list">
             <Show when={favs().length === 0}>
-              <li class="watchlist__item">
+              <li class="watchlist__hint">
                 <A href="/nearby">주변 도서관</A>에서 자주 가는 도서관을 먼저
-                등록하세요.
+                등록하면 대출 가능 여부를 볼 수 있어요.
               </li>
             </Show>
-            <Show when={favs().length > 0}>
-              <For each={watched()}>
-                {(book) => (
-                  <li class="watchlist__item">
-                    <button
-                      class="watchlist__book"
-                      onClick={() => props.onSelect?.(book.id)}
-                    >
-                      {book.title}
-                    </button>
-                    <StatusLabel status={statuses()[book.id]} />
-                  </li>
-                )}
-              </For>
-            </Show>
+            <For each={watched()}>
+              {(book) => (
+                <WatchRow
+                  book={book}
+                  status={favs().length > 0 ? statuses()[book.id] : undefined}
+                />
+              )}
+            </For>
           </ul>
         </Show>
       </section>
     </Show>
+  )
+}
+
+/** 찜한 책 한 줄: 누르면 도서관별 소장, 하트로 찜 풀기. */
+function WatchRow(props: { book: Book; status?: BookStatus }) {
+  const { watchlist } = useApp()
+  const { holdings, favoritesCount, lookup, reset } = useFavoriteHoldings(
+    () => props.book.isbn13,
+  )
+  const [open, setOpen] = createSignal(false)
+  const [leaving, setLeaving] = createSignal(false)
+  let row!: HTMLLIElement
+
+  const toggle = () => {
+    if (open()) {
+      setOpen(false)
+      reset()
+    } else {
+      setOpen(true)
+      lookup()
+    }
+  }
+
+  const unwatch = async () => {
+    if (leaving()) return
+    setLeaving(true)
+    await fadeOut(row)
+    await watchlist.unwatch(props.book.id)
+  }
+
+  return (
+    <li class="watchlist__item" ref={row}>
+      <div class="watchlist__row">
+        <button
+          class="watchlist__book"
+          onClick={toggle}
+          disabled={!props.book.isbn13}
+          aria-expanded={open()}
+          title={props.book.isbn13 ? '눌러서 자주 가는 도서관 소장 확인' : 'ISBN이 없어 조회할 수 없어요'}
+        >
+          <span class="watchlist__book-title">{props.book.title}</span>
+          <span class="watchlist__book-meta">
+            {[props.book.author, props.book.pubDate?.slice(0, 4)].filter(Boolean).join(' · ')}
+          </span>
+        </button>
+        <Show when={props.status}>{(status) => <StatusLabel status={status()} />}</Show>
+        <button
+          class="icon-button"
+          onClick={() => void unwatch()}
+          disabled={leaving()}
+          aria-label={`${props.book.title} 찜 해제`}
+          title="찜 풀기(서재로 돌아가요)"
+        >
+          <Heart size={14} fill="currentColor" />
+        </button>
+      </div>
+      <Show when={open()}>
+        <FavoriteHoldingsPanel holdings={holdings()} favoritesCount={favoritesCount()} />
+      </Show>
+    </li>
   )
 }
 

@@ -1,39 +1,43 @@
 import { createSignal, onCleanup, onMount } from 'solid-js'
-import { addWatchItem, getWatchlist, removeWatchItem } from '../lib/db'
-import { onDataApplied } from '../lib/localEvents'
+import { getWatchlist, unwatchBook, watchBook, type WatchItem } from '../lib/db'
+import { emitDataApplied, onDataApplied } from '../lib/localEvents'
+import { WATCHLIST_LIMIT } from '../lib/syncDoc'
+import type { Book } from '../types/book'
 
-/** 찜 목록 최대 개수 (gotolib_0 기준) */
-export const WATCHLIST_LIMIT = 5
+export { WATCHLIST_LIMIT }
 
+/**
+ * 찜 목록. 찜한 책은 서재에서 빠져 여기에만 있다(책 정보를 통째로 갖는다). 서재와 찜 목록이 같은 데이터를
+ * 나눠 쓰므로, 옮긴 뒤에는 둘 다 다시 읽게 알린다.
+ */
 export function useWatchlist() {
-  const [ids, setIds] = createSignal<string[]>([])
+  const [items, setItems] = createSignal<WatchItem[]>([])
 
   const load = () =>
     getWatchlist()
-      .then((items) => setIds(items.map((i) => i.bookId)))
-      .catch(() => setIds([]))
+      .then(setItems)
+      .catch(() => setItems([]))
 
   onMount(() => {
     void load()
     onCleanup(onDataApplied(() => void load()))
   })
 
-  const has = (bookId: string) => ids().includes(bookId)
+  const has = (bookId: string) => items().some((item) => item.id === bookId)
+  const isFull = () => items().length >= WATCHLIST_LIMIT
 
-  const isFull = () => ids().length >= WATCHLIST_LIMIT
-
-  /** 추가/제거. 한도 초과로 추가 못하면 false. */
-  const toggle = async (bookId: string): Promise<boolean> => {
-    if (ids().includes(bookId)) {
-      await removeWatchItem(bookId)
-    } else {
-      if (ids().length >= WATCHLIST_LIMIT) return false
-      await addWatchItem(bookId)
-    }
-    const items = await getWatchlist()
-    setIds(items.map((i) => i.bookId))
-    return true
+  /** 서재의 책을 찜으로 옮긴다. 한도가 차서 못 옮기면 false. */
+  const watch = async (book: Book): Promise<boolean> => {
+    const moved = await watchBook(book)
+    emitDataApplied()
+    return moved
   }
 
-  return { ids, has, isFull, count: () => ids().length, toggle }
+  /** 찜을 풀어 책을 서재로 되돌린다. */
+  const unwatch = async (bookId: string): Promise<void> => {
+    await unwatchBook(bookId)
+    emitDataApplied()
+  }
+
+  return { items, has, isFull, count: () => items().length, watch, unwatch }
 }

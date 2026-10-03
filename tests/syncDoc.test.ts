@@ -10,12 +10,14 @@ import {
   normalizeDoc,
   parseDoc,
   type SyncDoc,
+  type WatchEntryValue,
 } from '../src/lib/syncDoc'
 import type { Book } from '../src/types/book'
 
 const book = (id: string, title = id): Book => ({ id, title, addedAt: 1 })
 const doc = (patch: Partial<SyncDoc>): SyncDoc => ({ ...emptyDoc(), ...patch })
 const live = <T>(at: number, value: T) => ({ at, value })
+const watched = (id: string, at = 1): WatchEntryValue => ({ ...book(id), watchedAt: at })
 const gone = (at: number) => ({ at, deleted: true as const })
 
 describe('mergeDocs', () => {
@@ -42,7 +44,7 @@ describe('mergeDocs', () => {
   })
 
   test('시각이 같으면 삭제가 이긴다(순서와 무관)', () => {
-    const a = doc({ watchlist: { w: live(7, { bookId: 'w', addedAt: 7 }) } })
+    const a = doc({ watchlist: { w: live(7, watched('w', 7)) } })
     const b = doc({ watchlist: { w: gone(7) } })
     expect(mergeDocs(a, b).watchlist.w.deleted).toBe(true)
     expect(mergeDocs(b, a).watchlist.w.deleted).toBe(true)
@@ -51,7 +53,7 @@ describe('mergeDocs', () => {
   test('교환·결합·멱등: 어떤 순서로 합쳐도 결과가 같다', () => {
     const a = doc({
       books: { x: live(3, book('x', 'a')), y: gone(4) },
-      watchlist: { w: live(2, { bookId: 'w', addedAt: 2 }) },
+      watchlist: { w: live(2, watched('w', 2)) },
     })
     const b = doc({
       books: { x: live(3, book('x', 'b')), y: live(2, book('y')) },
@@ -77,7 +79,7 @@ describe('normalizeDoc', () => {
     Object.fromEntries(
       Array.from({ length: count }, (_, i) => [
         `b${i}`,
-        live(100 + i, { bookId: `b${i}`, addedAt: 100 + i }),
+        live(100 + i, watched(`b${i}`, 100 + i)),
       ]),
     )
 
@@ -86,8 +88,12 @@ describe('normalizeDoc', () => {
     expect(normalizeDoc(d)).toBe(d)
   })
 
-  test('한도를 넘으면 가장 오래된 것부터 삭제 표시로 바꾼다', () => {
+  test('한도를 넘으면 가장 오래된 것부터 찜을 풀어 서재로 돌려보낸다(책을 잃지 않는다)', () => {
     const out = normalizeDoc(doc({ watchlist: watch(WATCHLIST_LIMIT + 2) }))
+    expect(out.books.b0?.value?.title).toBe('b0')
+    expect(out.books.b0?.deleted).toBeUndefined()
+    expect(out.books.b0).not.toHaveProperty('value.watchedAt')
+    expect(out.books.b2).toBeUndefined()
     const liveKeys = Object.entries(out.watchlist)
       .filter(([, e]) => !e.deleted)
       .map(([k]) => k)
@@ -107,8 +113,96 @@ describe('normalizeDoc', () => {
 
   test('정규화로 지워진 항목을 나중에 다시 찜하면 되살아난다', () => {
     const trimmed = normalizeDoc(doc({ watchlist: watch(WATCHLIST_LIMIT + 1) }))
-    const again = doc({ watchlist: { b0: live(500, { bookId: 'b0', addedAt: 500 }) } })
+    const again = doc({ watchlist: { b0: live(500, watched('b0', 500)) } })
     expect(mergeDocs(trimmed, again).watchlist.b0.deleted).toBeUndefined()
+  })
+})
+
+describe('한 책은 서재와 찜 중 한 곳에만', () => {
+  test('둘 다 살아 있으면 더 늦게 바뀐 쪽이 이긴다', () => {
+    const watchWins = normalizeDoc(
+      doc({ books: { x: live(5, book('x')) }, watchlist: { x: live(9, watched('x', 9)) } }),
+    )
+    expect(watchWins.books.x.deleted).toBe(true)
+    expect(watchWins.watchlist.x.deleted).toBeUndefined()
+
+    const shelfWins = normalizeDoc(
+      doc({ books: { x: live(12, book('x')) }, watchlist: { x: live(9, watched('x', 9)) } }),
+    )
+    expect(shelfWins.books.x.deleted).toBeUndefined()
+    expect(shelfWins.watchlist.x.deleted).toBe(true)
+  })
+
+  test('같은 시각이면 찜이 이긴다', () => {
+    const out = normalizeDoc(
+      doc({ books: { x: live(9, book('x')) }, watchlist: { x: live(9, watched('x', 9)) } }),
+    )
+    expect(out.watchlist.x.deleted).toBeUndefined()
+    expect(out.books.x.deleted).toBe(true)
+  })
+
+  test('기기마다 따로 정규화해도 같은 결과로 수렴한다', () => {
+    const a = doc({ books: { x: live(5, book('x')) } })
+    const b = doc({ watchlist: { x: live(9, watched('x', 9)) } })
+    expect(canonical(normalizeDoc(mergeDocs(a, b)))).toBe(
+      canonical(normalizeDoc(mergeDocs(b, a))),
+    )
+  })
+
+  test('옮긴 직후(서재 삭제 표시 + 찜 항목)는 그대로 둔다', () => {
+    const d = doc({ books: { x: gone(9) }, watchlist: { x: live(9, watched('x', 9)) } })
+    expect(normalizeDoc(d)).toBe(d)
+  })
+
+  test('찜을 풀어 서재로 돌아간 책은 옛 찜 항목을 이긴다', () => {
+    const before = doc({ books: { x: gone(9) }, watchlist: { x: live(9, watched('x', 9)) } })
+    const after = doc({ books: { x: live(15, book('x')) }, watchlist: { x: gone(15) } })
+    const out = normalizeDoc(mergeDocs(before, after))
+    expect(out.books.x.deleted).toBeUndefined()
+    expect(out.watchlist.x.deleted).toBe(true)
+  })
+})
+
+describe('버전 1 문서 이전', () => {
+  test('찜 참조를 찜 항목으로 옮기고 서재에서는 뺀다', () => {
+    const v1 = {
+      v: 1,
+      books: { x: live(3, book('x', '찜한 책')), y: live(4, book('y')) },
+      watchlist: { x: live(8, { bookId: 'x', addedAt: 8 }) },
+      favLibraries: {},
+    }
+    const out = parseDoc(v1)
+    expect(out.v).toBe(2)
+    expect(out.watchlist.x.value?.title).toBe('찜한 책')
+    expect(out.watchlist.x.value?.watchedAt).toBe(8)
+    expect(out.books.x.deleted).toBe(true)
+    expect(out.books.y.value?.title).toBe('y')
+  })
+
+  test('서재에 없는 책(샘플)을 찜한 항목과 삭제된 찜은 버린다', () => {
+    const out = parseDoc({
+      v: 1,
+      books: {},
+      watchlist: {
+        ghost: live(5, { bookId: 'ghost', addedAt: 5 }),
+        old: gone(6),
+      },
+      favLibraries: {},
+    })
+    expect(out.watchlist.ghost).toEqual({ at: 5, deleted: true })
+    expect(out.watchlist.old).toEqual({ at: 6, deleted: true })
+  })
+
+  test('옮긴 결과는 어떤 기기에서 읽어도 같고, 이미 옮긴 문서와 합쳐도 같다', () => {
+    const v1 = {
+      v: 1,
+      books: { x: live(3, book('x')) },
+      watchlist: { x: live(8, { bookId: 'x', addedAt: 8 }) },
+      favLibraries: {},
+    }
+    const once = parseDoc(v1)
+    expect(canonical(parseDoc(JSON.parse(JSON.stringify(v1))))).toBe(canonical(once))
+    expect(canonical(mergeDocs(once, once))).toBe(canonical(once))
   })
 })
 
@@ -178,7 +272,7 @@ describe('limitDoc', () => {
   test('찜·자주 가는 도서관은 책 상한의 영향을 받지 않는다', () => {
     const d = doc({
       books: manyBooks(SYNC_MAX_BOOKS + 10),
-      watchlist: { w: live(9, { bookId: 'w', addedAt: 9 }) },
+      watchlist: { w: live(9, watched('w', 9)) },
     })
     expect(limitDoc(d).doc.watchlist.w).toBeDefined()
   })

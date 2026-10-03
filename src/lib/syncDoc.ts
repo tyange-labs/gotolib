@@ -8,7 +8,7 @@
 import type { Library } from '../types/library'
 import type { Book } from '../types/book'
 
-export const SYNC_VERSION = 1
+export const SYNC_VERSION = 2
 /** 찜 목록 최대 개수. useWatchlist의 한도와 같아야 한다. */
 export const WATCHLIST_LIMIT = 5
 /**
@@ -19,10 +19,12 @@ export const SYNC_MAX_BOOKS = 1000
 /** 서버에 올리는 삭제 표시 상한(가장 최근 것부터). 지운 책이 쌓여 문서가 커지는 걸 막는다. */
 export const SYNC_MAX_TOMBSTONES = 1500
 
-export interface WatchEntryValue {
-  bookId: string
-  addedAt: number
-}
+/**
+ * 찜한 책: 책 정보를 통째로 갖고(서재의 책과 같은 모양), 찜한 시각만 더한다. 찜한 책은 서재(books)에서
+ * 빠지고 여기에만 있다 — 같은 책이 두 곳에 동시에 있지 않다. `addedAt`은 서재에 담았던 시각을 지켜서,
+ * 찜을 풀어 서재로 돌아갈 때 원래 자리로 간다.
+ */
+export type WatchEntryValue = Book & { watchedAt: number }
 export type FavLibraryValue = Library & { addedAt: number }
 
 export interface SyncEntry<T> {
@@ -88,29 +90,79 @@ export function mergeDocs(a: SyncDoc, b: SyncDoc): SyncDoc {
   }
 }
 
+/** 찜 항목에서 서재 책으로 되돌린 값 */
+export function unwatched(value: WatchEntryValue): Book {
+  const book: Partial<WatchEntryValue> = { ...value }
+  delete book.watchedAt
+  return book as Book
+}
+
 /**
- * 합친 결과에 불변식을 맞춘다: 살아 있는 찜이 한도를 넘으면 오래된 것부터 삭제 표시로 바꾼다.
- * 삭제 표시의 시각을 `at + 1`로 정하는 건, 기기마다 'now'가 달라 결과가 갈리는 걸 막기 위해서다.
- * (그 사이 누군가 더 최근에 다시 찜하면 그쪽이 이긴다.)
+ * 합친 결과에 불변식을 맞춘다. 모두 결정적이라 기기마다 따로 해도 같은 결과로 수렴한다.
+ * 1. 한 책은 서재와 찜 중 한 곳에만 산다: 둘 다 살아 있으면(두 기기에서 동시에 다르게 바꾼 경우) 더 늦게
+ *    바뀐 쪽이 이기고(같으면 찜), 진 쪽은 삭제 표시가 된다.
+ * 2. 살아 있는 찜이 한도를 넘으면 오래된 것부터 서재로 돌려보낸다(책을 잃지 않는다).
+ * 삭제 표시·되돌림의 시각을 `at + 1`로 정하는 건, 기기마다 'now'가 달라 결과가 갈리는 걸 막기 위해서다.
+ * (그 사이 누군가 더 최근에 바꾸면 그쪽이 이긴다.)
  */
 export function normalizeDoc(doc: SyncDoc): SyncDoc {
-  const live = Object.entries(doc.watchlist)
+  let books = doc.books
+  let watchlist = doc.watchlist
+
+  for (const [id, watch] of Object.entries(doc.watchlist)) {
+    const book = doc.books[id]
+    if (watch.deleted || !book || book.deleted) continue
+    if (watch.at >= book.at) {
+      books = { ...books, [id]: { at: book.at + 1, deleted: true } }
+    } else {
+      watchlist = { ...watchlist, [id]: { at: watch.at + 1, deleted: true } }
+    }
+  }
+
+  const live = Object.entries(watchlist)
     .filter(([, entry]) => !entry.deleted)
     // 새로운 것 먼저. 같은 시각이면 키로 가른다.
     .sort(([ka, a], [kb, b]) => b.at - a.at || (ka < kb ? -1 : 1))
-  if (live.length <= WATCHLIST_LIMIT) return doc
-
-  const watchlist = { ...doc.watchlist }
-  for (const [key, entry] of live.slice(WATCHLIST_LIMIT)) {
-    watchlist[key] = { at: entry.at + 1, deleted: true }
+  for (const [id, entry] of live.slice(WATCHLIST_LIMIT)) {
+    watchlist = { ...watchlist, [id]: { at: entry.at + 1, deleted: true } }
+    if (entry.value) books = { ...books, [id]: { at: entry.at + 1, value: unwatched(entry.value) } }
   }
-  return { ...doc, watchlist }
+
+  return books === doc.books && watchlist === doc.watchlist ? doc : { ...doc, books, watchlist }
+}
+
+/**
+ * 버전 1 문서(찜이 `{ bookId, addedAt }` 참조였을 때)를 새 모양으로 바꾼다: 서재에 있는 책이면 찜 항목으로
+ * 옮기고 서재 쪽은 삭제 표시로 둔다. 서재에 없으면(샘플을 찜한 경우) 찜을 버린다. 모든 기기가 같은
+ * 결과를 내도록 시각은 문서 안의 값으로만 정한다.
+ */
+function migrateV1(raw: Partial<Omit<SyncDoc, 'v'>>): SyncDoc {
+  const record = (value: unknown) =>
+    value && typeof value === 'object' ? (value as Record<string, never>) : {}
+  const books: SyncDoc['books'] = { ...record(raw.books) }
+  const watchlist: SyncDoc['watchlist'] = {}
+  for (const [id, entry] of Object.entries(
+    record(raw.watchlist) as Record<string, SyncEntry<{ addedAt?: number }>>,
+  )) {
+    const book = books[id]
+    if (entry.deleted || !book || book.deleted || !book.value) {
+      watchlist[id] = { at: entry.at, deleted: true }
+      continue
+    }
+    watchlist[id] = {
+      at: entry.at,
+      value: { ...book.value, watchedAt: entry.value?.addedAt ?? entry.at },
+    }
+    books[id] = { at: Math.max(book.at, entry.at), deleted: true }
+  }
+  return { v: SYNC_VERSION, books, watchlist, favLibraries: record(raw.favLibraries) }
 }
 
 /** 서버에서 받은 값을 믿지 않고 모양만 확인한다. 맞지 않으면 빈 문서로 취급한다. */
 export function parseDoc(raw: unknown): SyncDoc {
   if (!raw || typeof raw !== 'object') return emptyDoc()
-  const doc = raw as Partial<SyncDoc>
+  const doc = raw as Partial<Omit<SyncDoc, 'v'>> & { v?: number }
+  if (doc.v === 1) return migrateV1(doc)
   if (doc.v !== SYNC_VERSION) return emptyDoc()
   const record = (value: unknown) =>
     value && typeof value === 'object' ? (value as Record<string, never>) : {}

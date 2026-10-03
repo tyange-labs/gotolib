@@ -3,6 +3,7 @@ import { ChevronLeft } from 'lucide-solid'
 import { Show } from 'solid-js'
 import { FavoriteStar } from './FavoriteStar'
 import type { NearbyLibrary } from '../hooks/useNearbyLibraries'
+import { webUrl } from '../lib/libraryLinks'
 
 interface Props {
   library: NearbyLibrary
@@ -45,15 +46,17 @@ export function LibraryDetail(props: Props) {
             value={`${props.library.bookCount!.toLocaleString()}권`}
           />
         </Show>
-        <Show when={props.library.homepage}>
-          <div class="detail__row">
-            <dt class="detail__label">홈페이지</dt>
-            <dd class="detail__value">
-              <a href={props.library.homepage} target="_blank" rel="noreferrer">
-                바로가기
-              </a>
-            </dd>
-          </div>
+        <Show when={webUrl(props.library.homepage)}>
+          {(href) => (
+            <div class="detail__row">
+              <dt class="detail__label">홈페이지</dt>
+              <dd class="detail__value">
+                <a href={href()} target="_blank" rel="noopener noreferrer">
+                  바로가기
+                </a>
+              </dd>
+            </div>
+          )}
         </Show>
       </dl>
 

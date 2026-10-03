@@ -1,6 +1,6 @@
 import { createSignal, onCleanup, onMount } from 'solid-js'
 import { SAMPLE_BOOKS } from '../data/sampleBooks'
-import { clearBooks, deleteBook, getAllBooks, saveBooks } from '../lib/db'
+import { clearBooks, deleteBook, getAllBooks, getWatchlist, saveBooks } from '../lib/db'
 import { onDataApplied } from '../lib/localEvents'
 import { ParseError, parseAladinExport } from '../lib/parseAladin'
 import type { Book } from '../types/book'
@@ -17,10 +17,14 @@ export function useBooks() {
   const [isSample, setIsSample] = createSignal(false)
 
   const load = () =>
-    getAllBooks()
-      .then((stored) => {
-        if (stored.length === 0) {
-          setBooks(SAMPLE_BOOKS)
+    Promise.all([getAllBooks(), getWatchlist()])
+      .then(([stored, watched]) => {
+        const sampleIds = new Set(SAMPLE_BOOKS.map((book) => book.id))
+        // 서재가 비어 있고 찜한 책도 샘플뿐이면 아직 내 책이 없는 것 → 샘플을 보여준다(찜한 샘플은 찜 목록에 있으니 뺀다).
+        // 찜한 책이 샘플이 아니라면 내 책이 전부 찜 목록으로 간 것이라 샘플을 되살리지 않는다.
+        if (stored.length === 0 && watched.every((item) => sampleIds.has(item.id))) {
+          const watchedIds = new Set(watched.map((item) => item.id))
+          setBooks(SAMPLE_BOOKS.filter((book) => !watchedIds.has(book.id)))
           setIsSample(true)
         } else {
           setBooks(stored)
@@ -40,8 +44,7 @@ export function useBooks() {
     try {
       const parsed = parseAladinExport(await file.arrayBuffer())
       await saveBooks(parsed)
-      setBooks(await getAllBooks())
-      setIsSample(false)
+      await load()
       return { imported: parsed.length }
     } catch (e) {
       setError(
@@ -56,8 +59,7 @@ export function useBooks() {
   /** 검색 등으로 책 한 권을 서재에 담는다. 샘플을 보던 중이면 내 목록으로 바뀐다. */
   const addBook = async (book: Book) => {
     await saveBooks([book])
-    setBooks(await getAllBooks())
-    setIsSample(false)
+    await load()
   }
 
   const removeBook = async (id: string) => {
@@ -67,9 +69,8 @@ export function useBooks() {
 
   const clearAll = async () => {
     await clearBooks()
-    // 모두 지우면 다시 데모 샘플로 되돌아간다
-    setBooks(SAMPLE_BOOKS)
-    setIsSample(true)
+    // 찜한 책이 없으면 다시 데모 샘플로 되돌아간다
+    await load()
   }
 
   return {

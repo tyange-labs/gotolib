@@ -1,5 +1,4 @@
 import { Show, createEffect, createSignal, on } from 'solid-js'
-import { ImportDropzone } from '../components/ImportDropzone'
 import { LoadingMessage } from '../components/Spinner'
 import { useApp } from '../context/appContext'
 import { startTourIfFirstRun } from '../lib/tour'
@@ -45,24 +44,18 @@ export function ShelfRoute() {
       </Show>
 
       <Show when={!loading()} fallback={<LoadingMessage>불러오는 중…</LoadingMessage>}>
-        <Show
-          when={books().length > 0}
-          fallback={<ImportDropzone onFile={handleFile} />}
-        >
-          <Show when={isSample()}>
-            <p class="sample-note">
-              샘플 데이터예요. 알라딘 보관함 파일을 불러오면 내 목록으로
-              바뀝니다.
-            </p>
-          </Show>
-          <ShelfView
-            books={books()}
-            onRemove={removeBook}
-            onClearAll={clearAll}
-            onImport={handleFile}
-            onAdd={addBook}
-          />
+        <Show when={isSample()}>
+          <p class="sample-note">
+            샘플 데이터예요. '책 추가'로 책을 검색해 담으면 내 서재로 바뀝니다.
+          </p>
         </Show>
+        <ShelfView
+          books={books()}
+          onRemove={removeBook}
+          onClearAll={clearAll}
+          onImport={handleFile}
+          onAdd={addBook}
+        />
       </Show>
     </>
   )

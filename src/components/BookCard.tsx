@@ -1,19 +1,14 @@
 import { Heart, X } from 'lucide-solid'
-import { Show, createEffect, createSignal, on, onCleanup } from 'solid-js'
+import { Show, createEffect, createSignal, onCleanup } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'
+import { flyToWatchlist } from '../lib/motion'
 import type { Book } from '../types/book'
 import { FavoriteHoldingsPanel } from './FavoriteHoldingsPanel'
-
-/** 찜 목록 등에서 '이 책으로 가라'는 일회성 요청. 새 객체가 올 때마다 한 번 처리한다. */
-export interface FocusRequest {
-  id: string
-}
 
 interface Props {
   book: Book
   onRemove: (id: string) => void
-  focusRequest?: FocusRequest | null
 }
 
 /** 판본이 다른 같은 제목을 구분하려고 발행연도를 보여준다. 알라딘은 '2016-01-15'·'20160115' 꼴이라 앞 4자리만. */
@@ -36,25 +31,22 @@ export function BookCard(props: Props) {
     onCleanup(() => clearTimeout(timer))
   })
 
-  const watched = () => watchlist.has(props.book.id)
-  const watchDisabled = () => !watched() && watchlist.isFull()
+  // 찜한 책은 서재에서 빠지므로(찜 목록으로 옮겨진다) 이 카드는 항상 찜하지 않은 책이다.
+  const watchDisabled = () => watchlist.isFull()
+  const [flying, setFlying] = createSignal(false)
 
   let item!: HTMLLIElement
 
-  // 내 책에 대한 요청이면 펼치고(이미 펼쳐져 있으면 그대로) 그 위치로 스크롤한다.
-  createEffect(
-    on(
-      () => props.focusRequest,
-      (request) => {
-        if (request?.id !== props.book.id) return
-        if (!open()) {
-          setOpen(true)
-          lookup()
-        }
-        item.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      },
-    ),
-  )
+  /** 찜 목록으로 날아가며 사라진 뒤 저장소에서 옮긴다. 못 옮기면(한도) 카드를 되돌린다. */
+  const watch = async () => {
+    if (flying() || watchDisabled()) return
+    setFlying(true)
+    const { restore } = await flyToWatchlist(item)
+    if (!(await watchlist.watch(props.book))) {
+      restore()
+      setFlying(false)
+    }
+  }
 
   const toggleLookup = () => {
     if (open()) {
@@ -107,17 +99,16 @@ export function BookCard(props: Props) {
           >
             <button
               class="icon-button"
-              onClick={() => watchlist.toggle(props.book.id)}
-              disabled={watchDisabled()}
-              aria-pressed={watched()}
-              aria-label={watched() ? '찜 목록에서 제거' : '찜 목록에 추가'}
+              onClick={() => void watch()}
+              disabled={watchDisabled() || flying()}
+              aria-label="찜 목록에 추가"
               title={
                 watchDisabled()
                   ? `찜 목록은 최대 ${watchlist.count()}권이에요`
-                  : undefined
+                  : '찜 목록으로 옮기기'
               }
             >
-              <Heart size={16} fill={watched() ? 'currentColor' : 'none'} />
+              <Heart size={16} fill={flying() ? 'currentColor' : 'none'} />
             </button>
             <button
               class="icon-button"

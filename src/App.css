@@ -70,6 +70,16 @@
   opacity: 0.4;
 }
 
+.text-button--strong {
+  color: var(--tl-fg);
+  font-weight: 500;
+}
+
+.text-button--quiet {
+  font-size: var(--tl-text-xs);
+  color: var(--tl-fg-subtle);
+}
+
 .text-button--danger {
   color: var(--tl-danger);
 }
@@ -328,12 +338,83 @@
   gap: var(--tl-space-2);
 }
 
-.holdings__item,
-.watchlist__item {
+.holdings__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tl-space-2);
+}
+
+.holdings__summary {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--tl-space-3);
+  width: 100%;
+  text-align: left;
+}
+
+.holdings__summary:hover .holdings__name,
+.holdings__summary[aria-expanded='true'] .holdings__name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.holdings__chevron {
+  display: inline-flex;
+  align-self: center;
+  color: var(--tl-fg-subtle);
+}
+
+.holdings__detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tl-space-2);
+  padding: var(--tl-space-2) 0 var(--tl-space-1) var(--tl-space-3);
+  font-size: var(--tl-text-xs);
+  color: var(--tl-fg-muted);
+}
+
+.holdings__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tl-space-1);
+  margin: 0;
+}
+
+.holdings__meta div {
+  display: flex;
+  gap: var(--tl-space-3);
+}
+
+.holdings__meta dt {
+  flex-shrink: 0;
+  width: 2.2em;
+  color: var(--tl-fg-subtle);
+}
+
+.holdings__meta dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.holdings__links {
+  display: flex;
+  gap: var(--tl-space-4);
+  margin: 0;
+}
+
+.holdings__links a,
+.holdings__meta a {
+  color: var(--tl-fg);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.holdings__note {
+  margin: var(--tl-space-3) 0 0;
+  font-size: var(--tl-text-xs);
+  color: var(--tl-fg-subtle);
 }
 
 .holdings__item--dim {
@@ -388,17 +469,82 @@
   margin-top: var(--tl-space-3);
 }
 
+.watchlist__item {
+  display: flex;
+  flex-direction: column;
+}
+
+.watchlist__row {
+  display: flex;
+  align-items: center;
+  gap: var(--tl-space-3);
+}
+
 .watchlist__book {
+  flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
   text-align: left;
 }
 
-.watchlist__book:hover {
+.watchlist__book:disabled {
+  cursor: default;
+}
+
+.watchlist__book-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.watchlist__book:hover:not(:disabled) .watchlist__book-title,
+.watchlist__book[aria-expanded='true'] .watchlist__book-title {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.watchlist__book-meta {
+  font-size: var(--tl-text-xs);
+  color: var(--tl-fg-muted);
+}
+
+.watchlist__hint {
+  color: var(--tl-fg-muted);
+}
+
+/* 첫 찜이 들어갈 자리 표시(보이지 않는다) */
+.watchlist-anchor {
+  height: 0;
+}
+
+/* 찜이 늘면 머리가 살짝 튕긴다 */
+.watchlist--bump .watchlist__title {
+  animation: watchlist-bump 0.45s ease;
+}
+
+@keyframes watchlist-bump {
+  40% {
+    transform: scale(1.12);
+  }
+}
+
+/* 서재의 책이 찜 목록으로 날아갈 때의 조각(문서 좌표 absolute, 스크립트가 위치를 정한다) */
+.fly-ghost {
+  position: absolute;
+  z-index: 60;
+  pointer-events: none;
+  padding: var(--tl-space-2) var(--tl-space-3);
+  border: 1px solid var(--tl-border);
+  border-radius: var(--tl-radius-sm, 4px);
+  background: var(--tl-bg);
+  color: var(--tl-fg);
+  font-size: var(--tl-text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform-origin: left top;
 }
 
 /* ── 페이지 이동: 이전 · 3 / 12 · 다음 ───────────────── */
