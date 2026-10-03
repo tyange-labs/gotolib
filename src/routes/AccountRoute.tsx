@@ -14,6 +14,7 @@ import {
 import { lastSyncedAt, omittedBooks, syncError, syncNow, syncStatus } from '../lib/sync'
 import { SYNC_MAX_BOOKS } from '../lib/syncDoc'
 import { replayTour } from '../lib/tour'
+import { InfoTip } from '../components/InfoTip'
 import { Spinner } from '../components/Spinner'
 
 /** '/account' — 로그인(패스키), 패스키 추가·삭제, 동기화 상태 */
@@ -172,7 +173,27 @@ function SignedIn() {
       </section>
 
       <section class="account__section">
-        <h2 class="account__title">이 계정의 패스키</h2>
+        <h2 class="account__title">
+          이 계정의 패스키
+          <InfoTip label="패스키 안내">
+            <strong>패스키는 이 계정에 등록된 로그인 열쇠예요.</strong>
+            <ul>
+              <li>
+                1Password·iCloud 키체인·Google 비밀번호 관리자에 저장하면 한 패스키를 여러
+                기기에서 함께 써요.
+              </li>
+              <li>기기에만 저장하면 기기마다 패스키를 추가해야 해요.</li>
+              <li>
+                ‘마지막 로그인’은 패스키로 로그인할 때만 기록돼요. 이미 로그인된 기기를 계속 쓰면
+                갱신되지 않아요.
+              </li>
+              <li>
+                모두 잃으면 계정을 되찾을 수 없으니 백업으로 하나 더 등록해 두세요. 책 목록은 알라딘
+                파일로 다시 만들 수 있어요.
+              </li>
+            </ul>
+          </InfoTip>
+        </h2>
         <Show
           when={passkeys()?.length}
           fallback={
@@ -196,7 +217,7 @@ function SignedIn() {
                       {`등록 ${item.created_at?.slice(0, 10) ?? ''}`}
                       {item.last_used_at
                         ? ` · 마지막 로그인 ${item.last_used_at.slice(0, 10)}`
-                        : ' · 이 패스키로 로그인한 적 없음'}
+                        : ''}
                     </span>
                   </span>
                   <button
@@ -256,12 +277,6 @@ function SignedIn() {
               패스키 추가
             </button>
           </form>
-          <p class="account__hint">
-            1Password·iCloud 키체인·Google 비밀번호 관리자에 저장된 패스키는 여러 기기에서 같이
-            쓰여요. 그래서 패스키를 기기별로 구분하지 않고, 이름(만든 곳)과 마지막 로그인만 보여줘요.
-            패스키를 모두 잃으면 이 계정을 되찾을 수 없지만, 책 목록은 알라딘 파일로 다시 만들 수
-            있어요.
-          </p>
         </Show>
       </section>
 

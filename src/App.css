@@ -1106,7 +1106,80 @@
   gap: var(--tl-space-3);
 }
 
+/* ── 물음표 말풍선 ───────────────────────────────────── */
+.infotip {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: var(--tl-space-1);
+}
+
+.infotip__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--tl-space-1);
+  color: var(--tl-fg-subtle);
+}
+
+.infotip__button:hover,
+.infotip__button:focus-visible,
+.infotip--pinned .infotip__button {
+  color: var(--tl-fg);
+}
+
+.infotip__bubble {
+  position: absolute;
+  top: calc(100% + var(--tl-space-1));
+  left: 0;
+  z-index: 20;
+  width: min(22rem, calc(100vw - 2rem));
+  padding: var(--tl-space-3) var(--tl-space-4);
+  border: 1px solid var(--tl-border-strong);
+  border-radius: var(--tl-radius-md);
+  background: var(--tl-surface);
+  color: var(--tl-fg);
+  font-size: var(--tl-text-xs);
+  font-weight: 400;
+  line-height: 1.6;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-2px);
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease,
+    visibility 0.12s;
+  pointer-events: none;
+}
+
+.infotip:hover .infotip__bubble,
+.infotip:focus-within .infotip__bubble,
+.infotip--pinned .infotip__bubble {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+}
+
+.infotip__bubble ul {
+  margin: var(--tl-space-2) 0 0;
+  padding-left: 1.1em;
+}
+
+.infotip__bubble li + li {
+  margin-top: var(--tl-space-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .infotip__bubble {
+    transition: none;
+  }
+}
+
 .account__title {
+  display: flex;
+  align-items: center;
   margin: 0;
   font-size: var(--tl-text-sm);
   font-weight: 500;
