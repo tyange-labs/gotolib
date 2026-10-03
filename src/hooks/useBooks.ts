@@ -1,6 +1,6 @@
 import { createSignal, onCleanup, onMount } from 'solid-js'
 import { SAMPLE_BOOKS } from '../data/sampleBooks'
-import { clearBooks, deleteBook, getAllBooks, getWatchlist, saveBooks } from '../lib/db'
+import { clearBooks, deleteBook, getAllBooks, getWatchlist, onDbBlocked, saveBooks } from '../lib/db'
 import { onDataApplied } from '../lib/localEvents'
 import { ParseError, parseAladinExport } from '../lib/parseAladin'
 import type { Book } from '../types/book'
@@ -19,6 +19,7 @@ export function useBooks() {
   const load = () =>
     Promise.all([getAllBooks(), getWatchlist()])
       .then(([stored, watched]) => {
+        setError(null)
         const sampleIds = new Set(SAMPLE_BOOKS.map((book) => book.id))
         // 서재가 비어 있고 찜한 책도 샘플뿐이면 아직 내 책이 없는 것 → 샘플을 보여준다(찜한 샘플은 찜 목록에 있으니 뺀다).
         // 찜한 책이 샘플이 아니라면 내 책이 전부 찜 목록으로 간 것이라 샘플을 되살리지 않는다.
@@ -35,6 +36,14 @@ export function useBooks() {
 
   onMount(() => {
     void load().finally(() => setLoading(false))
+    // 구버전을 연 다른 탭이 저장소를 쥐고 있으면 열기가 끝나지 않는다: 멈춘 채로 두지 않고 이유를 알린다.
+    // (그 탭을 닫으면 열기가 이어지고 load가 끝나며 이 안내는 저절로 사라진다.)
+    onCleanup(
+      onDbBlocked(() => {
+        setError('다른 탭에서 gotolib이 열려 있어 업데이트를 마치지 못했어요. 다른 gotolib 탭을 닫아 주세요.')
+        setLoading(false)
+      }),
+    )
     // 다른 기기의 변경이 동기화로 들어오면 다시 읽는다.
     onCleanup(onDataApplied(() => void load()))
   })

@@ -109,3 +109,32 @@ describe('데이터베이스 v4 → v5 이전', () => {
     expect((await raw.getAll('tombstones')).map((t: { key: string }) => t.key)).toContain('b:a')
   })
 })
+
+describe('다른 탭이 구버전 연결을 쥐고 있을 때', () => {
+  test('막힘을 알리고, 그 연결이 닫히면 열기가 이어진다', async () => {
+    resetIndexedDB()
+    // 구버전 탭: v4를 열고 versionchange에 응답하지 않는다(닫지 않는다).
+    const oldTab = await openDB('gotolib', 4, {
+      upgrade(d) {
+        d.createObjectStore('books', { keyPath: 'id' }).createIndex('by-addedAt', 'addedAt')
+        d.createObjectStore('favLibraries', { keyPath: 'libCode' })
+        d.createObjectStore('watchlist', { keyPath: 'bookId' })
+        d.createObjectStore('apiCache', { keyPath: 'key' })
+        d.createObjectStore('tombstones', { keyPath: 'key' })
+      },
+    })
+    const db = await import(`../src/lib/db?${Math.random()}`)
+    let blocked = 0
+    db.onDbBlocked(() => blocked++)
+    let opened = false
+    const pending = db.getAllBooks().then(() => {
+      opened = true
+    })
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(blocked).toBeGreaterThan(0)
+    expect(opened).toBe(false)
+    oldTab.close()
+    await pending
+    expect(opened).toBe(true)
+  })
+})

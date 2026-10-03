@@ -49,8 +49,29 @@ export const TOMB = {
 
 let dbPromise: Promise<IDBPDatabase<GotolibDB>> | null = null
 
+/**
+ * 저장소 업그레이드가 막혔을 때의 알림. 구버전을 연 다른 탭이 이전 연결을 쥐고 있으면 브라우저는 새 버전의
+ * 열기를 그 탭이 닫힐 때까지 무한정 기다린다(아무 오류도 없이). 화면이 '불러오는 중'에서 멈추지 않게 알린다.
+ */
+const blockedListeners = new Set<() => void>()
+export const onDbBlocked = (listener: () => void) => {
+  blockedListeners.add(listener)
+  return () => {
+    blockedListeners.delete(listener)
+  }
+}
+
 export function getDB() {
   dbPromise ??= openDB<GotolibDB>('gotolib', 5, {
+    blocked() {
+      blockedListeners.forEach((listener) => listener())
+    },
+    // 더 새로운 버전이 업그레이드하려 하면 연결을 놓고 다시 불러온다(그래야 그쪽이 막히지 않는다).
+    blocking() {
+      void dbPromise?.then((db) => db.close())
+      dbPromise = null
+      location.reload()
+    },
     async upgrade(db, oldVersion, _newVersion, tx) {
       if (oldVersion < 1) {
         const store = db.createObjectStore('books', { keyPath: 'id' })
