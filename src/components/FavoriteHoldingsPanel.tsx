@@ -35,10 +35,6 @@ export function FavoriteHoldingsPanel(props: Props) {
                 {(entry) => <HoldingItem entry={entry} isbn13={props.isbn13} />}
               </For>
             </ul>
-            <p class="holdings__note">
-              대출 가능 여부는 도서관정보나루 자료라 실제와 다를 수 있어요. 가기 전에 도서관에
-              전화나 홈페이지로 확인하세요.
-            </p>
           </div>
         )}
       </Show>

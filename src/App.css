@@ -524,12 +524,6 @@
   text-underline-offset: 2px;
 }
 
-.holdings__note {
-  margin: var(--tl-space-3) 0 0;
-  font-size: var(--tl-text-xs);
-  color: var(--tl-fg-subtle);
-}
-
 .holdings__item--dim {
   opacity: 0.45;
 }
