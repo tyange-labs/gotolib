@@ -49,6 +49,9 @@ export function FavoriteHoldingsPanel(props: Props) {
 /** 도서관 한 곳. 누르면 찾아가는 데 필요한 정보(주소·전화·홈페이지·운영시간·길찾기)가 펼쳐진다. */
 function HoldingItem(props: { entry: FavHolding; isbn13?: string }) {
   const [open, setOpen] = createSignal(false)
+  // 운영시간·전화·홈페이지·지도는 평소엔 접어 둔다(청구기호가 먼저 보이게). 소장하지 않는 도서관은 펼친 것 자체가
+  // 정보를 달라는 요청이라 바로 보여준다.
+  const [infoOpen, setInfoOpen] = createSignal(false)
   const library = () => props.entry.library
   const homepage = () => webUrl(library().homepage)
   const tel = () => telHref(library().tel)
@@ -132,49 +135,65 @@ function HoldingItem(props: { entry: FavHolding; isbn13?: string }) {
               </Show>
             </div>
           </Show>
-          <dl class="holdings__meta">
-            <Show when={library().operatingTime}>
-              <div>
-                <dt>운영</dt>
-                <dd>{library().operatingTime}</dd>
-              </div>
-            </Show>
-            <Show when={library().closed}>
-              <div>
-                <dt>휴관</dt>
-                <dd>{library().closed}</dd>
-              </div>
-            </Show>
-            <Show when={tel()}>
-              {(href) => (
+          <Show when={held()}>
+            <button
+              class="text-button holdings__info-toggle"
+              onClick={() => setInfoOpen((v) => !v)}
+              aria-expanded={infoOpen()}
+            >
+              도서관 정보 {infoOpen() ? '접기' : '보기'}
+              <span class="holdings__chevron" aria-hidden>
+                <Show when={infoOpen()} fallback={<ChevronDown size={12} />}>
+                  <ChevronUp size={12} />
+                </Show>
+              </span>
+            </button>
+          </Show>
+          <Show when={!held() || infoOpen()}>
+            <dl class="holdings__meta">
+              <Show when={library().operatingTime}>
                 <div>
-                  <dt>전화</dt>
-                  <dd>
-                    <a href={href()}>{library().tel}</a>
-                  </dd>
+                  <dt>운영</dt>
+                  <dd>{library().operatingTime}</dd>
                 </div>
-              )}
-            </Show>
-          </dl>
-          <p class="holdings__links">
-            <Show when={homepage()}>
-              {(href) => (
-                <a href={href()} target="_blank" rel="noopener noreferrer">
-                  홈페이지
-                </a>
-              )}
-            </Show>
-            <a href={maps().map} target="_blank" rel="noopener noreferrer">
-              지도
-            </a>
-            <Show when={maps().route}>
-              {(href) => (
-                <a href={href()} target="_blank" rel="noopener noreferrer">
-                  길찾기
-                </a>
-              )}
-            </Show>
-          </p>
+              </Show>
+              <Show when={library().closed}>
+                <div>
+                  <dt>휴관</dt>
+                  <dd>{library().closed}</dd>
+                </div>
+              </Show>
+              <Show when={tel()}>
+                {(href) => (
+                  <div>
+                    <dt>전화</dt>
+                    <dd>
+                      <a href={href()}>{library().tel}</a>
+                    </dd>
+                  </div>
+                )}
+              </Show>
+            </dl>
+            <p class="holdings__links">
+              <Show when={homepage()}>
+                {(href) => (
+                  <a href={href()} target="_blank" rel="noopener noreferrer">
+                    홈페이지
+                  </a>
+                )}
+              </Show>
+              <a href={maps().map} target="_blank" rel="noopener noreferrer">
+                지도
+              </a>
+              <Show when={maps().route}>
+                {(href) => (
+                  <a href={href()} target="_blank" rel="noopener noreferrer">
+                    길찾기
+                  </a>
+                )}
+              </Show>
+            </p>
+          </Show>
         </div>
       </Show>
     </li>

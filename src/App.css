@@ -405,6 +405,14 @@
   margin: 0;
 }
 
+.holdings__info-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tl-space-1);
+  align-self: flex-start;
+  font-size: var(--tl-text-xs);
+}
+
 .holdings__meta {
   display: flex;
   flex-direction: column;
