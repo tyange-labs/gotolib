@@ -184,10 +184,6 @@ function SignedIn() {
               </li>
               <li>기기에만 저장하면 기기마다 패스키를 추가해야 해요.</li>
               <li>
-                ‘마지막 로그인’은 패스키로 로그인할 때만 기록돼요. 이미 로그인된 기기를 계속 쓰면
-                갱신되지 않아요.
-              </li>
-              <li>
                 모두 잃으면 계정을 되찾을 수 없으니 백업으로 하나 더 등록해 두세요. 책 목록은 알라딘
                 파일로 다시 만들 수 있어요.
               </li>
@@ -215,9 +211,6 @@ function SignedIn() {
                     <span class="account__meta">
                       {' · '}
                       {`등록 ${item.created_at?.slice(0, 10) ?? ''}`}
-                      {item.last_used_at
-                        ? ` · 마지막 로그인 ${item.last_used_at.slice(0, 10)}`
-                        : ''}
                     </span>
                   </span>
                   <button
