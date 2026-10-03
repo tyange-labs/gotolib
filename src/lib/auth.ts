@@ -181,11 +181,24 @@ export async function loginWithPasskey() {
     throw new AuthError(webauthnMessage(e))
   }
 
-  const response = await api<LoginResponse>('/passkeys/login/finish', {
-    method: 'POST',
-    json: { challenge_id: start.challenge_id, credential },
-    auth: false,
-  })
+  let response: LoginResponse
+  try {
+    response = await api<LoginResponse>('/passkeys/login/finish', {
+      method: 'POST',
+      json: { challenge_id: start.challenge_id, credential },
+      auth: false,
+    })
+  } catch (e) {
+    // 401은 서버가 이 패스키를 모른다는 뜻이다: 계정 화면에서 지웠거나 다른 계정의 것. 이 기기(브라우저·키체인)에는
+    // 패스키가 남아 있어서 로그인 창에는 계속 나온다.
+    if (e instanceof AuthError && e.status === 401) {
+      throw new AuthError(
+        '이 패스키는 서버에 등록돼 있지 않아요(삭제했거나 다른 계정의 패스키예요). 로그인 창에서 다른 패스키를 고르거나 \'다른 기기의 패스키 사용\'을 선택하세요. 이 기기에 남은 옛 패스키는 비밀번호 관리자에서 지울 수 있어요.',
+        401,
+      )
+    }
+    throw e
+  }
   adopt(response, credential.id)
 }
 
