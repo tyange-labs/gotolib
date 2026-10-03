@@ -16,15 +16,11 @@ import { createSignal } from 'solid-js'
 
 const API = '/api/cms'
 const STORAGE_KEY = 'gotolib.session'
-/** 이 브라우저에서 만들었거나 로그인에 쓴 패스키 id들. 계정 화면에서 '이 기기'를 표시하는 데 쓴다(서버는 기기를 모른다). */
-const DEVICE_KEY = 'gotolib.devicePasskeys'
 
 export interface Session {
   token: string
   userId: string
   role: string
-  /** 이 로그인에 쓴 패스키의 id(브라우저가 알려준 값, 서버 목록의 id와 같다). 목록에서 '지금 사용 중'을 표시한다. */
-  credentialId?: string
 }
 
 export interface PasskeyInfo {
@@ -65,32 +61,6 @@ function save(next: Session | null) {
 }
 
 export const logout = () => save(null)
-
-function loadDeviceIds(): string[] {
-  try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(DEVICE_KEY) ?? '[]')
-    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []
-  } catch {
-    return []
-  }
-}
-
-const [deviceIds, setDeviceIds] = createSignal<string[]>(loadDeviceIds())
-
-/** 이 기기(브라우저)의 패스키인가: 여기서 만들었거나 로그인에 쓴 것. 로그아웃해도 남는다. */
-export const isThisDevice = (id: string) =>
-  deviceIds().includes(id) || session()?.credentialId === id
-
-function rememberDevicePasskey(id: string) {
-  if (deviceIds().includes(id)) return
-  const next = [...deviceIds(), id]
-  setDeviceIds(next)
-  try {
-    localStorage.setItem(DEVICE_KEY, JSON.stringify(next))
-  } catch {
-    // 저장이 막힌 환경에서는 이번 세션 동안만 기억한다.
-  }
-}
 
 /** JWT payload의 sub(사용자 id). 검증은 서버가 하고, 여기선 화면 표시용으로만 읽는다. */
 function subjectOf(token: string): string {
@@ -162,17 +132,15 @@ interface LoginResponse {
   user_role: string
 }
 
-function adopt(response: LoginResponse, credentialId?: string) {
-  if (credentialId) rememberDevicePasskey(credentialId)
+function adopt(response: LoginResponse) {
   save({
     token: response.access_token,
     userId: subjectOf(response.access_token),
     role: response.user_role,
-    credentialId,
   })
 }
 
-/** 가입: 이 기기에서 패스키를 만들면서 계정이 생긴다. 이메일·비밀번호는 없다. */
+/** 가입: 패스키를 만들면서 계정이 생긴다. 이메일·비밀번호는 없다. */
 export async function signUpWithPasskey(label: string) {
   const start = await api<{
     challenge_id: string
@@ -191,15 +159,11 @@ export async function signUpWithPasskey(label: string) {
     json: { challenge_id: start.challenge_id, label, credential },
     auth: false,
   })
-  adopt(response, credential.id)
+  adopt(response)
 }
 
-/**
- * 사용자명 없이: 브라우저가 이 사이트의 패스키를 골라준다.
- * `onlyCredentialId`를 주면 그 패스키로만 인증하게 한다 — 로그아웃 없이 '이 패스키가 이 기기에 있나' 확인하는 데
- * 쓴다(성공하면 이 기기의 패스키로 기억되고 서버에 사용 시각이 남는다).
- */
-export async function loginWithPasskey(onlyCredentialId?: string) {
+/** 사용자명 없이: 브라우저가 이 사이트의 패스키를 골라준다. */
+export async function loginWithPasskey() {
   const start = await api<{
     challenge_id: string
     options: { publicKey: PublicKeyCredentialRequestOptionsJSON }
@@ -208,12 +172,7 @@ export async function loginWithPasskey(onlyCredentialId?: string) {
   let credential
   try {
     credential = await startAuthentication({
-      optionsJSON: onlyCredentialId
-        ? {
-            ...start.options.publicKey,
-            allowCredentials: [{ id: onlyCredentialId, type: 'public-key' }],
-          }
-        : start.options.publicKey,
+      optionsJSON: start.options.publicKey,
     })
   } catch (e) {
     throw new AuthError(webauthnMessage(e))
@@ -231,19 +190,16 @@ export async function loginWithPasskey(onlyCredentialId?: string) {
     // 패스키가 남아 있어서 로그인 창에는 계속 나온다.
     if (e instanceof AuthError && e.status === 401) {
       throw new AuthError(
-        '이 패스키는 서버에 등록돼 있지 않아요(삭제했거나 다른 계정의 패스키예요). 로그인 창에서 다른 패스키를 고르거나 \'다른 기기의 패스키 사용\'을 선택하세요. 이 기기에 남은 옛 패스키는 비밀번호 관리자에서 지울 수 있어요.',
+        '이 패스키는 서버에 등록돼 있지 않아요(삭제했거나 다른 계정의 패스키예요). 로그인 창에서 다른 패스키를 고르거나 \'다른 기기의 패스키 사용\'을 선택하세요. 1Password 같은 비밀번호 관리자에 남은 옛 패스키는 거기서 지울 수 있어요.',
         401,
       )
     }
     throw e
   }
-  adopt(response, credential.id)
+  adopt(response)
 }
 
-/** 이 패스키가 이 기기에 있는지 확인한다(로그인된 상태 그대로, 생체인증 한 번). 이 기능 전에 만든 패스키를 이 기기 것으로 알아보게 한다. */
-export const confirmPasskeyHere = (id: string) => loginWithPasskey(id)
-
-/** 로그인한 상태에서 이 기기에 패스키를 등록한다. */
+/** 로그인한 상태에서 패스키를 하나 더 등록한다. */
 export async function registerPasskey(label: string) {
   const start = await api<{
     challenge_id: string
@@ -261,7 +217,6 @@ export async function registerPasskey(label: string) {
     method: 'POST',
     json: { challenge_id: start.challenge_id, label, credential },
   })
-  rememberDevicePasskey(credential.id)
 }
 
 export const listPasskeys = () => api<PasskeyInfo[]>('/passkeys')
@@ -283,7 +238,7 @@ function webauthnMessage(e: unknown): string {
   if (name === 'NotAllowedError') {
     return '패스키 인증이 끝나지 않았어요. 창을 닫았거나, 시크릿 모드 같은 브라우저 설정 때문에 막혔을 수 있어요. (NotAllowedError)'
   }
-  if (name === 'InvalidStateError') return '이 기기에는 이미 등록된 패스키입니다.'
+  if (name === 'InvalidStateError') return '이 계정의 패스키가 이미 있어요(1Password 같은 비밀번호 관리자에 저장돼 있을 수 있어요).'
   if (name === 'NotSupportedError') return '이 브라우저는 패스키를 지원하지 않습니다.'
   const detail = e instanceof Error ? e.message : ''
   return `패스키 처리에 실패했어요${name ? ` (${name}${detail ? `: ${detail}` : ''})` : ''}`

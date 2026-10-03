@@ -3,9 +3,7 @@ import { browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { For, Match, Show, Switch, createResource, createSignal } from 'solid-js'
 import {
   CANCELLED,
-  confirmPasskeyHere,
   deletePasskey,
-  isThisDevice,
   listPasskeys,
   loginWithPasskey,
   logout,
@@ -18,7 +16,7 @@ import { SYNC_MAX_BOOKS } from '../lib/syncDoc'
 import { replayTour } from '../lib/tour'
 import { Spinner } from '../components/Spinner'
 
-/** '/account' — 로그인(패스키 우선), 이 기기에 패스키 등록, 동기화 상태 */
+/** '/account' — 로그인(패스키), 패스키 추가·삭제, 동기화 상태 */
 export function AccountRoute() {
   return (
     <>
@@ -70,8 +68,8 @@ function SignedOut() {
   return (
     <div class="account">
       <p class="account__lead">
-        기기들 사이에 책 목록과 찜 목록을 동기화해요. 이메일이나 비밀번호는 없고, 이 기기의
-        패스키(생체인증) 하나로 가입도 로그인도 해요.
+        기기들 사이에 책 목록과 찜 목록을 동기화해요. 이메일이나 비밀번호는 없고, 패스키
+        (생체인증) 하나로 가입도 로그인도 해요.
       </p>
 
       <Show
@@ -182,7 +180,7 @@ function SignedIn() {
             <Show when={passkeys() !== undefined}>
               <p class="message message--error account__warn">
                 패스키가 하나도 없어요. 이 상태에서 로그아웃하면 이 계정으로 다시 로그인할 수 없어요.
-                지금 이 기기에 패스키를 추가하세요.
+                지금 패스키를 추가하세요.
               </p>
             </Show>
           }
@@ -193,9 +191,6 @@ function SignedIn() {
                 <li class="account__row">
                   <span>
                     {item.label}
-                    <Show when={isThisDevice(item.id)}>
-                      <span class="account__current"> · 이 기기</span>
-                    </Show>
                     <span class="account__meta">
                       {' · '}
                       {`등록 ${item.created_at?.slice(0, 10) ?? ''}`}
@@ -203,20 +198,6 @@ function SignedIn() {
                         ? ` · 마지막 로그인 ${item.last_used_at.slice(0, 10)}`
                         : ' · 이 패스키로 로그인한 적 없음'}
                     </span>
-                    <Show when={!isThisDevice(item.id) && supported}>
-                      <button
-                        class="text-button account__verify"
-                        disabled={busy()}
-                        onClick={() => {
-                          void guard(async () => {
-                            await confirmPasskeyHere(item.id)
-                            await refetch()
-                          })
-                        }}
-                      >
-                        이 기기의 패스키인지 확인
-                      </button>
-                    </Show>
                   </span>
                   <button
                     class="text-button"
@@ -267,18 +248,19 @@ function SignedIn() {
               class="field"
               value={label()}
               onInput={(e) => setLabel(e.currentTarget.value)}
-              placeholder="이 기기 이름"
+              placeholder="패스키 이름 (예: 1Password)"
               maxLength={40}
               aria-label="패스키 이름"
             />
             <button class="text-button" type="submit" disabled={busy()}>
-              이 기기에 패스키 추가
+              패스키 추가
             </button>
           </form>
           <p class="account__hint">
-            패스키가 iCloud나 Google 비밀번호 관리자에 저장되면 다른 기기에서도 자동으로 쓸 수 있어요.
-            그렇지 않으면 다른 기기에서 로그인할 때 '다른 기기의 패스키 사용'을 고르세요. 패스키를
-            모두 잃으면 이 계정을 되찾을 수 없지만, 책 목록은 알라딘 파일로 다시 만들 수 있어요.
+            1Password·iCloud 키체인·Google 비밀번호 관리자에 저장된 패스키는 여러 기기에서 같이
+            쓰여요. 그래서 패스키를 기기별로 구분하지 않고, 이름(만든 곳)과 마지막 로그인만 보여줘요.
+            패스키를 모두 잃으면 이 계정을 되찾을 수 없지만, 책 목록은 알라딘 파일로 다시 만들 수
+            있어요.
           </p>
         </Show>
       </section>
