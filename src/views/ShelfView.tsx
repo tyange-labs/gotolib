@@ -55,6 +55,17 @@ export function ShelfView(props: Props) {
     top.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  // 새 책 찾기를 이미 눌렀거나 입력 중이면(찾기 줄·결과가 그 역할을 한다) 같은 말을 되풀이하지 않는다.
+  const emptyMessage = () => {
+    if (finding()) return null
+    if (props.books.length === 0) {
+      return query().trim()
+        ? null
+        : '아직 담은 책이 없어요. 위 검색창에 제목·저자·ISBN을 입력하고 엔터를 눌러 첫 책을 찾아 담아 보세요.'
+    }
+    return query().trim() ? '서재에 맞는 책이 없어요.' : '조건에 맞는 책이 없어요.'
+  }
+
   return (
     <div>
       <WatchlistSummary />
@@ -68,36 +79,18 @@ export function ShelfView(props: Props) {
             props.books.length === 0 ? '제목·저자·ISBN으로 책 찾기' : '서재 검색 · 엔터로 새 책 찾기'
           }
         />
-        <GenreTabs
-          tabs={classTabs()}
-          total={props.books.length}
-          selected={kdcClass()}
-          onSelect={setKdcClass}
-        />
+        {/* 책이 없으면 분류 탭은 쓸 데가 없다 */}
+        <Show when={props.books.length > 0}>
+          <GenreTabs
+            tabs={classTabs()}
+            total={props.books.length}
+            selected={kdcClass()}
+            onSelect={setKdcClass}
+          />
+        </Show>
       </div>
 
-      <div class="list-header" ref={top}>
-        <span class="list-header__count">
-          {total() > 0
-            ? `${total()}권 중 ${rangeStart()}–${rangeEnd()}`
-            : '0권'}
-        </span>
-        <div class="list-header__actions">
-          <button class="text-button text-button--strong" onClick={startAdd}>
-            책 추가
-          </button>
-          <ImportDropzone onFile={props.onImport} />
-          <button
-            class="text-button"
-            onClick={() => {
-              if (confirm('저장된 도서 목록을 모두 삭제할까요?')) props.onClearAll()
-            }}
-          >
-            비우기
-          </button>
-        </div>
-      </div>
-
+      {/* 새 책 찾기는 입력창 바로 아래에 둔다: 입력 → 엔터 → 결과가 한 자리에서 이어진다. */}
       <Show when={query().trim() && query().trim() !== finding()}>
         <button class="find-prompt" onClick={submitFind}>
           <Search size={14} aria-hidden />
@@ -119,15 +112,40 @@ export function ShelfView(props: Props) {
       </Show>
 
       <Show
+        when={props.books.length > 0}
+        fallback={
+          <div class="list-header list-header--empty">
+            <ImportDropzone onFile={props.onImport} />
+          </div>
+        }
+      >
+        <div class="list-header" ref={top}>
+          <span class="list-header__count">
+            {total() > 0 ? `${total()}권 중 ${rangeStart()}–${rangeEnd()}` : '0권'}
+          </span>
+          <div class="list-header__actions">
+            <button class="text-button text-button--strong" onClick={startAdd}>
+              책 추가
+            </button>
+            <ImportDropzone onFile={props.onImport} />
+            <button
+              class="text-button"
+              onClick={() => {
+                if (confirm('저장된 도서 목록을 모두 삭제할까요?')) props.onClearAll()
+              }}
+            >
+              비우기
+            </button>
+          </div>
+        </div>
+      </Show>
+
+      <Show
         when={total() > 0}
         fallback={
-          <p class="message">
-            {props.books.length === 0
-              ? '아직 담은 책이 없어요. 위 검색창에 제목·저자·ISBN을 입력하고 엔터를 눌러 첫 책을 찾아 담아 보세요.'
-              : query().trim()
-                ? '서재에 맞는 책이 없어요. 엔터를 누르면 새 책을 찾아봐요.'
-                : '조건에 맞는 책이 없어요.'}
-          </p>
+          <Show when={emptyMessage()}>
+            {(message) => <p class="message">{message()}</p>}
+          </Show>
         }
       >
         <BookList books={pageItems()} onRemove={props.onRemove} />

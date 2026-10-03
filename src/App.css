@@ -237,6 +237,11 @@
   color: var(--tl-fg-muted);
 }
 
+/* 책이 없을 때는 '파일 불러오기'만 작게 */
+.list-header--empty {
+  justify-content: flex-end;
+}
+
 .list-header__count {
   font-variant-numeric: tabular-nums;
 }

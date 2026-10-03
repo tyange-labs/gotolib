@@ -8,6 +8,7 @@
  * 응답에서 정리할 것(실제 응답으로 확인):
  * - 저자 표기가 제각각이다: '지은이: 엄원태', '저자 : 아포리아에듀', '김현경 지음', '집필인: A,B,C'
  * - 전자책이 별도 ISBN으로 섞여 나온다(EBOOK_YN) → 종이책만 남긴다(도서관 소장 조회가 의미 없다)
+ * - 2007년 이전 책은 ISBN-10만 있다 → ISBN-13으로 바꿔 담는다(안 그러면 '따뜻한 흙' 같은 책이 통째로 검색에서 빠진다)
  * - 같은 ISBN이 겹쳐 오는 일은 거의 없지만 쪽을 이어 붙일 때 생길 수 있어 ISBN으로 합친다
  */
 import type { Book } from '../types/book'
@@ -69,10 +70,29 @@ function yearOf(raw: string | undefined): string | undefined {
   return m ? m[0] : undefined
 }
 
-/** 13자리 ISBN만 인정한다(서지정보 API는 EA_ISBN에 ISBN-13을 준다). */
-function isbn13Of(raw: string | undefined): string | undefined {
-  const m = raw?.match(/97[89]\d{10}/)
-  return m ? m[0] : undefined
+/** ISBN-10의 앞 9자리로 ISBN-13을 만든다(978 접두 + 새 검사 숫자). 검사 숫자 때문에 X가 있어도 앞 9자리만 쓴다. */
+export function isbn10to13(isbn10: string): string | undefined {
+  const digits = isbn10.replace(/[^\dXx]/g, '')
+  if (digits.length !== 10 || !/^\d{9}/.test(digits)) return undefined
+  const base = '978' + digits.slice(0, 9)
+  let sum = 0
+  for (let i = 0; i < 12; i++) sum += Number(base[i]) * (i % 2 === 0 ? 1 : 3)
+  return base + String((10 - (sum % 10)) % 10)
+}
+
+/**
+ * EA_ISBN에서 ISBN-13을 얻는다. 13자리가 있으면 그것, 2007년 이전 책처럼 10자리만 있으면 13자리로 바꾼다
+ * (이 앱의 id·도서관 조회는 ISBN-13이 기준이다). 둘 다 없으면 undefined.
+ */
+export function isbn13Of(raw: string | undefined): string | undefined {
+  const tokens = (raw ?? '').match(/\d{13}|\d{9}[\dXx]/g) ?? []
+  const direct = tokens.find((t) => /^97[89]\d{10}$/.test(t))
+  if (direct) return direct
+  for (const token of tokens) {
+    const converted = token.length === 10 ? isbn10to13(token) : undefined
+    if (converted) return converted
+  }
+  return undefined
 }
 
 /**

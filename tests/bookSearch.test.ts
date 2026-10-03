@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { authorsOf, toBook, toSearchResults, type SeojiDoc } from '../src/lib/bookSearch'
+import { authorsOf, isbn10to13, toBook, toSearchResults, type SeojiDoc } from '../src/lib/bookSearch'
 import risky from './fixtures/seoji-risky.json'
 import conifer from './fixtures/seoji-conifer.json'
 import byAuthor from './fixtures/seoji-author.json'
@@ -86,6 +86,43 @@ describe('toSearchResults', () => {
     const results = toSearchResults(docsOf(byAuthor))
     expect(results.length).toBeGreaterThan(0)
     for (const r of results) expect(r.author).not.toMatch(/^(지은이|저자)\s*:/)
+  })
+})
+
+describe('ISBN-10 레코드', () => {
+  test('isbn10to13: 알려진 책의 13자리가 나온다', () => {
+    expect(isbn10to13('8932014582')).toBe('9788932014586') // 따뜻한 흙
+    expect(isbn10to13('8960210188')).toBe('9788960210189') // 위험한 독서(박현수)
+    expect(isbn10to13('012345')).toBeUndefined()
+  })
+
+  test('2007년 이전 책(10자리만 있는 레코드)도 검색 결과에 나온다', () => {
+    // 실제 응답: 따뜻한 흙(조은, 2003)은 EA_ISBN이 10자리뿐이다.
+    const [result] = toSearchResults([
+      {
+        TITLE: '따뜻한 흙',
+        AUTHOR: '조은 저',
+        PUBLISHER: '(주)문학과 지성사',
+        EA_ISBN: '8932014582',
+        PUBLISH_PREDATE: '20031117',
+        EBOOK_YN: 'N',
+      },
+    ])
+    expect(result).toMatchObject({
+      id: '9788932014586',
+      isbn13: '9788932014586',
+      title: '따뜻한 흙',
+      author: '조은',
+      pubDate: '2003',
+    })
+  })
+
+  test('같은 책의 10자리·13자리 레코드는 하나로 합친다', () => {
+    const results = toSearchResults([
+      { TITLE: 'a', EA_ISBN: '8932014582' },
+      { TITLE: 'a', EA_ISBN: '9788932014586' },
+    ])
+    expect(results).toHaveLength(1)
   })
 })
 
