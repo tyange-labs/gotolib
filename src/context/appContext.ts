@@ -10,7 +10,7 @@ export interface AppValue {
   books: () => Book[]
   loading: () => boolean
   error: () => string | null
-  isSample: () => boolean
+  isEmpty: () => boolean
   importFile: (file: File) => Promise<{ imported: number } | null>
   addBook: (book: Book) => Promise<void>
   removeBook: (id: string) => Promise<void>

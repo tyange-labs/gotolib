@@ -10,7 +10,7 @@ export function ShelfRoute() {
     books,
     loading,
     error,
-    isSample,
+    isEmpty,
     importFile,
     addBook,
     removeBook,
@@ -18,10 +18,10 @@ export function ShelfRoute() {
   } = useApp()
   const [notice, setNotice] = createSignal<string | null>(null)
 
-  // 내 책이 없어 샘플이 보이는 첫 실행이면, 서재가 그려진 뒤 안내를 시작한다.
+  // 내 책이 없는 첫 실행이면, 서재가 그려진 뒤 안내를 시작한다(안내가 도는 동안만 샘플 책이 보인다).
   createEffect(
     on(
-      () => !loading() && isSample(),
+      () => !loading() && isEmpty(),
       (ready) => {
         if (ready) requestAnimationFrame(() => startTourIfFirstRun())
       },
@@ -44,11 +44,6 @@ export function ShelfRoute() {
       </Show>
 
       <Show when={!loading()} fallback={<LoadingMessage>불러오는 중…</LoadingMessage>}>
-        <Show when={isSample()}>
-          <p class="sample-note">
-            샘플 데이터예요. '책 추가'로 책을 검색해 담으면 내 서재로 바뀝니다.
-          </p>
-        </Show>
         <ShelfView
           books={books()}
           onRemove={removeBook}

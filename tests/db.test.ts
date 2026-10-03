@@ -59,13 +59,13 @@ describe('찜과 서재는 겹치지 않는다', () => {
     expect(await db.getWatchlist()).toHaveLength(5)
   })
 
-  test('서재에 없는 책(샘플)을 찜할 수 있고, 풀면 서재에 넣지 않는다', async () => {
-    const sample = { id: '9788932027265', title: '사람, 장소, 환대', addedAt: 0 }
-    expect(await db.watchBook(sample)).toBe(true)
+  test('서재에 없는 책도 찜할 수 있고, 풀면 서재로 돌아온다', async () => {
+    const outside = { id: '9788932027265', title: '사람, 장소, 환대', addedAt: 7 }
+    expect(await db.watchBook(outside)).toBe(true)
     expect(await db.getAllBooks()).toEqual([])
-    await db.unwatchBook(sample.id)
-    expect(await db.getAllBooks()).toEqual([]) // 샘플은 서재가 비어 있는 동안 저절로 다시 보인다
+    await db.unwatchBook(outside.id)
     expect(await db.getWatchlist()).toEqual([])
+    expect((await db.getAllBooks()).map((b: Book) => [b.id, b.addedAt])).toEqual([[outside.id, 7]])
   })
 
   test('옮길 때 삭제 표시가 남아 동기화가 옛 위치를 되살리지 못한다', async () => {

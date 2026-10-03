@@ -38,6 +38,16 @@ export function ShelfView(props: Props) {
   // 서재가 비어 있으면 처음부터 검색창을 열어 둔다 — 책 추가(검색)가 기본 흐름이다.
   // eslint-disable-next-line solid/reactivity -- 처음 그릴 때의 값만 필요하다(이후는 사용자가 연다).
   const [searching, setSearching] = createSignal(props.books.length === 0)
+  // 책이 다 없어지면(첫 실행 안내가 끝나 샘플이 사라질 때, 비우기 등) 검색창을 열어 첫 책을 담도록 이끈다.
+  createEffect(
+    on(
+      () => props.books.length === 0,
+      (empty) => {
+        if (empty) setSearching(true)
+      },
+      { defer: true },
+    ),
+  )
 
   const goToPage = (next: number) => {
     setPage(next)
@@ -100,7 +110,9 @@ export function ShelfView(props: Props) {
         fallback={
           <p class="message">
             {props.books.length === 0
-              ? "서재가 비어 있어요. '책 추가'로 제목·저자·ISBN을 검색해 담아 보세요."
+              ? searching()
+                ? "아직 담은 책이 없어요. 위 검색창에 제목·저자·ISBN을 입력하고 '추가'를 눌러 첫 책을 담아 보세요."
+                : "아직 담은 책이 없어요. '책 추가'를 눌러 검색하고 첫 책을 담아 보세요."
               : '조건에 맞는 책이 없어요.'}
           </p>
         }

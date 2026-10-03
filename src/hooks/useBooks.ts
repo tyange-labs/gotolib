@@ -1,8 +1,9 @@
-import { createSignal, onCleanup, onMount } from 'solid-js'
+import { createMemo, createSignal, onCleanup, onMount } from 'solid-js'
 import { SAMPLE_BOOKS } from '../data/sampleBooks'
 import { clearBooks, deleteBook, getAllBooks, getWatchlist, onDbBlocked, saveBooks } from '../lib/db'
 import { onDataApplied } from '../lib/localEvents'
 import { ParseError, parseAladinExport } from '../lib/parseAladin'
+import { tourStep } from '../lib/tour'
 import type { Book } from '../types/book'
 
 interface ImportResult {
@@ -10,27 +11,23 @@ interface ImportResult {
 }
 
 export function useBooks() {
-  const [books, setBooks] = createSignal<Book[]>([])
+  const [stored, setStored] = createSignal<Book[]>([])
+  const [hasWatched, setHasWatched] = createSignal(false)
   const [loading, setLoading] = createSignal(true)
   const [error, setError] = createSignal<string | null>(null)
-  // 저장된 도서가 없어 데모 샘플을 보여주는 중인지 (포트폴리오용, 비영속)
-  const [isSample, setIsSample] = createSignal(false)
+  // 내 책이 하나도 없다(서재도 찜 목록도 비었다)
+  const isEmpty = () => stored().length === 0 && !hasWatched()
+  // 샘플은 첫 실행 안내(튜토리얼)가 도는 동안에만 보여준다. 안내가 끝나면 사라지고 빈 서재 안내가 나온다.
+  const books = createMemo(() =>
+    isEmpty() && tourStep() !== null ? SAMPLE_BOOKS : stored(),
+  )
 
   const load = () =>
     Promise.all([getAllBooks(), getWatchlist()])
-      .then(([stored, watched]) => {
+      .then(([books, watched]) => {
         setError(null)
-        const sampleIds = new Set(SAMPLE_BOOKS.map((book) => book.id))
-        // 서재가 비어 있고 찜한 책도 샘플뿐이면 아직 내 책이 없는 것 → 샘플을 보여준다(찜한 샘플은 찜 목록에 있으니 뺀다).
-        // 찜한 책이 샘플이 아니라면 내 책이 전부 찜 목록으로 간 것이라 샘플을 되살리지 않는다.
-        if (stored.length === 0 && watched.every((item) => sampleIds.has(item.id))) {
-          const watchedIds = new Set(watched.map((item) => item.id))
-          setBooks(SAMPLE_BOOKS.filter((book) => !watchedIds.has(book.id)))
-          setIsSample(true)
-        } else {
-          setBooks(stored)
-          setIsSample(false)
-        }
+        setStored(books)
+        setHasWatched(watched.length > 0)
       })
       .catch(() => setError('저장된 도서 목록을 불러오지 못했습니다.'))
 
@@ -65,20 +62,19 @@ export function useBooks() {
     }
   }
 
-  /** 검색 등으로 책 한 권을 서재에 담는다. 샘플을 보던 중이면 내 목록으로 바뀐다. */
+  /** 검색 등으로 책 한 권을 서재에 담는다. */
   const addBook = async (book: Book) => {
     await saveBooks([book])
     await load()
   }
 
   const removeBook = async (id: string) => {
-    if (!isSample()) await deleteBook(id)
-    setBooks((prev) => prev.filter((book) => book.id !== id))
+    await deleteBook(id)
+    await load()
   }
 
   const clearAll = async () => {
     await clearBooks()
-    // 찜한 책이 없으면 다시 데모 샘플로 되돌아간다
     await load()
   }
 
@@ -86,7 +82,7 @@ export function useBooks() {
     books,
     loading,
     error,
-    isSample,
+    isEmpty,
     importFile,
     addBook,
     removeBook,

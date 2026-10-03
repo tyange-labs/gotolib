@@ -1,7 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { Book } from '../types/book'
 import type { Library } from '../types/library'
-import { SAMPLE_BOOKS } from '../data/sampleBooks'
 import { emitLocalChange } from './localEvents'
 import { WATCHLIST_LIMIT } from './syncDoc'
 
@@ -201,7 +200,7 @@ export async function getWatchlist(): Promise<WatchItem[]> {
 
 /**
  * 책을 서재에서 찜으로 옮긴다(한 트랜잭션: 서재에서 지우고 찜에 넣는다). 한도가 차 있으면 false.
- * 서재에 없는 책(샘플)이면 받은 값 그대로 찜에 넣는다.
+ * 서재에 없는 책이면 받은 값 그대로 찜에 넣는다.
  */
 export async function watchBook(book: Book): Promise<boolean> {
   const db = await getDB()
@@ -226,10 +225,7 @@ export async function watchBook(book: Book): Promise<boolean> {
   return true
 }
 
-/**
- * 찜을 풀어 책을 서재로 되돌린다(원래 담은 시각 그대로라 원래 자리로 간다). 서재가 비어 있고 샘플 책이면
- * 서재에 넣지 않는다 — 샘플은 서재가 비어 있는 동안 저절로 다시 보인다.
- */
+/** 찜을 풀어 책을 서재로 되돌린다(원래 담은 시각 그대로라 원래 자리로 간다). */
 export async function unwatchBook(id: string): Promise<void> {
   const db = await getDB()
   const tx = db.transaction(['books', 'watchlist', 'tombstones'], 'readwrite')
@@ -239,9 +235,7 @@ export async function unwatchBook(id: string): Promise<void> {
     tx.objectStore('watchlist').delete(id),
     tx.objectStore('tombstones').put({ key: TOMB.watch(id), at: now }),
   ]
-  const isSample =
-    SAMPLE_BOOKS.some((book) => book.id === id) && (await tx.objectStore('books').count()) === 0
-  if (item && !isSample) {
+  if (item) {
     const book: Partial<WatchItem> = { ...item }
     delete book.watchedAt
     writes.push(
