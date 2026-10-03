@@ -203,6 +203,29 @@
   outline: none;
 }
 
+/* 지우기(X)와 제출 버튼: SVG·글자가 기준선에 붙어 어긋나지 않게 같은 줄 가운데로 맞춘다 */
+.searchbar__clear,
+.searchbar .text-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  line-height: 1;
+}
+
+.searchbar__clear {
+  padding: var(--tl-space-1);
+  color: var(--tl-fg-muted);
+}
+
+.searchbar__clear:hover {
+  color: var(--tl-fg);
+}
+
+.searchbar__clear svg {
+  display: block;
+}
+
 .searchbar__input::-webkit-search-cancel-button,
 .searchbar__input::-webkit-search-decoration {
   appearance: none;
