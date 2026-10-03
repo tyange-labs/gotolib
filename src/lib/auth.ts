@@ -16,6 +16,8 @@ import { createSignal } from 'solid-js'
 
 const API = '/api/cms'
 const STORAGE_KEY = 'gotolib.session'
+/** 이 브라우저에서 만들었거나 로그인에 쓴 패스키 id들. 계정 화면에서 '이 기기'를 표시하는 데 쓴다(서버는 기기를 모른다). */
+const DEVICE_KEY = 'gotolib.devicePasskeys'
 
 export interface Session {
   token: string
@@ -63,6 +65,32 @@ function save(next: Session | null) {
 }
 
 export const logout = () => save(null)
+
+function loadDeviceIds(): string[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(DEVICE_KEY) ?? '[]')
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+const [deviceIds, setDeviceIds] = createSignal<string[]>(loadDeviceIds())
+
+/** 이 기기(브라우저)의 패스키인가: 여기서 만들었거나 로그인에 쓴 것. 로그아웃해도 남는다. */
+export const isThisDevice = (id: string) =>
+  deviceIds().includes(id) || session()?.credentialId === id
+
+function rememberDevicePasskey(id: string) {
+  if (deviceIds().includes(id)) return
+  const next = [...deviceIds(), id]
+  setDeviceIds(next)
+  try {
+    localStorage.setItem(DEVICE_KEY, JSON.stringify(next))
+  } catch {
+    // 저장이 막힌 환경에서는 이번 세션 동안만 기억한다.
+  }
+}
 
 /** JWT payload의 sub(사용자 id). 검증은 서버가 하고, 여기선 화면 표시용으로만 읽는다. */
 function subjectOf(token: string): string {
@@ -135,6 +163,7 @@ interface LoginResponse {
 }
 
 function adopt(response: LoginResponse, credentialId?: string) {
+  if (credentialId) rememberDevicePasskey(credentialId)
   save({
     token: response.access_token,
     userId: subjectOf(response.access_token),
@@ -220,6 +249,7 @@ export async function registerPasskey(label: string) {
     method: 'POST',
     json: { challenge_id: start.challenge_id, label, credential },
   })
+  rememberDevicePasskey(credential.id)
 }
 
 export const listPasskeys = () => api<PasskeyInfo[]>('/passkeys')

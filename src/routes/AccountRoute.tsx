@@ -4,6 +4,7 @@ import { For, Match, Show, Switch, createResource, createSignal } from 'solid-js
 import {
   CANCELLED,
   deletePasskey,
+  isThisDevice,
   listPasskeys,
   loginWithPasskey,
   logout,
@@ -191,15 +192,15 @@ function SignedIn() {
                 <li class="account__row">
                   <span>
                     {item.label}
-                    <Show when={item.id === session()?.credentialId}>
-                      <span class="account__current"> · 지금 사용 중</span>
+                    <Show when={isThisDevice(item.id)}>
+                      <span class="account__current"> · 이 기기</span>
                     </Show>
                     <span class="account__meta">
                       {' · '}
                       {`등록 ${item.created_at?.slice(0, 10) ?? ''}`}
                       {item.last_used_at
-                        ? ` · 마지막 사용 ${item.last_used_at.slice(0, 10)}`
-                        : ' · 아직 사용 안 함'}
+                        ? ` · 마지막 로그인 ${item.last_used_at.slice(0, 10)}`
+                        : ' · 이 패스키로 로그인한 적 없음'}
                     </span>
                   </span>
                   <button
