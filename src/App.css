@@ -144,6 +144,39 @@
   color: var(--tl-fg-muted);
 }
 
+/* ── 모드 전환: palim의 격자·흐름처럼 작은 두 칸 ─────── */
+.mode-switch {
+  margin: var(--tl-space-2) 0 var(--tl-space-3);
+}
+
+.seg {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.seg__item {
+  padding: var(--tl-space-1) var(--tl-space-4);
+  border-radius: 999px;
+  font-size: var(--tl-text-sm);
+  color: var(--tl-fg-muted);
+  white-space: nowrap;
+}
+
+.seg__item:hover {
+  color: var(--tl-fg);
+}
+
+.seg__item[aria-pressed='true'] {
+  background: var(--tl-fg);
+  color: var(--tl-bg);
+}
+
+.import-hint {
+  margin: var(--tl-space-6) 0 0;
+  font-size: var(--tl-text-xs);
+  color: var(--tl-fg-subtle);
+}
+
 /* ── 검색 / 필터: 밑줄만 ─────────────────────────────── */
 .searchbar {
   display: flex;
@@ -168,6 +201,13 @@
   border: none;
   background: none;
   outline: none;
+}
+
+.searchbar__input::-webkit-search-cancel-button,
+.searchbar__input::-webkit-search-decoration {
+  appearance: none;
+  -webkit-appearance: none;
+  display: none;
 }
 
 .searchbar__input::placeholder {
@@ -781,30 +821,6 @@
   margin-left: var(--tl-space-2);
   font-size: var(--tl-text-xs);
   font-weight: 400;
-  color: var(--tl-fg-subtle);
-}
-
-/* 서재를 걸러내는 입력 아래에서, 엔터와 같은 일을 하는 버튼 */
-.find-prompt {
-  display: flex;
-  align-items: center;
-  gap: var(--tl-space-2);
-  width: 100%;
-  margin-top: var(--tl-space-3);
-  padding: var(--tl-space-2) 0;
-  font-size: var(--tl-text-sm);
-  color: var(--tl-fg);
-  text-align: left;
-}
-
-.find-prompt:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.find-prompt__source {
-  margin-left: var(--tl-space-2);
-  font-size: var(--tl-text-xs);
   color: var(--tl-fg-subtle);
 }
 

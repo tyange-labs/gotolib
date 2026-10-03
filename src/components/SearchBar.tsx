@@ -7,6 +7,8 @@ interface Props {
   placeholder?: string
   /** 엔터(모바일 키보드의 '검색')를 눌렀을 때 */
   onSubmit?: () => void
+  /** 있으면 입력창 오른쪽에 제출 버튼을 보인다(엔터를 모르는 사람·마우스용) */
+  submitLabel?: string
   /** 바깥에서 포커스를 줄 수 있게 입력 요소를 넘겨준다 */
   inputRef?: (element: HTMLInputElement) => void
 }
@@ -40,6 +42,11 @@ export function SearchBar(props: Props) {
           aria-label="검색어 지우기"
         >
           <X size={16} />
+        </button>
+      </Show>
+      <Show when={props.submitLabel}>
+        <button type="submit" class="text-button text-button--strong" disabled={!props.value.trim()}>
+          {props.submitLabel}
         </button>
       </Show>
     </form>

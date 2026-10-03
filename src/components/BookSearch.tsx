@@ -1,4 +1,3 @@
-import { X } from 'lucide-solid'
 import { For, Show, createEffect, createMemo, createSignal, on } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { toBook, type SearchResult } from '../lib/bookSearch'
@@ -13,10 +12,9 @@ interface Props {
   /** 지금 서재의 책. 이미 담은 책은 '담김'으로 보여준다 */
   books: Book[]
   onAdd: (book: Book) => Promise<void>
-  onClose: () => void
 }
 
-/** 국립중앙도서관으로 책을 찾아 서재에 담는다. 입력창은 서재 검색창과 하나다(엔터를 누르면 이 결과가 열린다). */
+/** 국립중앙도서관으로 찾은 새 책 목록. 책 추가 모드의 검색창에서 엔터를 누르면 이 결과가 열린다. */
 export function BookSearch(props: Props) {
   const [results, setResults] = createSignal<SearchResult[]>([])
   const [page, setPage] = createSignal(0)
@@ -99,14 +97,6 @@ export function BookSearch(props: Props) {
         <span class="book-search__title">
           ‘{props.keyword}’ 새 책 검색 <span class="book-search__source">국립중앙도서관</span>
         </span>
-        <button
-          class="icon-button"
-          type="button"
-          onClick={() => props.onClose()}
-          aria-label="새 책 검색 닫기"
-        >
-          <X size={16} />
-        </button>
       </div>
 
       <Show when={error()}>
