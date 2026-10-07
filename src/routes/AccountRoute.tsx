@@ -11,6 +11,7 @@ import {
   session,
   signUpWithPasskey,
 } from '../lib/auth'
+import { confirmDialog } from '../lib/confirm'
 import { lastSyncedAt, omittedBooks, syncError, syncNow, syncStatus } from '../lib/sync'
 import { SYNC_MAX_BOOKS } from '../lib/syncDoc'
 import { replayTour } from '../lib/tour'
@@ -224,13 +225,17 @@ function SignedIn() {
                         ? '마지막 패스키는 지울 수 없어요'
                         : undefined
                     }
-                    onClick={() => {
-                      if (confirm(`'${item.label}' 패스키를 삭제할까요?`)) {
-                        void guard(async () => {
-                          await deletePasskey(item.id)
-                          await refetch()
-                        })
-                      }
+                    onClick={async () => {
+                      const ok = await confirmDialog({
+                        title: `'${item.label}' 패스키를 삭제할까요?`,
+                        confirmLabel: '삭제',
+                        danger: true,
+                      })
+                      if (!ok) return
+                      void guard(async () => {
+                        await deletePasskey(item.id)
+                        await refetch()
+                      })
                     }}
                   >
                     삭제
@@ -252,15 +257,18 @@ function SignedIn() {
         >
           <form
             class="account__add"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault()
               const existing = passkeys()?.length ?? 0
               // 비밀번호 관리자(1Password 등)는 같은 계정의 패스키가 이미 있어도 새로 만들어 주므로, 중복을 앱이 막는다.
               if (
                 existing > 0 &&
-                !confirm(
-                  `이미 패스키가 ${existing}개 있어요.\n\n1Password·iCloud 같은 비밀번호 관리자에 저장된 패스키는 여러 기기에서 함께 쓰여서, 같은 곳에 또 만들면 중복이 돼요. 다른 저장소에 백업으로 두려는 게 아니라면 필요 없어요.\n\n그래도 추가할까요?`,
-                )
+                !(await confirmDialog({
+                  title: `이미 패스키가 ${existing}개 있어요`,
+                  description:
+                    '1Password·iCloud 같은 비밀번호 관리자에 저장된 패스키는 여러 기기에서 함께 쓰여서, 같은 곳에 또 만들면 중복이 돼요. 다른 저장소에 백업으로 두려는 게 아니라면 필요 없어요.\n\n그래도 추가할까요?',
+                  confirmLabel: '추가',
+                }))
               ) {
                 return
               }

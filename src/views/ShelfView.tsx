@@ -8,6 +8,7 @@ import { SearchBar } from '../components/SearchBar'
 import { WatchlistSummary } from '../components/WatchlistSummary'
 import { ALL_CLASSES, useBookFilter } from '../hooks/useBookFilter'
 import { usePagination } from '../hooks/usePagination'
+import { confirmDialog } from '../lib/confirm'
 import { buildClassTabs } from '../lib/kdc'
 import { tourStep } from '../lib/tour'
 import type { Book } from '../types/book'
@@ -191,8 +192,13 @@ export function ShelfView(props: Props) {
             <div class="list-header__actions">
               <button
                 class="text-button"
-                onClick={() => {
-                  if (confirm('저장된 도서 목록을 모두 삭제할까요?')) props.onClearAll()
+                onClick={async () => {
+                  const ok = await confirmDialog({
+                    title: '저장된 도서 목록을 모두 삭제할까요?',
+                    confirmLabel: '모두 삭제',
+                    danger: true,
+                  })
+                  if (ok) props.onClearAll()
                 }}
               >
                 비우기

@@ -1118,59 +1118,44 @@
 }
 
 /* ── 물음표 말풍선 ───────────────────────────────────── */
-.infotip {
-  position: relative;
-  display: inline-flex;
-  vertical-align: middle;
-  margin-left: var(--tl-space-1);
-}
-
 .infotip__button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  vertical-align: middle;
+  margin-left: var(--tl-space-1);
   padding: var(--tl-space-1);
   color: var(--tl-fg-subtle);
 }
 
 .infotip__button:hover,
 .infotip__button:focus-visible,
-.infotip--pinned .infotip__button {
+.infotip__button[data-expanded] {
   color: var(--tl-fg);
 }
 
 .infotip__bubble {
-  position: absolute;
-  top: calc(100% + var(--tl-space-1));
-  left: 0;
-  z-index: 20;
+  z-index: var(--tl-z-popover);
   width: min(22rem, calc(100vw - 2rem));
   padding: var(--tl-space-3) var(--tl-space-4);
   border: 1px solid var(--tl-border-strong);
   border-radius: var(--tl-radius-md);
-  background: var(--tl-surface);
+  background: var(--tl-overlay);
   color: var(--tl-fg);
   font-size: var(--tl-text-xs);
   font-weight: 400;
   line-height: 1.6;
-  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-2px);
-  transition:
-    opacity 0.12s ease,
-    transform 0.12s ease,
-    visibility 0.12s;
-  pointer-events: none;
+  box-shadow: var(--tl-shadow-md);
+  transform-origin: var(--kb-popover-content-transform-origin);
+  animation: overlay-out var(--tl-duration-fast) var(--tl-ease-out) forwards;
 }
 
-.infotip:hover .infotip__bubble,
-.infotip:focus-within .infotip__bubble,
-.infotip--pinned .infotip__bubble {
-  opacity: 1;
-  visibility: visible;
-  transform: none;
-  pointer-events: auto;
+.infotip__bubble[data-expanded] {
+  animation: overlay-in var(--tl-duration-fast) var(--tl-ease-out);
+}
+
+.infotip__bubble:focus-visible {
+  outline: none;
 }
 
 .infotip__bubble ul {
@@ -1182,9 +1167,173 @@
   margin-top: var(--tl-space-1);
 }
 
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes overlay-out {
+  to {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+/* ── 토스트 ── */
+.toast-list {
+  position: fixed;
+  right: var(--tl-space-4);
+  bottom: calc(var(--tl-space-4) + env(safe-area-inset-bottom));
+  left: var(--tl-space-4);
+  z-index: var(--tl-z-toast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--tl-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--tl-space-3);
+  max-width: min(26rem, 100%);
+  padding: var(--tl-space-3) var(--tl-space-4);
+  border: 1px solid var(--tl-border-strong);
+  border-radius: var(--tl-radius-md);
+  background: var(--tl-overlay);
+  color: var(--tl-fg);
+  font-size: var(--tl-text-sm);
+  box-shadow: var(--tl-shadow-md);
+  pointer-events: auto;
+  transform: translateX(var(--kb-toast-swipe-move-x, 0));
+}
+
+.toast--error {
+  color: var(--tl-danger);
+}
+
+.toast[data-opened] {
+  animation: overlay-in var(--tl-duration-base) var(--tl-ease-out);
+}
+
+.toast[data-closed] {
+  animation: overlay-out var(--tl-duration-fast) var(--tl-ease-in-out) forwards;
+}
+
+.toast[data-swipe='move'] {
+  transition: none;
+}
+
+.toast[data-swipe='cancel'] {
+  transform: translateX(0);
+  transition: transform var(--tl-duration-base) var(--tl-ease-out);
+}
+
+.toast[data-swipe='end'] {
+  animation: toast-swipe-out var(--tl-duration-base) var(--tl-ease-out) forwards;
+}
+
+@keyframes toast-swipe-out {
+  from {
+    transform: translateX(var(--kb-toast-swipe-end-x));
+  }
+  to {
+    opacity: 0;
+    transform: translateX(calc(var(--kb-toast-swipe-end-x) + 3rem));
+  }
+}
+
+.toast__text {
+  margin: 0;
+}
+
+.toast__close {
+  display: inline-flex;
+  padding: var(--tl-space-1);
+  color: var(--tl-fg-subtle);
+}
+
+.toast__close:hover {
+  color: var(--tl-fg);
+}
+
+/* ── 확인 다이얼로그 ── */
+.dialog__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--tl-z-overlay);
+  background: rgb(0 0 0 / 0.4);
+}
+
+.dialog__overlay[data-expanded] {
+  animation: dialog-fade var(--tl-duration-base) var(--tl-ease-out);
+}
+
+.dialog__positioner {
+  position: fixed;
+  inset: 0;
+  z-index: var(--tl-z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--tl-space-4);
+  pointer-events: none;
+}
+
+.dialog {
+  width: min(24rem, 100%);
+  padding: var(--tl-space-5);
+  border: 1px solid var(--tl-border-strong);
+  border-radius: var(--tl-radius-lg);
+  background: var(--tl-overlay);
+  color: var(--tl-fg);
+  box-shadow: var(--tl-shadow-lg);
+  pointer-events: auto;
+}
+
+.dialog[data-expanded] {
+  animation: overlay-in var(--tl-duration-base) var(--tl-ease-out);
+}
+
+.dialog__title {
+  margin: 0;
+  font-size: var(--tl-text-base);
+  font-weight: 600;
+}
+
+.dialog__description {
+  margin: var(--tl-space-3) 0 0;
+  color: var(--tl-fg-muted);
+  font-size: var(--tl-text-sm);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--tl-space-5);
+  margin-top: var(--tl-space-5);
+}
+
+@keyframes dialog-fade {
+  from {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .infotip__bubble {
-    transition: none;
+  .infotip__bubble,
+  .toast,
+  .dialog,
+  .dialog__overlay {
+    animation: none !important;
   }
 }
 

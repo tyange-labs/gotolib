@@ -1,6 +1,7 @@
-import { Show, createEffect, createSignal, on } from 'solid-js'
+import { Show, createEffect, on } from 'solid-js'
 import { LoadingMessage } from '../components/Spinner'
 import { useApp } from '../context/appContext'
+import { showToast } from '../lib/toast'
 import { startTourIfFirstRun } from '../lib/tour'
 import { ShelfView } from '../views/ShelfView'
 
@@ -16,7 +17,6 @@ export function ShelfRoute() {
     removeBook,
     clearAll,
   } = useApp()
-  const [notice, setNotice] = createSignal<string | null>(null)
 
   // 내 책이 없는 첫 실행이면, 서재가 그려진 뒤 안내를 시작한다(안내가 도는 동안만 샘플 책이 보인다).
   createEffect(
@@ -29,11 +29,10 @@ export function ShelfRoute() {
   )
 
   const handleFile = async (file: File) => {
-    setNotice(null)
     const result = await importFile(file)
     if (!result) return
     const existing = result.imported - result.added
-    setNotice(
+    showToast(
       result.added === 0
         ? `새로 추가된 책이 없어요. ${result.imported}권 모두 이미 있어요.`
         : existing === 0
@@ -46,9 +45,6 @@ export function ShelfRoute() {
     <>
       <Show when={error()}>
         {(message) => <p class="message message--error">{message()}</p>}
-      </Show>
-      <Show when={notice()}>
-        {(message) => <p class="message">{message()}</p>}
       </Show>
 
       <Show when={!loading()} fallback={<LoadingMessage>불러오는 중…</LoadingMessage>}>

@@ -1,6 +1,7 @@
 import { For, Show, createEffect, createMemo, createSignal, on } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { toBook, type SearchResult } from '../lib/bookSearch'
+import { confirmDialog } from '../lib/confirm'
 import { LibraryApiError } from '../lib/libraryApi'
 import { fetchBookSearch } from '../lib/queries'
 import { Spinner } from './Spinner'
@@ -70,9 +71,11 @@ export function BookSearch(props: Props) {
     // 이미 서재에 있는 책이면 확인을 받는다. 같은 id로 다시 저장하면 기존 항목이 사라지고 새로 담은 시각(최신순 맨 앞)으로 바뀐다.
     if (
       has(result.id) &&
-      !confirm(
-        `'${result.title}'은(는) 이미 서재에 있어요.\n기존 항목을 지우고 지금 담은 책으로 다시 등록할까요? (최신순 맨 앞으로 이동해요)`,
-      )
+      !(await confirmDialog({
+        title: `'${result.title}'은(는) 이미 서재에 있어요`,
+        description: '기존 항목을 지우고 지금 담은 책으로 다시 등록할까요? (최신순 맨 앞으로 이동해요)',
+        confirmLabel: '다시 등록',
+      }))
     ) {
       return
     }
