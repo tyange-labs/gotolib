@@ -8,6 +8,8 @@ import type { Book } from '../types/book'
 
 interface ImportResult {
   imported: number
+  /** 그중 서재·찜에 없던 새 책 수 */
+  added: number
 }
 
 export function useBooks() {
@@ -49,9 +51,13 @@ export function useBooks() {
     setError(null)
     try {
       const parsed = parseAladinExport(await file.arrayBuffer())
+      // 이미 서재나 찜에 있는 책은 '새로 추가'로 세지 않는다(같은 파일을 다시 불러와도 늘 '추가됐다'고 나오던 문제).
+      const [existing, watched] = await Promise.all([getAllBooks(), getWatchlist()])
+      const known = new Set([...existing, ...watched].map((book) => book.id))
+      const added = parsed.filter((book) => !known.has(book.id)).length
       await saveBooks(parsed)
       await load()
-      return { imported: parsed.length }
+      return { imported: parsed.length, added }
     } catch (e) {
       setError(
         e instanceof ParseError

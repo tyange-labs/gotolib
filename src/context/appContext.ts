@@ -11,7 +11,7 @@ export interface AppValue {
   loading: () => boolean
   error: () => string | null
   isEmpty: () => boolean
-  importFile: (file: File) => Promise<{ imported: number } | null>
+  importFile: (file: File) => Promise<{ imported: number; added: number } | null>
   addBook: (book: Book) => Promise<void>
   removeBook: (id: string) => Promise<void>
   clearAll: () => Promise<void>

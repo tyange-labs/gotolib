@@ -31,7 +31,15 @@ export function ShelfRoute() {
   const handleFile = async (file: File) => {
     setNotice(null)
     const result = await importFile(file)
-    if (result) setNotice(`${result.imported}권을 불러왔어요.`)
+    if (!result) return
+    const existing = result.imported - result.added
+    setNotice(
+      result.added === 0
+        ? `새로 추가된 책이 없어요. ${result.imported}권 모두 이미 있어요.`
+        : existing === 0
+          ? `${result.added}권을 추가했어요.`
+          : `${result.added}권을 새로 추가했어요. (${existing}권은 이미 있어요)`,
+    )
   }
 
   return (
