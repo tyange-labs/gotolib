@@ -71,6 +71,10 @@ export function getDB() {
       dbPromise = null
       location.reload()
     },
+    // 브라우저가 연결을 일방적으로 끊은 경우(iOS는 백그라운드에서 자주 그런다): 캐시한 연결을 버려 다음에 새로 연다.
+    terminated() {
+      dbPromise = null
+    },
     async upgrade(db, oldVersion, _newVersion, tx) {
       if (oldVersion < 1) {
         const store = db.createObjectStore('books', { keyPath: 'id' })
@@ -110,6 +114,20 @@ export function getDB() {
     },
   })
   return dbPromise
+}
+
+/**
+ * iOS(특히 홈 화면 앱)는 백그라운드에 간 페이지의 IndexedDB 연결을 알리지도 않고 닫는다. 그 뒤 캐시한 연결로
+ * 트랜잭션을 열면 'The database connection is closing.'이 나서 동기화가 멈춘다. 숨겨질 때 우리가 먼저 연결을
+ * 닫아 두면(진행 중인 트랜잭션은 끝까지 간다) 다시 보일 때 새 연결로 열린다.
+ */
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'hidden' || !dbPromise) return
+    const closing = dbPromise
+    dbPromise = null
+    void closing.then((db) => db.close()).catch(() => {})
+  })
 }
 
 // ── 도서 ──────────────────────────────────────────────
