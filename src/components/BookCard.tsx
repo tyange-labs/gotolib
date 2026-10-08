@@ -5,10 +5,13 @@ import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'
 import { WATCHLIST_LIMIT } from '../hooks/useWatchlist'
 import { flyToWatchlist } from '../lib/motion'
 import type { Book } from '../types/book'
+import { BookCover } from './BookCover'
 import { FavoriteHoldingsPanel } from './FavoriteHoldingsPanel'
 
 interface Props {
   book: Book
+  /** 서버가 줄여 둔 표지 썸네일 주소(아직 없으면 글자 타일) */
+  coverUrl?: string
   onRemove: (id: string) => void
 }
 
@@ -62,6 +65,7 @@ export function BookCard(props: Props) {
   return (
     <li class="book-card" ref={item}>
       <div class="book-card__row">
+        <BookCover src={props.coverUrl} title={props.book.title} />
         <button
           class="book-card__body"
           onClick={toggleLookup}

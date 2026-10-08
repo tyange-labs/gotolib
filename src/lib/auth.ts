@@ -15,6 +15,9 @@ import {
 import { createSignal } from 'solid-js'
 
 const API = '/api/cms'
+
+/** 서버(tyange-cms-api)가 알려 준 경로(`/gotolib/...`)를 이 앱에서 부르는 주소로 바꾼다. */
+export const apiUrl = (path: string) => API + path
 const STORAGE_KEY = 'gotolib.session'
 
 export interface Session {

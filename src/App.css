@@ -337,6 +337,10 @@
   gap: var(--tl-space-2);
 }
 
+.book-card__row .book-cover {
+  margin-right: var(--tl-space-2);
+}
+
 .book-card__body {
   flex: 1;
   min-width: 0;
@@ -1417,4 +1421,35 @@
 
 .primary-button:disabled {
   opacity: 0.5;
+}
+
+/* ── 책 표지 ── 표지가 있든 없든 같은 칸(5:7)을 차지해 이미지가 늦게 와도 목록이 밀리지 않는다 */
+.book-cover {
+  flex: none;
+  display: block;
+  width: 2.75rem;
+  aspect-ratio: 5 / 7;
+  overflow: hidden;
+  border: 1px solid var(--tl-border);
+  border-radius: var(--tl-radius-sm);
+  background: var(--tl-surface-sunken);
+}
+
+.book-cover__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.book-cover__tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--tl-fg-subtle);
+  font-size: var(--tl-text-lg);
+  font-weight: 500;
+  user-select: none;
 }
