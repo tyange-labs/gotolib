@@ -10,7 +10,7 @@ import { FavoriteHoldingsPanel } from './FavoriteHoldingsPanel'
 
 interface Props {
   book: Book
-  /** 서버가 줄여 둔 표지 썸네일 주소(아직 없으면 글자 타일) */
+  /** 서버가 줄여 둔 표지 썸네일 주소(아직 없으면 책 아이콘 칸) */
   coverUrl?: string
   onRemove: (id: string) => void
 }
@@ -65,7 +65,7 @@ export function BookCard(props: Props) {
   return (
     <li class="book-card" ref={item}>
       <div class="book-card__row">
-        <BookCover src={props.coverUrl} title={props.book.title} />
+        <BookCover src={props.coverUrl} />
         <button
           class="book-card__body"
           onClick={toggleLookup}
