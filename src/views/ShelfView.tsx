@@ -10,6 +10,7 @@ import { ALL_CLASSES, useBookFilter } from '../hooks/useBookFilter'
 import { usePagination } from '../hooks/usePagination'
 import { confirmDialog } from '../lib/confirm'
 import { buildClassTabs } from '../lib/kdc'
+import { shelfHomeRequests } from '../lib/shelfNav'
 import { tourStep } from '../lib/tour'
 import type { Book } from '../types/book'
 
@@ -42,6 +43,19 @@ export function ShelfView(props: Props) {
   // 분류·검색이 바뀌면 첫 페이지로 되돌린다.
   // `on`이 없으면 setPage가 읽는 것까지 추적돼 매 페이지 이동마다 1로 되돌아간다.
   createEffect(on([kdcClass, query], () => setPage(1), { defer: true }))
+
+  // 상단 '서재'를 누르면 첫 쪽으로 돌아가 맨 위로 올라간다(분류·검색은 그대로 둔다).
+  // 처음 그릴 때의 값은 무시한다(`defer`): 다른 화면에서 눌러 들어온 경우는 이미 1쪽이다.
+  createEffect(
+    on(
+      shelfHomeRequests,
+      () => {
+        setPage(1)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      },
+      { defer: true },
+    ),
+  )
 
   const showGenreFilter = () =>
     mode() === 'shelf' &&
