@@ -1451,3 +1451,35 @@
   color: var(--tl-fg-subtle);
   user-select: none;
 }
+
+/* ── 찜 소장 알림 토글 ── */
+.push {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tl-space-3);
+  margin: var(--tl-space-3) 0 0;
+  font-size: var(--tl-text-sm);
+}
+
+.push__status,
+.push__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tl-space-2);
+}
+
+.push__status {
+  color: var(--tl-fg);
+}
+
+.push__hint {
+  margin: 0;
+  color: var(--tl-fg-muted);
+  font-size: var(--tl-text-xs);
+  line-height: 1.6;
+}
+
+p.push {
+  display: block;
+}

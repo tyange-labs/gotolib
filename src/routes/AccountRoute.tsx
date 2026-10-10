@@ -14,9 +14,19 @@ import {
 import { confirmDialog } from '../lib/confirm'
 import { lastSyncedAt, omittedBooks, syncError, syncNow, syncStatus } from '../lib/sync'
 import { SYNC_MAX_BOOKS } from '../lib/syncDoc'
+import { disablePush } from '../lib/push'
 import { replayTour } from '../lib/tour'
 import { InfoTip } from '../components/InfoTip'
 import { Spinner } from '../components/Spinner'
+
+/**
+ * 로그아웃하면 이 기기의 찜 소장 알림도 끈다: 서버가 구독을 계정에 묶어 두므로, 그대로 두면 로그아웃한 기기에
+ * 그 계정의 알림이 계속 온다. 토큰이 아직 유효할 때(로그아웃 전에) 서버에 알린다.
+ */
+async function signOut() {
+  await disablePush().catch(() => {})
+  logout()
+}
 
 /** '/account' — 로그인(패스키), 패스키 추가·삭제, 동기화 상태 */
 export function AccountRoute() {
@@ -136,7 +146,7 @@ function SignedIn() {
     <div class="account">
       <div class="account__row">
         <span>이 기기에서 로그인됨</span>
-        <button class="text-button" onClick={logout}>
+        <button class="text-button" onClick={() => void signOut()}>
           로그아웃
         </button>
       </div>

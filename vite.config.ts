@@ -28,6 +28,8 @@ export default defineConfig(({ mode }) => {
 
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // 웹 푸시(찜한 책 소장 알림): push·notificationclick 처리는 public/push-handler.js에 있다.
+        importScripts: ['push-handler.js'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
       },

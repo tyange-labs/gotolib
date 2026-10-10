@@ -8,6 +8,7 @@ import { fadeOut } from '../lib/motion'
 import { fetchAvailability } from '../lib/queries'
 import { FavoriteHoldingsPanel } from './FavoriteHoldingsPanel'
 import { Pagination } from './Pagination'
+import { PushToggle } from './PushToggle'
 import { Spinner } from './Spinner'
 import type { Book } from '../types/book'
 
@@ -138,6 +139,7 @@ export function WatchlistSummary() {
             onChange={setPage}
             label="찜 목록 페이지"
           />
+          <PushToggle />
         </Show>
       </section>
     </Show>
