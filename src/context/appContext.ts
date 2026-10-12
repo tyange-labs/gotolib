@@ -14,6 +14,8 @@ export interface AppValue {
   importFile: (file: File) => Promise<{ imported: number; added: number } | null>
   addBook: (book: Book) => Promise<void>
   removeBook: (id: string) => Promise<void>
+  setOwned: (id: string, owned: boolean) => Promise<void>
+  setProgress: (id: string, progress: number) => Promise<void>
   clearAll: () => Promise<void>
   // 지역
   region: () => string

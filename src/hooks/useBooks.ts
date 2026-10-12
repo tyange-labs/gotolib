@@ -1,7 +1,16 @@
 import { createMemo, createSignal, onCleanup, onMount } from 'solid-js'
 import { SAMPLE_BOOKS } from '../data/sampleBooks'
-import { clearBooks, deleteBook, getAllBooks, getWatchlist, onDbBlocked, saveBooks } from '../lib/db'
-import { onDataApplied } from '../lib/localEvents'
+import {
+  clearBooks,
+  deleteBook,
+  getAllBooks,
+  getWatchlist,
+  onDbBlocked,
+  saveBooks,
+  setOwned as storeOwned,
+  setProgress as storeProgress,
+} from '../lib/db'
+import { emitDataApplied, onDataApplied } from '../lib/localEvents'
 import { ParseError, parseAladinExport } from '../lib/parseAladin'
 import { tourStep } from '../lib/tour'
 import type { Book } from '../types/book'
@@ -79,6 +88,20 @@ export function useBooks() {
     await load()
   }
 
+  /**
+   * 소장 표시를 바꾼다. 찜에 있던 책을 소장하면 찜에서 서재로 옮겨지므로, 서재와 찜 목록이 함께 다시 읽게 알린다.
+   */
+  const setOwned = async (id: string, owned: boolean) => {
+    await storeOwned(id, owned)
+    emitDataApplied()
+  }
+
+  /** 읽은 정도(0~100%). 슬라이더에서 손을 뗄 때 저장한다. */
+  const setProgress = async (id: string, progress: number) => {
+    await storeProgress(id, progress)
+    emitDataApplied()
+  }
+
   const clearAll = async () => {
     await clearBooks()
     await load()
@@ -92,6 +115,8 @@ export function useBooks() {
     importFile,
     addBook,
     removeBook,
+    setOwned,
+    setProgress,
     clearAll,
   }
 }

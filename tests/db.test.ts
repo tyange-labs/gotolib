@@ -149,3 +149,80 @@ describe('다른 탭이 구버전 연결을 쥐고 있을 때', () => {
     expect(opened).toBe(true)
   })
 })
+
+describe('소장과 읽은 정도', () => {
+  let db: Awaited<ReturnType<typeof fresh>>
+  beforeEach(async () => {
+    db = await fresh()
+  })
+
+  test('소장 표시를 켜고 읽은 정도를 저장한다', async () => {
+    await db.saveBooks([book('a', 10)])
+    await db.setOwned('a', true)
+    await db.setProgress('a', 40)
+    const [a] = await db.getAllBooks()
+    expect(a.owned).toBe(true)
+    expect(a.progress).toBe(40)
+  })
+
+  test('소장하지 않은 책에는 읽은 정도를 저장하지 않는다', async () => {
+    await db.saveBooks([book('a', 10)])
+    await db.setProgress('a', 40)
+    const [a] = await db.getAllBooks()
+    expect(a.progress).toBeUndefined()
+  })
+
+  test('읽은 정도는 0~100 정수로 맞추고, 0이면 필드를 지운다', async () => {
+    await db.saveBooks([book('a', 10)])
+    await db.setOwned('a', true)
+    await db.setProgress('a', 250)
+    expect((await db.getAllBooks())[0].progress).toBe(100)
+    await db.setProgress('a', 33.6)
+    expect((await db.getAllBooks())[0].progress).toBe(34)
+    await db.setProgress('a', -5)
+    expect('progress' in (await db.getAllBooks())[0]).toBe(false)
+  })
+
+  test('소장을 해제하면 읽은 정도도 지운다', async () => {
+    await db.saveBooks([book('a', 10)])
+    await db.setOwned('a', true)
+    await db.setProgress('a', 40)
+    await db.setOwned('a', false)
+    const [a] = await db.getAllBooks()
+    expect(a.owned).toBeUndefined()
+    expect(a.progress).toBeUndefined()
+  })
+
+  test('찜한(빌려보고 싶은) 책을 소장하면 찜에서 서재로 옮겨진다', async () => {
+    await db.saveBooks([book('a', 10)])
+    await db.watchBook(book('a', 10))
+    await db.setOwned('a', true)
+    expect(await db.getWatchlist()).toEqual([])
+    const books = await db.getAllBooks()
+    expect(books.map((b: Book) => [b.id, b.owned, b.addedAt])).toEqual([['a', true, 10]])
+    expect('watchedAt' in books[0]).toBe(false)
+  })
+
+  test('서재에도 찜에도 없는 책은 소장 표시해도 생기지 않는다', async () => {
+    await db.setOwned('nope', true)
+    expect(await db.getAllBooks()).toEqual([])
+  })
+
+  test('찜에 있는 책의 소장 해제는 아무것도 하지 않는다(찜은 소장하지 않은 책)', async () => {
+    await db.saveBooks([book('a', 10)])
+    await db.watchBook(book('a', 10))
+    await db.setOwned('a', false)
+    expect(await db.getAllBooks()).toEqual([])
+    expect((await db.getWatchlist()).map((w: Book) => w.id)).toEqual(['a'])
+  })
+
+  test('같은 파일을 다시 가져와도 소장·읽은 정도가 지워지지 않는다', async () => {
+    await db.saveBooks([book('a', 10)])
+    await db.setOwned('a', true)
+    await db.setProgress('a', 70)
+    await db.saveBooks([book('a', 10)])
+    const [a] = await db.getAllBooks()
+    expect(a.owned).toBe(true)
+    expect(a.progress).toBe(70)
+  })
+})

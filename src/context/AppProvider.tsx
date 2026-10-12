@@ -17,6 +17,8 @@ export function AppProvider(props: { children: JSX.Element }) {
     importFile,
     addBook,
     removeBook,
+    setOwned,
+    setProgress,
     clearAll,
   } = useBooks()
   const { coords, status: locationStatus, request: requestLocation } =
@@ -40,6 +42,8 @@ export function AppProvider(props: { children: JSX.Element }) {
     importFile,
     addBook,
     removeBook,
+    setOwned,
+    setProgress,
     clearAll,
     region,
     setRegion,

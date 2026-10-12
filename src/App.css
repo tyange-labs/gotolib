@@ -299,6 +299,21 @@
   cursor: pointer;
 }
 
+.filter__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tl-space-1);
+  padding: var(--tl-space-1) 0;
+  font-size: var(--tl-text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--tl-fg-muted);
+}
+
+.filter__toggle:hover,
+.filter__toggle[aria-pressed='true'] {
+  color: var(--tl-fg);
+}
+
 .controls {
   display: flex;
   align-items: center;
@@ -408,6 +423,30 @@
   align-items: center;
   gap: var(--tl-space-3);
   flex-shrink: 0;
+}
+
+/* 소장한 책의 읽은 정도: 슬라이더 + 퍼센트 */
+.book-card__progress {
+  display: flex;
+  align-items: center;
+  gap: var(--tl-space-3);
+  margin-top: var(--tl-space-3);
+}
+
+.book-card__progress input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  height: 1.5rem;
+  accent-color: var(--tl-fg);
+  cursor: pointer;
+}
+
+.book-card__progress-value {
+  min-width: 2.5rem;
+  text-align: right;
+  font-size: var(--tl-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--tl-fg-muted);
 }
 
 /* ── 대출 상태: 알약 대신 글자색 ─────────────────────── */
@@ -622,7 +661,7 @@
 /* 책 | 대출 상태 | 찜 해제 — 같은 열 정렬 */
 .watchlist__row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 4.5rem 1.25rem;
+  grid-template-columns: minmax(0, 1fr) 4.5rem 1.25rem 1.25rem;
   align-items: center;
   column-gap: var(--tl-space-3);
 }
@@ -630,6 +669,12 @@
 .watchlist__row .badge {
   justify-self: end;
   text-align: right;
+}
+
+.watchlist__mark {
+  display: inline-flex;
+  justify-content: center;
+  color: var(--tl-fg-muted);
 }
 
 .watchlist .pagination {

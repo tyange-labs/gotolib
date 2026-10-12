@@ -1,8 +1,9 @@
-import { Heart, X } from 'lucide-solid'
+import { BookCheck, Heart, X } from 'lucide-solid'
 import { Show, createEffect, createSignal, onCleanup } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'
 import { WATCHLIST_LIMIT } from '../hooks/useWatchlist'
+import { confirmDialog } from '../lib/confirm'
 import { flyToWatchlist } from '../lib/motion'
 import type { Book } from '../types/book'
 import { BookCover } from './BookCover'
@@ -22,7 +23,7 @@ function publishedYear(book: Book): string | undefined {
 
 // props를 구조분해하면 그 자리에서 값이 읽히고 굳는다. props.book으로 접근한다.
 export function BookCard(props: Props) {
-  const { watchlist } = useApp()
+  const { watchlist, setOwned, setProgress } = useApp()
   const { holdings, favoritesCount, lookup, reset } = useFavoriteHoldings(
     () => props.book.isbn13,
   )
@@ -50,6 +51,28 @@ export function BookCard(props: Props) {
       restore()
       setFlying(false)
     }
+  }
+
+  // 슬라이더를 끄는 동안의 값(저장은 손을 뗄 때 한 번만). null이면 저장된 값을 보여준다.
+  const [draft, setDraft] = createSignal<number | null>(null)
+  const progress = () => draft() ?? props.book.progress ?? 0
+
+  const toggleOwned = async () => {
+    if (props.book.owned && (props.book.progress ?? 0) > 0) {
+      const ok = await confirmDialog({
+        title: '소장을 해제할까요?',
+        description: '읽은 정도 기록이 함께 지워져요.',
+        confirmLabel: '해제',
+        danger: true,
+      })
+      if (!ok) return
+    }
+    await setOwned(props.book.id, !props.book.owned)
+  }
+
+  const commitProgress = async (value: number) => {
+    await setProgress(props.book.id, value)
+    setDraft(null)
   }
 
   const toggleLookup = () => {
@@ -104,17 +127,29 @@ export function BookCard(props: Props) {
           >
             <button
               class="icon-button"
-              onClick={() => void watch()}
-              disabled={watchDisabled() || flying()}
-              aria-label="찜 목록에 추가"
-              title={
-                watchDisabled()
-                  ? `찜 목록은 최대 ${WATCHLIST_LIMIT}권이에요`
-                  : '찜 목록으로 옮기기'
-              }
+              onClick={() => void toggleOwned()}
+              aria-pressed={props.book.owned === true}
+              aria-label="내 서재에 있는 책"
+              title={props.book.owned ? '소장 해제' : '내 서재에 꽂힌 책으로 표시'}
             >
-              <Heart size={16} fill={flying() ? 'currentColor' : 'none'} />
+              <BookCheck size={16} />
             </button>
+            {/* 가진 책은 빌릴 필요가 없어서 찜(빌려보고 싶은 책) 버튼을 감춘다 */}
+            <Show when={!props.book.owned}>
+              <button
+                class="icon-button"
+                onClick={() => void watch()}
+                disabled={watchDisabled() || flying()}
+                aria-label="찜 목록에 추가"
+                title={
+                  watchDisabled()
+                    ? `찜 목록은 최대 ${WATCHLIST_LIMIT}권이에요`
+                    : '찜 목록으로 옮기기'
+                }
+              >
+                <Heart size={16} fill={flying() ? 'currentColor' : 'none'} />
+              </button>
+            </Show>
             <button
               class="icon-button"
               onClick={() => setConfirming(true)}
@@ -125,6 +160,23 @@ export function BookCard(props: Props) {
           </Show>
         </div>
       </div>
+
+      <Show when={props.book.owned}>
+        <div class="book-card__progress">
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value={progress()}
+            aria-label={`${props.book.title} 읽은 정도`}
+            aria-valuetext={`${progress()}%`}
+            onInput={(e) => setDraft(e.currentTarget.valueAsNumber)}
+            onChange={(e) => void commitProgress(e.currentTarget.valueAsNumber)}
+          />
+          <span class="book-card__progress-value">{progress()}%</span>
+        </div>
+      </Show>
 
       <Show when={open()}>
         <FavoriteHoldingsPanel

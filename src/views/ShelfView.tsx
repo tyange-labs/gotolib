@@ -1,3 +1,4 @@
+import { BookCheck } from 'lucide-solid'
 import { Show, createEffect, createMemo, createSignal, on } from 'solid-js'
 import { BookSearch } from '../components/BookSearch'
 import { BookList } from '../components/BookList'
@@ -30,10 +31,11 @@ interface Props {
 }
 
 export function ShelfView(props: Props) {
-  const { kdcClass, setKdcClass, query, setQuery, filtered } = useBookFilter(
+  const { kdcClass, setKdcClass, query, setQuery, ownedOnly, setOwnedOnly, filtered } = useBookFilter(
     () => props.books,
   )
   const classTabs = createMemo(() => buildClassTabs(props.books))
+  const ownedCount = createMemo(() => props.books.filter((book) => book.owned).length)
   let top: HTMLDivElement | undefined
   let searchField: HTMLInputElement | undefined
 
@@ -42,7 +44,7 @@ export function ShelfView(props: Props) {
 
   // 분류·검색이 바뀌면 첫 페이지로 되돌린다.
   // `on`이 없으면 setPage가 읽는 것까지 추적돼 매 페이지 이동마다 1로 되돌아간다.
-  createEffect(on([kdcClass, query], () => setPage(1), { defer: true }))
+  createEffect(on([kdcClass, query, ownedOnly], () => setPage(1), { defer: true }))
 
   // 상단 '서재'를 누르면 첫 쪽으로 돌아가 맨 위로 올라간다(분류·검색은 그대로 둔다).
   // 처음 그릴 때의 값은 무시한다(`defer`): 다른 화면에서 눌러 들어온 경우는 이미 1쪽이다.
@@ -64,6 +66,11 @@ export function ShelfView(props: Props) {
   // 필터 칸이 사라졌는데(책을 지워 줄어듦 등) 고른 분류가 남아 있으면 안 보이는 필터가 목록을 가린다.
   createEffect(() => {
     if (!showGenreFilter() && kdcClass() !== ALL_CLASSES) setKdcClass(ALL_CLASSES)
+  })
+
+  // 소장한 책이 하나도 없는데(해제·삭제) '내 책장' 필터가 남아 있으면 목록이 텅 빈 채 풀 길이 없다.
+  createEffect(() => {
+    if (ownedCount() === 0 && ownedOnly()) setOwnedOnly(false)
   })
 
   // 입력창은 하나지만 모드마다 하는 일이 하나뿐이다(palim의 격자·흐름처럼). 서재 필터 글자와 새 책 검색어는 따로 둔다.
@@ -152,6 +159,19 @@ export function ShelfView(props: Props) {
             inputRef={(element) => (searchField = element)}
             placeholder="제목·저자·ISBN으로 새 책 찾기"
           />
+        </Show>
+        {/* 내 책장: 소장한 책이 하나라도 있을 때만 */}
+        <Show when={mode() === 'shelf' && ownedCount() > 0}>
+          <button
+            type="button"
+            class="filter__toggle"
+            aria-pressed={ownedOnly()}
+            onClick={() => setOwnedOnly(!ownedOnly())}
+            title="내 서재에 꽂힌 책만 보기"
+          >
+            <BookCheck size={14} aria-hidden />
+            {ownedCount()}
+          </button>
         </Show>
         {/* 분류 필터는 서재를 거를 때만, 책이 충분하고 분류가 둘 이상일 때만 쓴다 */}
         <Show when={showGenreFilter()}>

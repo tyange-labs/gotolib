@@ -38,7 +38,11 @@ function splitKey(key: string): [Domain, string] | null {
 function bookValue(book: Book): Book {
   const { id, title, author, publisher, isbn13, kdc, addedAt } = book
   const pubDate = book.pubDate?.match(/^\d{4}/)?.[0]
-  return { id, title, author, publisher, pubDate, isbn13, kdc, addedAt }
+  const value: Book = { id, title, author, publisher, pubDate, isbn13, kdc, addedAt }
+  // 소장·읽은 정도는 있을 때만 올린다(대부분의 책은 없어서 문서가 커지지 않는다).
+  if (book.owned) value.owned = true
+  if (book.owned && book.progress) value.progress = book.progress
+  return value
 }
 
 /** 찜 항목의 문서 값: 책 값 + 찜한 시각 */

@@ -12,6 +12,8 @@ function normalize(text: string): string {
 export function useBookFilter(books: () => Book[]) {
   const [kdcClass, setKdcClass] = createSignal<string>(ALL_CLASSES)
   const [query, setQuery] = createSignal('')
+  // 내 책장: 실제로 소장한 책만 본다.
+  const [ownedOnly, setOwnedOnly] = createSignal(false)
 
   const filtered = createMemo(() => {
     // 어절 단위로 나눈 뒤 각 어절을 정규화 → 모두 포함(AND)하는 책만 통과.
@@ -20,9 +22,11 @@ export function useBookFilter(books: () => Book[]) {
     /* eslint-disable solid/reactivity */
     const terms = query().split(/\s+/).map(normalize).filter(Boolean)
     const selected = kdcClass()
+    const onlyOwned = ownedOnly()
     /* eslint-enable solid/reactivity */
 
     return books().filter((book) => {
+      if (onlyOwned && !book.owned) return false
       if (selected !== ALL_CLASSES && kdcLabel(book) !== selected) return false
       if (terms.length === 0) return true
       const haystack = normalize(
@@ -32,5 +36,5 @@ export function useBookFilter(books: () => Book[]) {
     })
   })
 
-  return { kdcClass, setKdcClass, query, setQuery, filtered }
+  return { kdcClass, setKdcClass, query, setQuery, ownedOnly, setOwnedOnly, filtered }
 }

@@ -2,6 +2,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { Book } from '../types/book'
 import type { Library } from '../types/library'
 import { emitLocalChange } from './localEvents'
+import { clampProgress } from './reading'
 import { WATCHLIST_LIMIT } from './syncDoc'
 
 /**
@@ -143,13 +144,81 @@ export async function saveBooks(books: Book[]): Promise<void> {
   const tx = db.transaction(['books', 'tombstones', 'watchlist'], 'readwrite')
   // 찜한 책은 서재에 또 넣지 않는다(한 책은 한 곳에만 있다).
   const watched = new Set(await tx.objectStore('watchlist').getAllKeys())
-  // 다시 가져온 책은 '방금 바뀐 것'이라 이전의 삭제 표시를 이긴다.
+  // 다시 가져온 책은 '방금 바뀐 것'이라 이전의 삭제 표시를 이긴다. 다만 가져오는 파일에는 없는 소장·읽은 정도는
+  // 이미 저장된 값을 지킨다(같은 파일을 다시 불러와도 내 기록이 지워지지 않게).
   await Promise.all(
-    books.filter((book) => !watched.has(book.id)).flatMap((book) => [
-      tx.objectStore('books').put({ ...book, updatedAt: now }),
-      tx.objectStore('tombstones').delete(TOMB.book(book.id)),
-    ]),
+    books
+      .filter((book) => !watched.has(book.id))
+      .map(async (book) => {
+        const prev = await tx.objectStore('books').get(book.id)
+        const value: Book = { ...book, updatedAt: now }
+        if (prev?.owned && value.owned === undefined) value.owned = true
+        if (prev?.progress && value.progress === undefined) value.progress = prev.progress
+        await Promise.all([
+          tx.objectStore('books').put(value),
+          tx.objectStore('tombstones').delete(TOMB.book(book.id)),
+        ])
+      }),
   )
+  await tx.done
+  emitLocalChange()
+}
+
+/**
+ * 소장 표시를 바꾼다. 찜(빌려보고 싶은 책)에 있던 책을 소장하면 찜에서 서재로 옮긴다 — 가졌으니 빌릴 필요가 없다.
+ * 소장을 해제하면 읽은 정도도 지운다. 서재·찜 어디에도 없는 책이면 아무것도 하지 않는다.
+ */
+export async function setOwned(id: string, owned: boolean): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(['books', 'watchlist', 'tombstones'], 'readwrite')
+  const now = Date.now()
+  const watchItem = await tx.objectStore('watchlist').get(id)
+  let book: Book | undefined = await tx.objectStore('books').get(id)
+  if (!book && watchItem && owned) {
+    const moved: Partial<WatchItem> = { ...watchItem }
+    delete moved.watchedAt
+    book = moved as Book
+  }
+  if (!book) {
+    await tx.done
+    return
+  }
+  const next: Book = { ...book, updatedAt: now }
+  if (owned) {
+    next.owned = true
+  } else {
+    delete next.owned
+    delete next.progress
+  }
+  const writes: Promise<unknown>[] = [
+    tx.objectStore('books').put(next),
+    tx.objectStore('tombstones').delete(TOMB.book(id)),
+  ]
+  if (watchItem && owned) {
+    writes.push(
+      tx.objectStore('watchlist').delete(id),
+      tx.objectStore('tombstones').put({ key: TOMB.watch(id), at: now }),
+    )
+  }
+  await Promise.all(writes)
+  await tx.done
+  emitLocalChange()
+}
+
+/** 읽은 정도(0~100%)를 저장한다. 소장한 책에만 적용된다. 0이면 필드를 지운다. */
+export async function setProgress(id: string, progress: number): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction('books', 'readwrite')
+  const book = await tx.store.get(id)
+  if (!book?.owned) {
+    await tx.done
+    return
+  }
+  const value = clampProgress(progress)
+  const next: Book = { ...book, updatedAt: Date.now() }
+  if (value === 0) delete next.progress
+  else next.progress = value
+  await tx.store.put(next)
   await tx.done
   emitLocalChange()
 }
