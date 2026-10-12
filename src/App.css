@@ -11,7 +11,7 @@
 
 /* ── 푸터: 한 줄, 같은 색·서체, 얇은 구분선과 넉넉한 여백 ─────────────── */
 .app__footer {
-  margin-top: var(--tl-space-16);
+  margin-top: var(--tl-space-8);
   /* iOS 홈 화면 앱의 하단 안전 영역(홈 바)을 피한다 */
   padding: var(--tl-space-6) 0 calc(var(--tl-space-6) + env(safe-area-inset-bottom));
   color: var(--tl-fg-muted);
