@@ -1,7 +1,42 @@
 .app {
+  /* 헤더 · 본문 · 푸터의 3행: 본문이 짧아도 푸터가 화면 맨 아래에 붙고, 길면 본문 끝에 이어진다. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
   max-width: 560px;
   margin: 0 auto;
-  padding: var(--tl-space-6) var(--tl-space-5) var(--tl-space-16);
+  padding: var(--tl-space-6) var(--tl-space-5) 0;
+}
+
+/* ── 푸터: 한 줄, 같은 색·서체, 얇은 구분선과 넉넉한 여백 ─────────────── */
+.app__footer {
+  margin-top: var(--tl-space-16);
+  /* iOS 홈 화면 앱의 하단 안전 영역(홈 바)을 피한다 */
+  padding: var(--tl-space-6) 0 calc(var(--tl-space-6) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--tl-border);
+  color: var(--tl-fg-muted);
+  font-size: var(--tl-text-xs);
+}
+
+.app__footer a {
+  /* 링크 하나만 있어도 터치 영역은 최소 24×24px(WCAG 2.2 2.5.8) */
+  display: inline-flex;
+  align-items: center;
+  min-width: 24px;
+  min-height: 24px;
+  border-radius: var(--tl-radius-sm);
+  color: var(--tl-fg);
+  text-underline-offset: 3px;
+}
+
+.app__footer a:hover {
+  text-decoration: underline;
+}
+
+.app__footer a:focus-visible {
+  outline: 2px solid var(--tl-ring);
+  outline-offset: 2px;
 }
 
 /* ── 헤더: 워드마크 + 텍스트 링크 두 개 ─────────────────── */

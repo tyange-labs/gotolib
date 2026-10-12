@@ -4,7 +4,7 @@ import { ModeNav } from '../components/ModeNav'
 import { Overlays } from '../components/Overlays'
 import { Tour } from '../components/Tour'
 
-/** 루트 레이아웃: 워드마크 + 텍스트 내비 + 라우트 아웃렛 */
+/** 루트 레이아웃: 워드마크 + 텍스트 내비 + 라우트 아웃렛 + 푸터 */
 export function AppLayout(props: RouteSectionProps) {
   return (
     <div class="app">
@@ -13,7 +13,14 @@ export function AppLayout(props: RouteSectionProps) {
         <ModeNav />
       </header>
 
-      {props.children}
+      <main class="app__main">{props.children}</main>
+
+      <footer class="app__footer">
+        <span>©</span>{' '}
+        <a href="https://dev.tyange.com" target="_blank" rel="noopener noreferrer" aria-label="tyange (새 창에서 열기)">
+          tyange
+        </a>
+      </footer>
 
       <Tour />
       <Overlays />
