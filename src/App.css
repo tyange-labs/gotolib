@@ -14,7 +14,6 @@
   margin-top: var(--tl-space-16);
   /* iOS 홈 화면 앱의 하단 안전 영역(홈 바)을 피한다 */
   padding: var(--tl-space-6) 0 calc(var(--tl-space-6) + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--tl-border);
   color: var(--tl-fg-muted);
   font-size: var(--tl-text-xs);
 }
