@@ -1,14 +1,15 @@
-import { Library } from 'lucide-solid'
-import { Show, createEffect, createMemo, createSignal, on } from 'solid-js'
+import { Heart, Library } from 'lucide-solid'
+import { Show, createEffect, createMemo, createSignal, on, onCleanup } from 'solid-js'
 import { BookSearch } from '../components/BookSearch'
 import { BookList } from '../components/BookList'
 import { GenreTabs } from '../components/GenreTabs'
 import { ImportDropzone } from '../components/ImportDropzone'
 import { Pagination } from '../components/Pagination'
 import { SearchBar } from '../components/SearchBar'
-import { WatchlistSummary } from '../components/WatchlistSummary'
+import { WatchlistPanel } from '../components/WatchlistPanel'
 import { ALL_CLASSES, useBookFilter } from '../hooks/useBookFilter'
 import { usePagination } from '../hooks/usePagination'
+import { useWatchEntries } from '../hooks/useWatchEntries'
 import { confirmDialog } from '../lib/confirm'
 import { buildClassTabs } from '../lib/kdc'
 import { shelfHomeRequests } from '../lib/shelfNav'
@@ -19,8 +20,11 @@ const PAGE_SIZE = 20
 /** 분류 필터는 책이 이만큼 쌓였을 때부터 보인다(적을 땐 검색으로 충분하고 칸만 차지한다). */
 const GENRE_FILTER_MIN_BOOKS = 10
 
-/** '내 서재': 입력으로 서재를 거른다. '책 추가': 엔터로 국립중앙도서관에서 새 책을 찾는다. */
-type Mode = 'shelf' | 'add'
+/**
+ * '내 서재': 입력으로 서재를 거른다. '찜 목록': 빌려보고 싶은 책과 읽는 중인 책. '책 추가': 엔터로 국립중앙도서관에서
+ * 새 책을 찾는다.
+ */
+type Mode = 'shelf' | 'watch' | 'add'
 
 interface Props {
   books: Book[]
@@ -35,6 +39,7 @@ export function ShelfView(props: Props) {
     () => props.books,
   )
   const classTabs = createMemo(() => buildClassTabs(props.books))
+  const watchEntries = useWatchEntries()
   const ownedCount = createMemo(() => props.books.filter((book) => book.owned).length)
   let top: HTMLDivElement | undefined
   let searchField: HTMLInputElement | undefined
@@ -80,12 +85,27 @@ export function ShelfView(props: Props) {
   // 엔터로 확정한 검색어. 입력 중인 값(findInput)과 나눠야 결과가 입력을 따라 계속 다시 검색되지 않는다.
   const [finding, setFinding] = createSignal<string | null>(null)
 
+  // 찜이 늘면 탭이 살짝 튕겨서 책이 여기로 들어왔음을 알린다.
+  const [bump, setBump] = createSignal(false)
+  createEffect(
+    on(
+      () => watchEntries().length,
+      (count, prev) => {
+        if (prev === undefined || count <= prev) return
+        setBump(true)
+        const timer = setTimeout(() => setBump(false), 500)
+        onCleanup(() => clearTimeout(timer))
+      },
+    ),
+  )
+
   // 책이 다 없어지면(첫 실행 안내가 끝나 샘플이 사라질 때, 비우기 등) 책 추가로 이끈다.
+  // 찜 목록을 보는 중이면 그대로 둔다(마지막 책을 찜해서 비는 경우도 있다).
   createEffect(
     on(
       () => props.books.length === 0,
       (empty) => {
-        if (empty) setMode('add')
+        if (empty && mode() === 'shelf') setMode('add')
       },
       { defer: true },
     ),
@@ -118,8 +138,6 @@ export function ShelfView(props: Props) {
 
   return (
     <div>
-      <WatchlistSummary />
-
       <div class="mode-switch">
         <div class="seg" role="group" aria-label="검색 모드">
           <button
@@ -131,6 +149,17 @@ export function ShelfView(props: Props) {
             }}
           >
             내 서재
+          </button>
+          {/* 찜 목록: 책이 날아와 들어가는 자리(data-watch-target) */}
+          <button
+            class="seg__item seg__item--icon"
+            classList={{ 'seg__item--bump': bump() }}
+            data-watch-target
+            aria-pressed={mode() === 'watch'}
+            onClick={() => switchMode('watch')}
+          >
+            <Heart size={14} fill={mode() === 'watch' ? 'currentColor' : 'none'} aria-hidden />
+            찜 목록 {watchEntries().length}
           </button>
           {/* 내 책장: 실제로 소장한 책만. 소장한 책이 하나라도 있을 때만 보인다 */}
           <Show when={ownedCount() > 0}>
@@ -157,122 +186,131 @@ export function ShelfView(props: Props) {
         </div>
       </div>
 
-      <div class="toolbar">
-        <Show
-          when={mode() === 'add'}
-          fallback={
+      <Show when={mode() !== 'watch'}>
+        <div class="toolbar">
+          <Show
+            when={mode() === 'add'}
+            fallback={
+              <SearchBar
+                value={query()}
+                onChange={setQuery}
+                inputRef={(element) => (searchField = element)}
+                placeholder="서재에서 제목·저자·출판사 찾기"
+              />
+            }
+          >
             <SearchBar
-              value={query()}
-              onChange={setQuery}
+              value={findInput()}
+              onChange={setFindInput}
+              onSubmit={() => find(findInput())}
+              submitLabel="찾기"
               inputRef={(element) => (searchField = element)}
-              placeholder="서재에서 제목·저자·출판사 찾기"
+              placeholder="제목·저자·ISBN으로 새 책 찾기"
             />
-          }
-        >
-          <SearchBar
-            value={findInput()}
-            onChange={setFindInput}
-            onSubmit={() => find(findInput())}
-            submitLabel="찾기"
-            inputRef={(element) => (searchField = element)}
-            placeholder="제목·저자·ISBN으로 새 책 찾기"
-          />
-        </Show>
-        {/* 분류 필터는 서재를 거를 때만, 책이 충분하고 분류가 둘 이상일 때만 쓴다 */}
-        <Show when={showGenreFilter()}>
-          <GenreTabs
-            tabs={classTabs()}
-            selected={kdcClass()}
-            onSelect={setKdcClass}
-          />
-        </Show>
-      </div>
+          </Show>
+          {/* 분류 필터는 서재를 거를 때만, 책이 충분하고 분류가 둘 이상일 때만 쓴다 */}
+          <Show when={showGenreFilter()}>
+            <GenreTabs
+              tabs={classTabs()}
+              selected={kdcClass()}
+              onSelect={setKdcClass}
+            />
+          </Show>
+        </div>
+      </Show>
 
       <Show
-        when={mode() === 'shelf'}
+        when={mode() === 'watch'}
         fallback={
-          <>
+          <Show
+            when={mode() === 'shelf'}
+            fallback={
+              <>
+                <Show
+                  when={finding()}
+                  fallback={
+                    <p class="message">
+                      {props.books.length === 0
+                        ? '아직 담은 책이 없어요. 제목·저자·ISBN을 입력하고 엔터를 눌러 첫 책을 찾아 담아 보세요.'
+                        : '제목·저자·ISBN을 입력하고 엔터를 누르면 국립중앙도서관에서 새 책을 찾아요.'}
+                    </p>
+                  }
+                >
+                  {(word) => (
+                    <BookSearch keyword={word()} books={props.books} onAdd={props.onAdd} />
+                  )}
+                </Show>
+                <p class="import-hint">
+                  PC라면 알라딘 보관함 파일을 한꺼번에 가져올 수도 있어요. <ImportDropzone onFile={props.onImport} />
+                </p>
+              </>
+            }
+          >
             <Show
-              when={finding()}
+              when={props.books.length > 0}
               fallback={
                 <p class="message">
-                  {props.books.length === 0
-                    ? '아직 담은 책이 없어요. 제목·저자·ISBN을 입력하고 엔터를 눌러 첫 책을 찾아 담아 보세요.'
-                    : '제목·저자·ISBN을 입력하고 엔터를 누르면 국립중앙도서관에서 새 책을 찾아요.'}
+                  서재가 비어 있어요.{' '}
+                  <button class="text-button text-button--strong" onClick={() => switchMode('add')}>
+                    책 추가
+                  </button>
+                  에서 찾아 담아 보세요.
                 </p>
               }
             >
-              {(word) => (
-                <BookSearch keyword={word()} books={props.books} onAdd={props.onAdd} />
-              )}
+              <div class="list-header" ref={top}>
+                <span class="list-header__count">
+                  {total() > 0 ? `${total()}권 중 ${rangeStart()}–${rangeEnd()}` : '0권'}
+                </span>
+                <div class="list-header__actions">
+                  <button
+                    class="text-button"
+                    onClick={async () => {
+                      const ok = await confirmDialog({
+                        title: '저장된 도서 목록을 모두 삭제할까요?',
+                        confirmLabel: '모두 삭제',
+                        danger: true,
+                      })
+                      if (ok) props.onClearAll()
+                    }}
+                  >
+                    비우기
+                  </button>
+                </div>
+              </div>
+
+              <Show
+                when={total() > 0}
+                fallback={
+                  <p class="message">
+                    {query().trim() ? (
+                      <>
+                        서재에 맞는 책이 없어요.{' '}
+                        <button
+                          class="text-button text-button--strong"
+                          onClick={() => {
+                            setFindInput(query().trim())
+                            switchMode('add')
+                            find(query())
+                          }}
+                        >
+                          ‘{query().trim()}’ 새 책 찾기
+                        </button>
+                      </>
+                    ) : (
+                      '조건에 맞는 책이 없어요.'
+                    )}
+                  </p>
+                }
+              >
+                <BookList books={pageItems()} onRemove={props.onRemove} />
+                <Pagination page={page()} pageCount={pageCount()} onChange={goToPage} />
+              </Show>
             </Show>
-            <p class="import-hint">
-              PC라면 알라딘 보관함 파일을 한꺼번에 가져올 수도 있어요. <ImportDropzone onFile={props.onImport} />
-            </p>
-          </>
+          </Show>
         }
       >
-        <Show
-          when={props.books.length > 0}
-          fallback={
-            <p class="message">
-              서재가 비어 있어요.{' '}
-              <button class="text-button text-button--strong" onClick={() => switchMode('add')}>
-                책 추가
-              </button>
-              에서 찾아 담아 보세요.
-            </p>
-          }
-        >
-          <div class="list-header" ref={top}>
-            <span class="list-header__count">
-              {total() > 0 ? `${total()}권 중 ${rangeStart()}–${rangeEnd()}` : '0권'}
-            </span>
-            <div class="list-header__actions">
-              <button
-                class="text-button"
-                onClick={async () => {
-                  const ok = await confirmDialog({
-                    title: '저장된 도서 목록을 모두 삭제할까요?',
-                    confirmLabel: '모두 삭제',
-                    danger: true,
-                  })
-                  if (ok) props.onClearAll()
-                }}
-              >
-                비우기
-              </button>
-            </div>
-          </div>
-
-          <Show
-            when={total() > 0}
-            fallback={
-              <p class="message">
-                {query().trim() ? (
-                  <>
-                    서재에 맞는 책이 없어요.{' '}
-                    <button
-                      class="text-button text-button--strong"
-                      onClick={() => {
-                        setFindInput(query().trim())
-                        switchMode('add')
-                        find(query())
-                      }}
-                    >
-                      ‘{query().trim()}’ 새 책 찾기
-                    </button>
-                  </>
-                ) : (
-                  '조건에 맞는 책이 없어요.'
-                )}
-              </p>
-            }
-          >
-            <BookList books={pageItems()} onRemove={props.onRemove} />
-            <Pagination page={page()} pageCount={pageCount()} onChange={goToPage} />
-          </Show>
-        </Show>
+        <WatchlistPanel />
       </Show>
     </div>
   )

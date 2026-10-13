@@ -205,6 +205,13 @@
   color: var(--tl-bg);
 }
 
+/* 칸이 넷이라 좁은 휴대폰에서는 좌우 여백을 줄여 한 줄에 담는다(375px 폭 기준 355px → 323px) */
+@media (max-width: 440px) {
+  .mode-switch .seg__item {
+    padding-inline: var(--tl-space-3);
+  }
+}
+
 .seg__item--icon {
   display: inline-flex;
   align-items: center;
@@ -628,27 +635,6 @@
   font-size: var(--tl-text-sm);
 }
 
-.watchlist__header {
-  display: flex;
-  align-items: center;
-  gap: var(--tl-space-3);
-  width: 100%;
-  text-align: left;
-}
-
-.watchlist__title {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--tl-space-1);
-  font-weight: 500;
-}
-
-.watchlist__chevron {
-  display: inline-flex;
-  margin-left: auto;
-  color: var(--tl-fg-subtle);
-}
-
 .watchlist__list {
   display: flex;
   flex-direction: column;
@@ -717,13 +703,8 @@
   color: var(--tl-fg-muted);
 }
 
-/* 첫 찜이 들어갈 자리 표시(보이지 않는다) */
-.watchlist-anchor {
-  height: 0;
-}
-
-/* 찜이 늘면 머리가 살짝 튕긴다 */
-.watchlist--bump .watchlist__title {
+/* 찜이 늘면 탭이 살짝 튕긴다 */
+.seg__item--bump {
   animation: watchlist-bump 0.45s ease;
 }
 
