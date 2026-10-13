@@ -425,12 +425,23 @@
   flex-shrink: 0;
 }
 
-/* 소장한 책의 읽은 정도: 슬라이더 + 퍼센트 */
+/* 소장한 책의 읽기 상태(안 읽음 / 읽는 중 / 완독) + 읽는 중일 때만 슬라이더 */
+.book-card__reading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tl-space-2);
+  margin-top: var(--tl-space-3);
+}
+
+.seg--sm .seg__item {
+  padding: 2px var(--tl-space-3);
+  font-size: var(--tl-text-xs);
+}
+
 .book-card__progress {
   display: flex;
   align-items: center;
   gap: var(--tl-space-3);
-  margin-top: var(--tl-space-3);
 }
 
 .book-card__progress input[type='range'] {

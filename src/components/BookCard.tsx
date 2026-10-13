@@ -56,6 +56,10 @@ export function BookCard(props: Props) {
   // 슬라이더를 끄는 동안의 값(저장은 손을 뗄 때 한 번만). null이면 저장된 값을 보여준다.
   const [draft, setDraft] = createSignal<number | null>(null)
   const progress = () => draft() ?? props.book.progress ?? 0
+  const readState = () => {
+    const saved = props.book.progress ?? 0
+    return saved <= 0 ? 'todo' : saved >= 100 ? 'done' : 'reading'
+  }
 
   const toggleOwned = async () => {
     if (props.book.owned && (props.book.progress ?? 0) > 0) {
@@ -162,19 +166,47 @@ export function BookCard(props: Props) {
       </div>
 
       <Show when={props.book.owned}>
-        <div class="book-card__progress">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="1"
-            value={progress()}
-            aria-label={`${props.book.title} 읽은 정도`}
-            aria-valuetext={`${progress()}%`}
-            onInput={(e) => setDraft(e.currentTarget.valueAsNumber)}
-            onChange={(e) => void commitProgress(e.currentTarget.valueAsNumber)}
-          />
-          <span class="book-card__progress-value">{progress()}%</span>
+        <div class="book-card__reading">
+          {/* 상태는 저장된 값으로 정한다(끄는 중의 값으로 정하면 100에 닿는 순간 슬라이더가 사라진다) */}
+          <div class="seg seg--sm" role="group" aria-label={`${props.book.title} 읽기 상태`}>
+            <button
+              class="seg__item"
+              aria-pressed={readState() === 'todo'}
+              onClick={() => void commitProgress(0)}
+            >
+              안 읽음
+            </button>
+            <button
+              class="seg__item"
+              aria-pressed={readState() === 'reading'}
+              onClick={() => readState() !== 'reading' && void commitProgress(1)}
+            >
+              읽는 중
+            </button>
+            <button
+              class="seg__item"
+              aria-pressed={readState() === 'done'}
+              onClick={() => void commitProgress(100)}
+            >
+              완독
+            </button>
+          </div>
+          <Show when={readState() === 'reading'}>
+            <div class="book-card__progress">
+              <input
+                type="range"
+                min="1"
+                max="99"
+                step="1"
+                value={progress()}
+                aria-label={`${props.book.title} 읽은 정도`}
+                aria-valuetext={`${progress()}%`}
+                onInput={(e) => setDraft(e.currentTarget.valueAsNumber)}
+                onChange={(e) => void commitProgress(e.currentTarget.valueAsNumber)}
+              />
+              <span class="book-card__progress-value">{progress()}%</span>
+            </div>
+          </Show>
         </div>
       </Show>
 
