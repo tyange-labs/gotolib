@@ -1,5 +1,5 @@
 import { A } from '@solidjs/router'
-import { BookCheck, BookOpen, ChevronDown, ChevronUp, Heart } from 'lucide-solid'
+import { Library as ShelfIcon, BookOpen, ChevronDown, ChevronUp, Heart } from 'lucide-solid'
 import { For, Show, createEffect, createMemo, createSignal, on, onCleanup } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'
@@ -248,7 +248,7 @@ function WatchRow(props: { book: Book; status?: BookStatus; reading?: boolean })
             aria-label={`${props.book.title} 샀어요(내 서재로)`}
             title="샀어요: 내 서재에 꽂힌 책으로 옮기기"
           >
-            <BookCheck size={14} />
+            <ShelfIcon size={14} />
           </button>
         </Show>
         <Show when={!props.reading} fallback={<span />}>

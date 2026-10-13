@@ -1,4 +1,4 @@
-import { BookCheck, Heart, X } from 'lucide-solid'
+import { Library, Heart, X } from 'lucide-solid'
 import { Show, createEffect, createSignal, onCleanup } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'
@@ -136,7 +136,7 @@ export function BookCard(props: Props) {
               aria-label="내 서재에 있는 책"
               title={props.book.owned ? '소장 해제' : '내 서재에 꽂힌 책으로 표시'}
             >
-              <BookCheck size={16} />
+              <Library size={16} />
             </button>
             {/* 가진 책은 빌릴 필요가 없어서 찜(빌려보고 싶은 책) 버튼을 감춘다 */}
             <Show when={!props.book.owned}>

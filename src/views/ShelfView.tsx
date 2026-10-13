@@ -1,4 +1,4 @@
-import { BookCheck } from 'lucide-solid'
+import { Library } from 'lucide-solid'
 import { Show, createEffect, createMemo, createSignal, on } from 'solid-js'
 import { BookSearch } from '../components/BookSearch'
 import { BookList } from '../components/BookList'
@@ -169,7 +169,7 @@ export function ShelfView(props: Props) {
             onClick={() => setOwnedOnly(!ownedOnly())}
             title="내 서재에 꽂힌 책만 보기"
           >
-            <BookCheck size={14} aria-hidden />
+            <Library size={14} aria-hidden />
             {ownedCount()}
           </button>
         </Show>
