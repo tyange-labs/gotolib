@@ -137,7 +137,6 @@ export function ShelfView(props: Props) {
             <button
               class="seg__item seg__item--icon"
               aria-pressed={mode() === 'shelf' && ownedOnly()}
-              aria-label={`내 책장 ${ownedCount()}권`}
               title="내 서재에 꽂힌 책만 보기"
               onClick={() => {
                 setOwnedOnly(true)
@@ -145,7 +144,7 @@ export function ShelfView(props: Props) {
               }}
             >
               <Library size={14} aria-hidden />
-              {ownedCount()}
+              내 책장 {ownedCount()}
             </button>
           </Show>
           <button
