@@ -124,11 +124,30 @@ export function ShelfView(props: Props) {
         <div class="seg" role="group" aria-label="검색 모드">
           <button
             class="seg__item"
-            aria-pressed={mode() === 'shelf'}
-            onClick={() => switchMode('shelf')}
+            aria-pressed={mode() === 'shelf' && !ownedOnly()}
+            onClick={() => {
+              setOwnedOnly(false)
+              switchMode('shelf')
+            }}
           >
             내 서재
           </button>
+          {/* 내 책장: 실제로 소장한 책만. 소장한 책이 하나라도 있을 때만 보인다 */}
+          <Show when={ownedCount() > 0}>
+            <button
+              class="seg__item seg__item--icon"
+              aria-pressed={mode() === 'shelf' && ownedOnly()}
+              aria-label={`내 책장 ${ownedCount()}권`}
+              title="내 서재에 꽂힌 책만 보기"
+              onClick={() => {
+                setOwnedOnly(true)
+                switchMode('shelf')
+              }}
+            >
+              <Library size={14} aria-hidden />
+              {ownedCount()}
+            </button>
+          </Show>
           <button
             class="seg__item"
             aria-pressed={mode() === 'add'}
@@ -159,19 +178,6 @@ export function ShelfView(props: Props) {
             inputRef={(element) => (searchField = element)}
             placeholder="제목·저자·ISBN으로 새 책 찾기"
           />
-        </Show>
-        {/* 내 책장: 소장한 책이 하나라도 있을 때만 */}
-        <Show when={mode() === 'shelf' && ownedCount() > 0}>
-          <button
-            type="button"
-            class="filter__toggle"
-            aria-pressed={ownedOnly()}
-            onClick={() => setOwnedOnly(!ownedOnly())}
-            title="내 서재에 꽂힌 책만 보기"
-          >
-            <Library size={14} aria-hidden />
-            {ownedCount()}
-          </button>
         </Show>
         {/* 분류 필터는 서재를 거를 때만, 책이 충분하고 분류가 둘 이상일 때만 쓴다 */}
         <Show when={showGenreFilter()}>
