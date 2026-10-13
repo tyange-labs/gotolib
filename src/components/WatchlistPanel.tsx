@@ -1,5 +1,5 @@
 import { A } from '@solidjs/router'
-import { Library as ShelfIcon, BookOpen, Heart } from 'lucide-solid'
+import { Library as ShelfIcon, Heart } from 'lucide-solid'
 import { For, Show, createEffect, createMemo, createSignal, on } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'
@@ -24,7 +24,7 @@ type BookStatus =
   | { state: 'error' }
 
 /**
- * '찜 목록' 화면(모드 칸에서 고른다): 빌려보고 싶은 책과 읽는 중인 책. 이 화면이 열려 있을 때만 대출 가능
+ * '찜 목록' 화면(모드 칸에서 고른다): 빌려보고 싶은 책. 이 화면이 열려 있을 때만 대출 가능
  * 여부를 조회한다 — 찜 5권 × 자주 가는 도서관 수만큼 요청이 나가므로, 서재에 들어왔다고 미리 보내지 않는다.
  * 책을 누르면 도서관별 소장을 보고, 하트를 누르면 찜을 풀어 서재로 돌려보낸다(흐려지며 사라질 뿐 날아가지 않는다).
  */
@@ -46,7 +46,7 @@ export function WatchlistPanel() {
 
   // 조회 재실행 키 (조회할 책 집합 + 자주 가는 도서관 집합이 바뀔 때만).
   // `on`으로 이 키만 추적한다. 그냥 두면 아래에서 읽는 statuses까지 의존이 되어 응답이 올 때마다 조회가 다시 돈다.
-  const lookupBooks = () => shown().filter((e) => e.kind === 'watch').map((e) => e.book)
+  const lookupBooks = () => shown()
   const key = () =>
     `${lookupBooks().map((b) => b.id).join(',')}|${favs().map((f) => f.libCode).join(',')}`
 
@@ -94,13 +94,8 @@ export function WatchlistPanel() {
           <For each={shown()}>
             {(entry) => (
               <WatchRow
-                book={entry.book}
-                reading={entry.kind === 'reading'}
-                status={
-                  entry.kind === 'watch' && favs().length > 0
-                    ? statuses()[entry.book.id]
-                    : undefined
-                }
+                book={entry}
+                status={favs().length > 0 ? statuses()[entry.id] : undefined}
               />
             )}
           </For>
@@ -118,10 +113,9 @@ export function WatchlistPanel() {
 }
 
 /**
- * 한 줄: 누르면 도서관별 소장을 본다. 빌려보고 싶은 책은 '샀어요'(소장으로 옮기기)와 하트(찜 풀기)가 있고,
- * 읽는 중인 책은 대출 상태 대신 읽은 %가 보인다.
+ * 한 줄: 누르면 도서관별 소장을 본다. '샀어요'(소장으로 옮기기)와 하트(찜 풀기)가 있다.
  */
-function WatchRow(props: { book: Book; status?: BookStatus; reading?: boolean }) {
+function WatchRow(props: { book: Book; status?: BookStatus }) {
   const { watchlist, setOwned } = useApp()
   const { holdings, favoritesCount, lookup, reset } = useFavoriteHoldings(
     () => props.book.isbn13,
@@ -171,43 +165,27 @@ function WatchRow(props: { book: Book; status?: BookStatus; reading?: boolean })
           </span>
         </button>
         {/* 상태가 없어도 칸은 비워 둬서(격자) 아이콘이 항상 같은 열에 선다 */}
-        <Show
-          when={!props.reading}
-          fallback={<span class="badge">{props.book.progress}%</span>}
+        <Show when={props.status} fallback={<span />}>
+          {(status) => <StatusLabel status={status()} />}
+        </Show>
+        <button
+          class="icon-button"
+          onClick={() => void own()}
+          disabled={leaving()}
+          aria-label={`${props.book.title} 샀어요(내 서재로)`}
+          title="샀어요: 내 서재에 꽂힌 책으로 옮기기"
         >
-          <Show when={props.status} fallback={<span />}>
-            {(status) => <StatusLabel status={status()} />}
-          </Show>
-        </Show>
-        <Show
-          when={!props.reading}
-          fallback={
-            <span class="watchlist__mark" title="읽는 중" aria-label="읽는 중">
-              <BookOpen size={14} aria-hidden />
-            </span>
-          }
+          <ShelfIcon size={14} />
+        </button>
+        <button
+          class="icon-button"
+          onClick={() => void unwatch()}
+          disabled={leaving()}
+          aria-label={`${props.book.title} 찜 해제`}
+          title="찜 풀기(서재로 돌아가요)"
         >
-          <button
-            class="icon-button"
-            onClick={() => void own()}
-            disabled={leaving()}
-            aria-label={`${props.book.title} 샀어요(내 서재로)`}
-            title="샀어요: 내 서재에 꽂힌 책으로 옮기기"
-          >
-            <ShelfIcon size={14} />
-          </button>
-        </Show>
-        <Show when={!props.reading} fallback={<span />}>
-          <button
-            class="icon-button"
-            onClick={() => void unwatch()}
-            disabled={leaving()}
-            aria-label={`${props.book.title} 찜 해제`}
-            title="찜 풀기(서재로 돌아가요)"
-          >
-            <Heart size={14} fill="currentColor" />
-          </button>
-        </Show>
+          <Heart size={14} fill="currentColor" />
+        </button>
       </div>
       <Show when={open()}>
         <FavoriteHoldingsPanel

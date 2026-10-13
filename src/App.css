@@ -655,17 +655,6 @@
   column-gap: var(--tl-space-3);
 }
 
-.watchlist__row .badge {
-  justify-self: end;
-  text-align: right;
-}
-
-.watchlist__mark {
-  display: inline-flex;
-  justify-content: center;
-  color: var(--tl-fg-muted);
-}
-
 .watchlist .pagination {
   margin-top: var(--tl-space-4);
 }
