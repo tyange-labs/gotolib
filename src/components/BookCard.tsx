@@ -23,6 +23,8 @@ function publishedYear(book: Book): string | undefined {
   return book.pubDate?.match(/^\d{4}/)?.[0]
 }
 
+const READ_LABEL = { todo: '안 읽음', reading: '읽는 중', done: '완독' } as const
+
 // props를 구조분해하면 그 자리에서 값이 읽히고 굳는다. props.book으로 접근한다.
 export function BookCard(props: Props) {
   const { watchlist, setOwned, setProgress } = useApp()
@@ -64,6 +66,8 @@ export function BookCard(props: Props) {
     const saved = props.book.progress ?? 0
     return saved <= 0 ? 'todo' : saved >= 100 ? 'done' : 'reading'
   }
+
+  const nextProgress = () => ({ todo: 1, reading: 100, done: 0 })[readState()]
 
   const toggleOwned = async () => {
     if (props.book.owned && (props.book.progress ?? 0) > 0) {
@@ -177,31 +181,15 @@ export function BookCard(props: Props) {
       </div>
 
       <Show when={props.book.owned}>
-        <div class="book-card__reading">
-          <div class="seg seg--sm" role="group" aria-label={`${props.book.title} 읽기 상태`}>
-            <button
-              class="seg__item"
-              aria-pressed={readState() === 'todo'}
-              onClick={() => void commitProgress(0)}
-            >
-              안 읽음
-            </button>
-            <button
-              class="seg__item"
-              aria-pressed={readState() === 'reading'}
-              onClick={() => readState() !== 'reading' && void commitProgress(1)}
-            >
-              읽는 중
-            </button>
-            <button
-              class="seg__item"
-              aria-pressed={readState() === 'done'}
-              onClick={() => void commitProgress(100)}
-            >
-              완독
-            </button>
-          </div>
-        </div>
+        <button
+          class="book-card__state"
+          data-state={readState()}
+          onClick={() => void commitProgress(nextProgress())}
+          title="눌러서 읽기 상태 바꾸기"
+          aria-label={`${props.book.title} 읽기 상태: ${READ_LABEL[readState()]}. 누르면 바뀌어요`}
+        >
+          {READ_LABEL[readState()]}
+        </button>
       </Show>
 
       <Show when={open()}>

@@ -460,17 +460,21 @@
   flex-shrink: 0;
 }
 
-/* 소장한 책의 읽기 상태(안 읽음 / 읽는 중 / 완독) */
-.book-card__reading {
-  display: flex;
-  flex-direction: column;
-  gap: var(--tl-space-2);
-  margin-top: var(--tl-space-3);
+/* 소장한 책의 읽기 상태: 글자 하나, 누르면 안 읽음 → 읽는 중 → 완독 순으로 돈다 */
+.book-card__state {
+  margin-top: var(--tl-space-2);
+  padding: 0;
+  font-size: var(--tl-text-xs);
+  color: var(--tl-fg-muted);
 }
 
-.seg--sm .seg__item {
-  padding: 2px var(--tl-space-3);
-  font-size: var(--tl-text-xs);
+.book-card__state[data-state='reading'] {
+  color: var(--tl-fg);
+  font-weight: 600;
+}
+
+.book-card__state:hover {
+  text-decoration: underline;
 }
 
 /* ── 대출 상태: 알약 대신 글자색 ─────────────────────── */
