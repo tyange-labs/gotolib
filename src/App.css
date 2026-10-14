@@ -460,21 +460,89 @@
   flex-shrink: 0;
 }
 
-/* 소장한 책의 읽기 상태: 글자 하나, 누르면 안 읽음 → 읽는 중 → 완독 순으로 돈다 */
-.book-card__state {
-  margin-top: var(--tl-space-2);
-  padding: 0;
-  font-size: var(--tl-text-xs);
+/* 소장한 책의 읽기 상태: 표지 모서리 배지(읽는 중·완독만) + Library 아이콘의 메뉴 */
+.book-card__cover {
+  position: relative;
+  flex: none;
+}
+
+.book-card__row .book-card__cover .book-cover {
+  margin-right: 0;
+}
+
+.book-card__row .book-card__cover {
+  margin-right: var(--tl-space-2);
+}
+
+.book-card__badge {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  border: 2px solid var(--tl-bg);
+  background: var(--tl-fg);
+  color: var(--tl-bg);
+}
+
+.book-card__badge[data-state='done'] {
+  background: var(--tl-success);
+}
+
+.state-menu {
+  z-index: var(--tl-z-popover);
+  min-width: 8.5rem;
+  padding: var(--tl-space-1);
+  border: 1px solid var(--tl-border-strong);
+  border-radius: var(--tl-radius-md);
+  background: var(--tl-overlay);
+  box-shadow: var(--tl-shadow-md);
+  transform-origin: var(--kb-menu-content-transform-origin);
+  animation: overlay-out var(--tl-duration-fast) var(--tl-ease-out) forwards;
+}
+
+.state-menu[data-expanded] {
+  animation: overlay-in var(--tl-duration-fast) var(--tl-ease-out);
+}
+
+.state-menu:focus-visible {
+  outline: none;
+}
+
+.state-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--tl-space-2);
+  padding: var(--tl-space-2) var(--tl-space-3);
+  border-radius: var(--tl-radius-sm);
+  font-size: var(--tl-text-sm);
+  color: var(--tl-fg);
+  cursor: pointer;
+  outline: none;
+}
+
+.state-menu__item[data-highlighted] {
+  background: var(--tl-surface-sunken);
+}
+
+.state-menu__item--quiet {
   color: var(--tl-fg-muted);
 }
 
-.book-card__state[data-state='reading'] {
-  color: var(--tl-fg);
-  font-weight: 600;
+.state-menu__check {
+  display: inline-flex;
+  width: 12px;
 }
 
-.book-card__state:hover {
-  text-decoration: underline;
+.state-menu__sep {
+  height: 1px;
+  margin: var(--tl-space-1) 0;
+  border: 0;
+  background: var(--tl-border);
 }
 
 /* ── 대출 상태: 알약 대신 글자색 ─────────────────────── */
