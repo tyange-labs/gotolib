@@ -424,7 +424,7 @@
   flex-shrink: 0;
 }
 
-/* 소장한 책의 읽기 상태(안 읽음 / 읽는 중 / 완독) + 읽는 중일 때만 슬라이더 */
+/* 소장한 책의 읽기 상태(안 읽음 / 읽는 중 / 완독) */
 .book-card__reading {
   display: flex;
   flex-direction: column;
@@ -435,28 +435,6 @@
 .seg--sm .seg__item {
   padding: 2px var(--tl-space-3);
   font-size: var(--tl-text-xs);
-}
-
-.book-card__progress {
-  display: flex;
-  align-items: center;
-  gap: var(--tl-space-3);
-}
-
-.book-card__progress input[type='range'] {
-  flex: 1;
-  min-width: 0;
-  height: 1.5rem;
-  accent-color: var(--tl-fg);
-  cursor: pointer;
-}
-
-.book-card__progress-value {
-  min-width: 2.5rem;
-  text-align: right;
-  font-size: var(--tl-text-xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--tl-fg-muted);
 }
 
 /* ── 대출 상태: 알약 대신 글자색 ─────────────────────── */
