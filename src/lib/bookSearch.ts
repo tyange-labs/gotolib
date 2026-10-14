@@ -29,6 +29,8 @@ export interface SeojiDoc {
   EBOOK_YN?: string
   /** KDC 주류 한 자리를 담는 경우가 있다(대개 빈 값) */
   KDC?: string
+  /** 쪽수. '564 p.'·'564'처럼 표기가 제각각이다 */
+  PAGE?: string
 }
 
 /** 검색 결과: 책에서 '담은 시각'만 뺀 것 + 화면에서 판본을 구분하려는 판 표시. */
@@ -62,6 +64,15 @@ export function authorsOf(raw: string | undefined): string | undefined {
     })
     .filter((part): part is string => !!part)
   return parts.length ? parts.join(', ') : undefined
+}
+
+/**
+ * 쪽수 표기에서 쪽수를 뽑는다: "564 p." → 564, "xii, 564 p." → 564, "1책" → 1. 숫자가 없거나 0이면 undefined.
+ * 앞의 로마 숫자 쪽(머리말)은 세지 않고 아라비아 숫자 중 첫 번째를 본문 쪽수로 본다.
+ */
+export function pageCountOf(raw: string | undefined): number | undefined {
+  const n = Number(raw?.match(/\d{1,5}/)?.[0])
+  return n > 0 ? n : undefined
 }
 
 /** "20260831" → "2026" */

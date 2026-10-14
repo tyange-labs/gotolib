@@ -417,6 +417,42 @@
   color: var(--tl-fg-muted);
 }
 
+/* 불러오는 중 자리 표시: 쪽수가 들어올 칸만큼 미리 차지해 도착해도 줄이 흔들리지 않는다 */
+.skeleton {
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: var(--tl-radius-sm, 4px);
+  background: linear-gradient(
+    90deg,
+    var(--tl-border) 25%,
+    var(--tl-surface) 50%,
+    var(--tl-border) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.book-card__pages-skeleton {
+  width: 3.5em;
+  height: 0.9em;
+  margin-left: var(--tl-space-2);
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
 .book-card__tools {
   display: flex;
   align-items: center;

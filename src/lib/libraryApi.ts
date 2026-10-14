@@ -4,7 +4,7 @@
  */
 
 import type { Library } from '../types/library'
-import { toSearchResults, type SeojiDoc, type SearchResult } from './bookSearch'
+import { isbn13Of, pageCountOf, toSearchResults, type SeojiDoc, type SearchResult } from './bookSearch'
 import { toHoldingInfo, type HoldingInfo, type ItemDoc } from './holdingInfo'
 
 export type { Library }
@@ -170,6 +170,20 @@ export async function searchBooks(
     results: toSearchResults([...byTitle.docs, ...byAuthor.docs]),
     fetched: byTitle.docs.length + byAuthor.docs.length,
   }
+}
+
+/**
+ * 한 권의 쪽수: 같은 ISBN의 종이책 레코드에서 읽는다. 서지정보에 쪽수가 없거나 책을 못 찾으면 null
+ * (없다는 답도 답이라 캐시에 남긴다). 보관함 파일로 가져온 책은 쪽수가 없어서 카드가 보일 때 부른다.
+ */
+export async function fetchPageCount(isbn13: string): Promise<number | null> {
+  const { docs } = await seoji('isbn', isbn13, 1, 5)
+  for (const doc of docs) {
+    if (doc.EBOOK_YN === 'Y' || isbn13Of(doc.EA_ISBN) !== isbn13) continue
+    const pages = pageCountOf(doc.PAGE)
+    if (pages) return pages
+  }
+  return null
 }
 
 /** 특정 도서관의 소장 및 대출 가능 여부를 조회한다. */

@@ -1,3 +1,4 @@
+import { createQuery } from '@tanstack/solid-query'
 import { Library, Heart, X } from 'lucide-solid'
 import { Show, createEffect, createSignal, onCleanup } from 'solid-js'
 import { useApp } from '../context/appContext'
@@ -5,6 +6,7 @@ import { useFavoriteHoldings } from '../hooks/useFavoriteHoldings'
 import { WATCHLIST_LIMIT } from '../hooks/useWatchlist'
 import { confirmDialog } from '../lib/confirm'
 import { flyToWatchlist } from '../lib/motion'
+import { pageCountQuery } from '../lib/queries'
 import type { Book } from '../types/book'
 import { BookCover } from './BookCover'
 import { FavoriteHoldingsPanel } from './FavoriteHoldingsPanel'
@@ -28,6 +30,11 @@ export function BookCard(props: Props) {
     () => props.book.isbn13,
   )
   const [open, setOpen] = createSignal(false)
+  // 쪽수는 카드가 보일 때 서지정보에서 가져온다(한 번 알면 기기에 남는다). 못 가져오면 그냥 안 보인다.
+  const pageCount = createQuery(() => ({
+    ...pageCountQuery(props.book.isbn13 ?? ''),
+    enabled: !!props.book.isbn13,
+  }))
   // 삭제는 되돌릴 수 없어서(다시 가져오기 전까지) 한 번 더 확인한다. 아무것도 안 하면 저절로 닫힌다.
   const [confirming, setConfirming] = createSignal(false)
   createEffect(() => {
@@ -101,10 +108,18 @@ export function BookCard(props: Props) {
           }
         >
           <span class="book-card__title">{props.book.title}</span>
-          <span class="book-card__meta">
-            {[props.book.author, props.book.publisher, publishedYear(props.book)]
+          <span class="book-card__meta" aria-busy={pageCount.isPending && !!props.book.isbn13}>
+            {[
+              props.book.author,
+              props.book.publisher,
+              publishedYear(props.book),
+              pageCount.data ? `${pageCount.data}쪽` : undefined,
+            ]
               .filter(Boolean)
               .join(' · ')}
+            <Show when={props.book.isbn13 && pageCount.isPending}>
+              <span class="skeleton book-card__pages-skeleton" role="status" aria-label="쪽수 불러오는 중" />
+            </Show>
           </span>
         </button>
         <div class="book-card__tools">

@@ -1,7 +1,13 @@
 import { QueryClient } from '@tanstack/solid-query'
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
 import { getApiCache, putApiCache, removeApiCache } from './db'
-import { checkAvailability, fetchHoldingInfo, searchBooks, searchLibraries } from './libraryApi'
+import {
+  checkAvailability,
+  fetchHoldingInfo,
+  fetchPageCount,
+  searchBooks,
+  searchLibraries,
+} from './libraryApi'
 
 const HOUR = 60 * 60 * 1000
 
@@ -46,6 +52,13 @@ export const holdingInfoQuery = (isbn13: string, libCode: string) => ({
 export const fetchHolding = (isbn13: string, libCode: string) =>
   queryClient.fetchQuery(holdingInfoQuery(isbn13, libCode))
 
+/** 쪽수는 책이 같으면 안 바뀐다. 한 번 알면(없다는 답 포함) 다시 부르지 않는다. */
+export const pageCountQuery = (isbn13: string) => ({
+  queryKey: ['pageCount', isbn13] as const,
+  queryFn: () => fetchPageCount(isbn13),
+  staleTime: Infinity,
+})
+
 /** 도서 검색: 같은 검색어·쪽은 잠시 다시 부르지 않는다(더 보기·되돌아오기에서 호출을 아낀다). */
 export const fetchBookSearch = (keyword: string, pageNo: number) =>
   queryClient.fetchQuery({
@@ -58,7 +71,7 @@ export const fetchBookSearch = (keyword: string, pageNo: number) =>
 export const fetchAvailability = (isbn13: string, libCode: string) =>
   queryClient.fetchQuery(availabilityQuery(isbn13, libCode))
 
-/** 캐시 영속화는 IndexedDB(apiCache)에. 도서관 목록만 저장한다(대출 여부는 휘발). */
+/** 캐시 영속화는 IndexedDB(apiCache)에. 도서관 목록과 쪽수만 저장한다(대출 여부는 휘발). */
 export const persister = createAsyncStoragePersister({
   key: 'gotolib-query-cache',
   throttleTime: 1000,
@@ -79,6 +92,8 @@ export const persistOptions = {
     shouldDehydrateQuery: (query: {
       queryKey: readonly unknown[]
       state: { status: string }
-    }) => query.state.status === 'success' && query.queryKey[0] === 'libraries',
+    }) =>
+      query.state.status === 'success' &&
+      (query.queryKey[0] === 'libraries' || query.queryKey[0] === 'pageCount'),
   },
 }

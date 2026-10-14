@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { authorsOf, isbn10to13, toBook, toSearchResults, type SeojiDoc } from '../src/lib/bookSearch'
+import { authorsOf, isbn10to13, pageCountOf, toBook, toSearchResults, type SeojiDoc } from '../src/lib/bookSearch'
 import risky from './fixtures/seoji-risky.json'
 import conifer from './fixtures/seoji-conifer.json'
 import byAuthor from './fixtures/seoji-author.json'
@@ -133,5 +133,20 @@ describe('toBook', () => {
     expect(book.addedAt).toBe(123)
     expect('edition' in book).toBe(false)
     expect(book.id).toBe('9788954606752')
+  })
+})
+
+describe('pageCountOf', () => {
+  test('표기가 제각각이어도 쪽수를 뽑는다', () => {
+    expect(pageCountOf('564 p.')).toBe(564)
+    expect(pageCountOf('564')).toBe(564)
+    expect(pageCountOf('xii, 564 p.')).toBe(564)
+  })
+
+  test('숫자가 없거나 0이면 없는 것', () => {
+    expect(pageCountOf(undefined)).toBeUndefined()
+    expect(pageCountOf('')).toBeUndefined()
+    expect(pageCountOf('p.')).toBeUndefined()
+    expect(pageCountOf('0 p.')).toBeUndefined()
   })
 })
