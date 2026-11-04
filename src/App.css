@@ -1050,6 +1050,14 @@
   color: var(--tl-fg-muted);
 }
 
+/* ── '한국문학' 탭 목록 줄의 오른쪽 버튼들(알라딘 링크 · 서재에 담기) ── */
+.novel-row__actions {
+  display: flex;
+  align-items: baseline;
+  gap: var(--tl-space-3);
+  flex-shrink: 0;
+}
+
 /* ── 첫 실행 안내(튜토리얼) ───────────────────────────── */
 /* 문서(페이지) 좌표 기준: fixed가 아니라 absolute. 높이는 문서 높이로 컴포넌트가 정한다.
    iOS에서 fixed와 getBoundingClientRect의 기준이 어긋나 점선이 밀리던 문제를 피한다. */

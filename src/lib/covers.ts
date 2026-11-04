@@ -16,6 +16,17 @@ interface CoversResponse {
 /** 서버가 한 번에 받는 ISBN 상한(MAX_ISBNS_PER_REQUEST)과 맞춘다. */
 export const MAX_ISBNS_PER_REQUEST = 50
 
+/**
+ * 아직 출간되지 않은 책인지. 출간예정일이 미래면 true — 알라딘에 물어봐도 상품 페이지가 없어
+ * 헛걸음이므로(서버 수집 큐 한 자리를 그냥 버리는 셈) 애초에 묻지 않는다.
+ * pubDate가 없거나 날짜로 못 읽으면(연도만 있는 등) 보수적으로 "출간됨"으로 본다.
+ */
+export function isUnreleased(pubDate: string | undefined, now = new Date()): boolean {
+  if (!pubDate) return false
+  const parsed = new Date(pubDate)
+  return !Number.isNaN(parsed.getTime()) && parsed.getTime() > now.getTime()
+}
+
 /** 아직 수집 중인 표지를 다시 물어보는 간격(점점 늘린다). 다 쓰면 그 화면에서는 더 묻지 않는다. */
 export const POLL_DELAYS_MS = [5_000, 10_000, 20_000, 40_000, 60_000]
 

@@ -1,0 +1,118 @@
+import { For, Show, createMemo, createSignal } from 'solid-js'
+import { useApp } from '../context/appContext'
+import { Pagination } from '../components/Pagination'
+import { SearchBar } from '../components/SearchBar'
+import { NovelRow } from '../components/NovelRow'
+import type { NovelsProgress } from '../hooks/useKoreanNovels'
+import { TARGET_PUBLISHERS } from '../lib/novelClassify'
+import type { NovelCandidate } from '../types/novel'
+
+const PAGE_SIZE = 20
+const ALL_PUBLISHERS = '전체 출판사'
+
+function normalize(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, '')
+}
+
+interface Props {
+  novels: NovelCandidate[]
+  ready: boolean
+  progress: NovelsProgress
+  error: string | null
+  onRefresh: () => void
+}
+
+/** '한국문학' 탭: 2020년대 이후 전자책으로 나온 한국 장편소설을 모아 보여준다 */
+export function KoreanLitView(props: Props) {
+  const { books } = useApp()
+  const shelfIds = createMemo(() => new Set(books().map((book) => book.id)))
+
+  const [query, setQuery] = createSignal('')
+  const [publisher, setPublisher] = createSignal(ALL_PUBLISHERS)
+
+  const filtered = createMemo(() => {
+    // filter 콜백은 이 memo 본문 안에서 동기적으로 실행되므로 매번 다시 계산된다(useBookFilter와 같은 패턴).
+    /* eslint-disable solid/reactivity */
+    const term = normalize(query())
+    const selectedPublisher = publisher()
+    /* eslint-enable solid/reactivity */
+    return props.novels
+      .filter((novel) => selectedPublisher === ALL_PUBLISHERS || novel.publisher === selectedPublisher)
+      .filter((novel) => !term || normalize(`${novel.title} ${novel.author ?? ''}`).includes(term))
+      .sort((a, b) => (b.pubDate ?? '').localeCompare(a.pubDate ?? ''))
+  })
+
+  const [page, setPage] = createSignal(1)
+  const pageCount = () => Math.max(1, Math.ceil(filtered().length / PAGE_SIZE))
+  const pageItems = createMemo(() => {
+    const start = (Math.min(page(), pageCount()) - 1) * PAGE_SIZE
+    return filtered().slice(start, start + PAGE_SIZE)
+  })
+
+  const publisherCounts = createMemo(() => {
+    const counts = new Map<string, number>()
+    for (const novel of props.novels) counts.set(novel.publisher, (counts.get(novel.publisher) ?? 0) + 1)
+    return counts
+  })
+
+  return (
+    <div>
+      <p class="message">
+        국립중앙도서관 서지정보로 모은 17개 문학 출판사의 전자책 중 2020년 이후 한국 장편소설 후보예요.
+        쪽수가 아직 없는 책은 '확인 필요'로 표시돼요.{' '}
+        <button class="text-button" onClick={() => props.onRefresh()}>
+          새로고침
+        </button>
+      </p>
+
+      <Show when={props.error}>{(message) => <p class="message message--error">{message()}</p>}</Show>
+
+      <Show when={props.progress.total > 0 && props.progress.done < props.progress.total}>
+        <p class="message">
+          모으는 중… {props.progress.done}/{props.progress.total}
+          <Show when={props.progress.label}>{(label) => ` (${label()})`}</Show>
+        </p>
+      </Show>
+
+      <div class="toolbar">
+        <SearchBar value={query()} onChange={setQuery} placeholder="제목·저자로 찾기" />
+        <div class="filter">
+          <select
+            class="filter__select"
+            aria-label="출판사"
+            value={publisher()}
+            onChange={(e) => setPublisher(e.currentTarget.value)}
+          >
+            <option value={ALL_PUBLISHERS}>전체 출판사</option>
+            <For each={TARGET_PUBLISHERS}>
+              {(name) => (
+                <option value={name}>
+                  {name} ({publisherCounts().get(name) ?? 0})
+                </option>
+              )}
+            </For>
+          </select>
+        </div>
+      </div>
+
+      <Show
+        when={filtered().length > 0}
+        fallback={
+          <p class="message">
+            {props.ready ? '조건에 맞는 책이 없어요.' : '불러오는 중…'}
+          </p>
+        }
+      >
+        <div class="list-header">
+          <span class="list-header__count">{filtered().length}권</span>
+        </div>
+        <ul class="search-results">
+          <For each={pageItems()}>
+            {(novel) => <NovelRow novel={novel} inShelf={shelfIds().has(novel.id)} />}
+          </For>
+        </ul>
+        <Pagination page={page()} pageCount={pageCount()} onChange={setPage} />
+      </Show>
+    </div>
+  )
+}

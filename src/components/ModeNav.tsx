@@ -11,6 +11,9 @@ export function ModeNav() {
       <A href="/nearby" class="nav__link" activeClass="nav__link--active">
         도서관
       </A>
+      <A href="/korean-lit" class="nav__link" activeClass="nav__link--active">
+        한국문학
+      </A>
       <A href="/account" class="nav__link" activeClass="nav__link--active">
         계정
       </A>
