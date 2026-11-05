@@ -153,10 +153,12 @@ export function classifyWithAladin(
   minPages = NOVEL_MIN_PAGES,
 ): NovelVerdict {
   if (aladin?.formHint && FORM_HINT_VERDICT[aladin.formHint]) return FORM_HINT_VERDICT[aladin.formHint]
-  // 알라딘의 "소설/시/희곡" 묶음 카테고리명 자체에는 항상 "소설"이 들어 있으니(시여도 마찬가지) 맨 끝
-  // 갈래(예: "한국시"·"한국소설")만 본다.
-  const lastSegment = aladin?.category?.split('>').at(-1)?.trim()
-  if (lastSegment && !lastSegment.includes('소설')) return '소설 아님'
+  // 알라딘 분류 경로에 "소설"이 있는지로 가른다. 묶음 카테고리명 "소설/시/희곡" 자체에는 시여도 항상
+  // "소설"이 들어 있어서 그 부분은 빼고 본다. 맨 끝 갈래만 보면 안 된다 — 예전 책은
+  // "…한국소설 > 2000년대 이전"처럼 장르가 아니라 시기 구간이 한 단계 더 붙어서(실제 버그 사례:
+  // 최인호 "몽유도원도") 맨 끝만 보면 '한국소설' 신호를 놓친다.
+  const category = aladin?.category?.replace('소설/시/희곡', '')
+  if (category && !category.includes('소설')) return '소설 아님'
   return classifyNovel(candidate, aladin?.pages ?? nlPages, minPages)
 }
 

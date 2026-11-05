@@ -67,6 +67,20 @@ describe('classifyWithAladin', () => {
       classifyWithAladin(candidate, 300, { category: '국내도서 > 소설/시/희곡 > 한국소설' }),
     ).not.toBe('소설 아님')
   })
+  test('실제 버그 사례: 옛날 책은 맨 끝에 장르가 아니라 "2000년대 이전" 같은 시기 구간이 붙는다 — 맨 끝 갈래만 보면 안 된다', () => {
+    // 최인호 "몽유도원도": "전자책 > 소설/시/희곡 > 한국소설 > 2000년대 이전"의 맨 끝 "2000년대 이전"에는
+    // "소설"이 없어서, 맨 끝 갈래만 보던 예전 로직은 이걸 소설 아님으로 잘못 걸렀다.
+    expect(
+      classifyWithAladin(candidate, 300, {
+        category: '전자책 > 소설/시/희곡 > 한국소설 > 2000년대 이전',
+      }),
+    ).not.toBe('소설 아님')
+  })
+  test('에세이처럼 "소설/시/희곡" 묶음이 아예 없는 분류도 정확히 걸러낸다', () => {
+    expect(
+      classifyWithAladin(candidate, 300, { category: '전자책 > 에세이 > 한국에세이' }),
+    ).toBe('소설 아님')
+  })
   test('알라딘 쪽수가 있으면 NL 쪽수보다 우선한다', () => {
     expect(classifyWithAladin(candidate, 100, { pages: 300 })).toBe('장편')
   })
