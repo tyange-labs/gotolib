@@ -1,11 +1,11 @@
 import { createSignal, onCleanup } from 'solid-js'
-import { clearNovelCache, getAllNovelMonths, putNovelMonth } from '../lib/db'
+import { clearNovelCache, getAllNovelPeriods, putNovelPeriod } from '../lib/db'
 import { LibraryApiError } from '../lib/libraryApi'
 import { TARGET_PUBLISHERS } from '../lib/novelClassify'
 import {
-  fetchNovelMonthRaw,
-  monthWindow,
-  monthsSince2020,
+  fetchNovelPeriodRaw,
+  yearWindow,
+  yearsSince2020,
   toCandidates,
   type NovelSeojiDoc,
 } from '../lib/novelsApi'
@@ -20,8 +20,8 @@ export interface NovelsProgress {
 
 const CONCURRENCY = 3
 
-/** publisher|yyyymm → 캐시 행에서 바로 쓸 수 있게 publisher를 들고 다닌다 */
-type Row = { publisher: string; yyyymm: string; docs: NovelSeojiDoc[] }
+/** publisher|yyyy → 캐시 행에서 바로 쓸 수 있게 publisher를 들고 다닌다 */
+type Row = { publisher: string; period: string; docs: NovelSeojiDoc[] }
 
 function toCandidateList(rows: Row[]): NovelCandidate[] {
   const seen = new Map<string, NovelCandidate>()
@@ -35,8 +35,8 @@ function toCandidateList(rows: Row[]): NovelCandidate[] {
 }
 
 /**
- * '한국문학' 탭 데이터: IndexedDB 캐시를 먼저 보여주고, 빠진 출판사×월 구간을 백그라운드에서 채운다.
- * 탭을 처음 열면 몇 분 걸릴 수 있지만(17개 출판사 × 수십 달), 한 번 모은 달은 다음부터 다시 긁지 않는다.
+ * '한국문학' 탭 데이터: IndexedDB 캐시를 먼저 보여주고, 빠진 출판사×해 구간을 백그라운드에서 채운다.
+ * 탭을 처음 열면 시간이 좀 걸릴 수 있지만(17개 출판사 × 7년), 한 번 모은 해는 다음부터 다시 긁지 않는다.
  */
 export function useKoreanNovels() {
   const [rows, setRows] = createSignal<Row[]>([])
@@ -56,18 +56,18 @@ export function useKoreanNovels() {
       await clearNovelCache()
       setRows([])
     } else {
-      cached = await getAllNovelMonths()
+      cached = await getAllNovelPeriods()
       if (cancelled) return
       setRows(cached)
     }
     setReady(true)
 
-    const months = monthsSince2020()
-    const cachedKeys = new Set(cached.map((r) => `${r.publisher}|${r.yyyymm}`))
+    const periods = yearsSince2020()
+    const cachedKeys = new Set(cached.map((r) => `${r.publisher}|${r.period}`))
     const jobs = TARGET_PUBLISHERS.flatMap((publisher) =>
-      months
-        .filter((yyyymm) => !cachedKeys.has(`${publisher}|${yyyymm}`))
-        .map((yyyymm) => ({ publisher, yyyymm })),
+      periods
+        .filter((period) => !cachedKeys.has(`${publisher}|${period}`))
+        .map((period) => ({ publisher, period })),
     )
     if (jobs.length === 0) {
       setProgress({ done: 0, total: 0 })
@@ -82,14 +82,14 @@ export function useKoreanNovels() {
         if (cancelled) return
         const index = nextIndex++
         if (index >= jobs.length) return
-        const { publisher, yyyymm } = jobs[index]
+        const { publisher, period } = jobs[index]
         try {
-          const [start, end] = monthWindow(yyyymm)
-          const docs = await fetchNovelMonthRaw(publisher, start, end)
+          const [start, end] = yearWindow(period)
+          const docs = await fetchNovelPeriodRaw(publisher, start, end)
           if (cancelled) return
-          await putNovelMonth(publisher, yyyymm, docs)
+          await putNovelPeriod(publisher, period, docs)
           if (cancelled) return
-          setRows((prev) => [...prev, { publisher, yyyymm, docs }])
+          setRows((prev) => [...prev, { publisher, period, docs }])
         } catch (e) {
           if (cancelled) return
           setError(
@@ -99,7 +99,7 @@ export function useKoreanNovels() {
           )
         } finally {
           doneCount += 1
-          setProgress({ done: doneCount, total: jobs.length, label: `${publisher} ${yyyymm}` })
+          setProgress({ done: doneCount, total: jobs.length, label: `${publisher} ${period}` })
         }
       }
     }

@@ -75,8 +75,25 @@ const BOUNDARY_MIN_PAGES = 200
 const NOVEL_MIN_PAGES = 250
 
 /**
+ * 부가기호 내용분류 중 '소설이 아님'을 확정하는 코드만. 810은 "한국문학" 대분류일 뿐 하위 갈래가
+ * 안 적힌 전자책에 흔히 붙어서(소설도 810으로 들어온다) 제외 대상이 아니다 — 813(소설)과 똑같이
+ * "모른다"로 보고 제목·쪽수로 더 추정한다. 811 시·812 희곡·814 수필·815 평론 등 구체적으로 소설이
+ * 아닌 하위 갈래만 제외한다.
+ */
+const EXCLUDE_KDC3 = new Set(['811', '812', '814', '815', '816', '817', '818', '819'])
+
+/** 알라딘 책소개에서 뽑은 형식어(book_info::extract_form_hint)를 판정으로 옮긴다 */
+const FORM_HINT_VERDICT: Record<string, NovelVerdict> = {
+  장편소설: '장편',
+  경장편소설: '장편',
+  연작소설: '소설집·중편',
+  소설집: '소설집·중편',
+}
+
+/**
  * 장편/소설집·중편/확인 필요/소설 아님을 추정한다.
- * - KDC 3자리가 있는데 81x이면서 813이 아니면 '소설 아님'(시·수필·희곡 등).
+ * - KDC 3자리가 EXCLUDE_KDC3에 있으면 '소설 아님'(시·수필·희곡 등). 813은 물론이고 810(갈래 미기재)도
+ *   통과시킨다.
  * - 제목에 시집·에세이·동화·희곡 등이 있으면 '소설 아님'.
  * - 공저 3인 이상이면 앤솔로지로 보고 '소설 아님'.
  * - 제목에 소설집·단편·연작소설 등이 있거나 쪽수가 200 미만이면 '소설집·중편'.
@@ -90,7 +107,7 @@ export function classifyNovel(
 ): NovelVerdict {
   const { title, kdc3, authorCount } = candidate
 
-  if (kdc3 && kdc3.startsWith('81') && kdc3 !== '813') return '소설 아님'
+  if (kdc3 && EXCLUDE_KDC3.has(kdc3)) return '소설 아님'
   if (EXCLUDE_TITLE.test(title)) return '소설 아님'
   if ((authorCount ?? 0) >= 3) return '소설 아님'
 
@@ -99,6 +116,35 @@ export function classifyNovel(
   if (pages < BOUNDARY_MIN_PAGES) return '소설집·중편'
   if (pages < minPages) return '확인 필요'
   return '장편'
+}
+
+/** 알라딘(book-info)에서 받은 신호. 모르면(아직 수집 전) undefined */
+export interface AladinSignal {
+  /** 알라딘 주제 분류 경로(예: "국내도서 > 소설/시/희곡 > 한국소설 > …") */
+  category?: string
+  /** 책소개에서 뽑은 형식어: "장편소설"·"경장편소설"·"연작소설"·"소설집" */
+  formHint?: string
+  pages?: number
+}
+
+/**
+ * NL 서지 신호에 알라딘 신호를 겹쳐 더 정확하게 판정한다(알라딘이 1차, NL 서지가 보강·대체).
+ * - formHint가 있으면 그걸로 바로 '장편'/'소설집·중편' 확정(책소개에 직접 적힌 값이라 가장 믿을 만하다).
+ * - 분류 경로가 있는데 '소설'이 전혀 안 들어 있으면(시·에세이·희곡 등 알라딘 자체 분류) '소설 아님'.
+ * - 그 외엔 알라딘 쪽수(있으면 NL 쪽수보다 믿는다)로 classifyNovel을 그대로 쓴다.
+ */
+export function classifyWithAladin(
+  candidate: Pick<NovelCandidate, 'title' | 'kdc3' | 'authorCount'>,
+  nlPages: number | null | undefined,
+  aladin: AladinSignal | undefined,
+  minPages = NOVEL_MIN_PAGES,
+): NovelVerdict {
+  if (aladin?.formHint && FORM_HINT_VERDICT[aladin.formHint]) return FORM_HINT_VERDICT[aladin.formHint]
+  // 알라딘의 "소설/시/희곡" 묶음 카테고리명 자체에는 항상 "소설"이 들어 있으니(시여도 마찬가지) 맨 끝
+  // 갈래(예: "한국시"·"한국소설")만 본다.
+  const lastSegment = aladin?.category?.split('>').at(-1)?.trim()
+  if (lastSegment && !lastSegment.includes('소설')) return '소설 아님'
+  return classifyNovel(candidate, aladin?.pages ?? nlPages, minPages)
 }
 
 /** 알라딘 상품 페이지 링크(ISBN 기준). CORS 때문에 내용을 긁어 오지 못하니 '보러 가기' 링크로만 쓴다. */

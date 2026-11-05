@@ -40,13 +40,14 @@ interface GotolibDB extends DBSchema {
     value: { key: string; savedAt: number; data: unknown }
   }
   /**
-   * '한국문학' 탭 수집 캐시. 출판사 × 월(key: `publisher|yyyymm`)로 원본 서지 레코드를 쌓아 둔다.
+   * '한국문학' 탭 수집 캐시. 출판사 × 해(key: `publisher|yyyy`)로 원본 서지 레코드를 쌓아 둔다.
+   * 달 단위(구 novelMonths)는 17개 출판사 × 수십 달이라 요청이 너무 많아져 해 단위로 바꿨다(2026-11).
    * 걸러내는 기준(classifyNovel)이 바뀌어도 다시 긁지 않고 재계산만 하면 되게 원본을 둔다.
    * 개인 서재와 달리 동기화 대상이 아니라 삭제 표시(tombstone)가 없다.
    */
-  novelMonths: {
+  novelPeriods: {
     key: string
-    value: { key: string; publisher: string; yyyymm: string; fetchedAt: number; docs: NovelSeojiDoc[] }
+    value: { key: string; publisher: string; period: string; fetchedAt: number; docs: NovelSeojiDoc[] }
   }
 }
 
@@ -72,7 +73,7 @@ export const onDbBlocked = (listener: () => void) => {
 }
 
 export function getDB() {
-  dbPromise ??= openDB<GotolibDB>('gotolib', 6, {
+  dbPromise ??= openDB<GotolibDB>('gotolib', 7, {
     blocked() {
       blockedListeners.forEach((listener) => listener())
     },
@@ -102,7 +103,17 @@ export function getDB() {
         db.createObjectStore('tombstones', { keyPath: 'key' })
       }
       if (oldVersion < 6) {
-        db.createObjectStore('novelMonths', { keyPath: 'key' })
+        ;(db as unknown as { createObjectStore(name: string, opts: { keyPath: string }): void }).createObjectStore(
+          'novelMonths',
+          { keyPath: 'key' },
+        )
+      }
+      if (oldVersion < 7) {
+        // 달 단위 캐시(novelMonths)를 해 단위(novelPeriods)로 바꾼다 — 키 모양이 달라져서
+        // 옮기지 않고 새로 긁는다(어차피 한국문학 탭을 다시 열면 다시 모은다). 스키마에서 이미 뺀
+        // 이름이라 타입이 안 걸린다(실제 지우는 동작은 버전만 맞으면 그대로 된다).
+        if (oldVersion >= 6) (db as unknown as { deleteObjectStore(name: string): void }).deleteObjectStore('novelMonths')
+        db.createObjectStore('novelPeriods', { keyPath: 'key' })
       }
       if (oldVersion >= 2 && oldVersion < 5) {
         // 찜을 `{ bookId, addedAt }` 참조에서 책 통째 저장으로 옮긴다: 서재에서 꺼내 찜으로 보낸다.
@@ -349,41 +360,41 @@ export async function unwatchBook(id: string): Promise<void> {
 }
 
 // ── '한국문학' 수집 캐시 ──────────────────────────────
-export async function getNovelMonth(
+export async function getNovelPeriod(
   publisher: string,
-  yyyymm: string,
+  period: string,
 ): Promise<NovelSeojiDoc[] | undefined> {
   const db = await getDB()
-  const row = await db.get('novelMonths', `${publisher}|${yyyymm}`)
+  const row = await db.get('novelPeriods', `${publisher}|${period}`)
   return row?.docs
 }
 
-export async function putNovelMonth(
+export async function putNovelPeriod(
   publisher: string,
-  yyyymm: string,
+  period: string,
   docs: NovelSeojiDoc[],
 ): Promise<void> {
   const db = await getDB()
-  await db.put('novelMonths', {
-    key: `${publisher}|${yyyymm}`,
+  await db.put('novelPeriods', {
+    key: `${publisher}|${period}`,
     publisher,
-    yyyymm,
+    period,
     fetchedAt: Date.now(),
     docs,
   })
 }
 
-/** 캐시에 쌓인 월별 레코드 전체(걸러내기 전). 출판사별로 다시 거르려면 publisher가 필요해서 통째로 둔다. */
-export async function getAllNovelMonths(): Promise<
-  Array<{ publisher: string; yyyymm: string; docs: NovelSeojiDoc[] }>
+/** 캐시에 쌓인 해별 레코드 전체(걸러내기 전). 출판사별로 다시 거르려면 publisher가 필요해서 통째로 둔다. */
+export async function getAllNovelPeriods(): Promise<
+  Array<{ publisher: string; period: string; docs: NovelSeojiDoc[] }>
 > {
   const db = await getDB()
-  return db.getAll('novelMonths')
+  return db.getAll('novelPeriods')
 }
 
 export async function clearNovelCache(): Promise<void> {
   const db = await getDB()
-  await db.clear('novelMonths')
+  await db.clear('novelPeriods')
 }
 
 // ── API 응답 캐시 ────────────────────────────────────

@@ -137,7 +137,7 @@ async function seoji(
   if (!res.ok) throw new LibraryApiError(`요청 실패 (HTTP ${res.status})`)
   let data: SeojiResponse
   try {
-    data = await res.json()
+    data = (await res.json()) as SeojiResponse
   } catch {
     throw new LibraryApiError('응답을 해석하지 못했습니다.')
   }
@@ -245,7 +245,7 @@ async function request(url: string): Promise<{
     throw new LibraryApiError(`요청 실패 (HTTP ${res.status})`)
   }
   try {
-    return await res.json()
+    return (await res.json()) as Awaited<ReturnType<typeof request>>
   } catch {
     throw new LibraryApiError('응답을 해석하지 못했습니다.')
   }

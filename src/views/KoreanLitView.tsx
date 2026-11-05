@@ -3,8 +3,9 @@ import { useApp } from '../context/appContext'
 import { Pagination } from '../components/Pagination'
 import { SearchBar } from '../components/SearchBar'
 import { NovelRow } from '../components/NovelRow'
+import { useBookInfo } from '../hooks/useBookInfo'
 import type { NovelsProgress } from '../hooks/useKoreanNovels'
-import { TARGET_PUBLISHERS } from '../lib/novelClassify'
+import { TARGET_PUBLISHERS, classifyWithAladin } from '../lib/novelClassify'
 import type { NovelCandidate } from '../types/novel'
 
 const PAGE_SIZE = 20
@@ -30,7 +31,10 @@ export function KoreanLitView(props: Props) {
   const [query, setQuery] = createSignal('')
   const [publisher, setPublisher] = createSignal(ALL_PUBLISHERS)
 
-  const filtered = createMemo(() => {
+  /** 쪽수 조회에 쓰는 것과 같은 우선순위(종이책 ISBN 먼저) — 알라딘 상품 페이지도 종이책 쪽이 더 잘 잡힌다 */
+  const preferredIsbn = (novel: NovelCandidate) => novel.paperIsbn13 ?? novel.ebookIsbn13
+
+  const searched = createMemo(() => {
     // filter 콜백은 이 memo 본문 안에서 동기적으로 실행되므로 매번 다시 계산된다(useBookFilter와 같은 패턴).
     /* eslint-disable solid/reactivity */
     const term = normalize(query())
@@ -41,6 +45,18 @@ export function KoreanLitView(props: Props) {
       .filter((novel) => !term || normalize(`${novel.title} ${novel.author ?? ''}`).includes(term))
       .sort((a, b) => (b.pubDate ?? '').localeCompare(a.pubDate ?? ''))
   })
+
+  // 검색·출판사로 좁힌 후보 전체(지금 쪼으로 보이는 20개가 아니라)의 알라딘 정보를 물어서,
+  // '소설 아님'으로 확정된 건 목록에서 아예 뺀다 — "한국문학 & 소설만 추릴 것".
+  const aladinOf = useBookInfo(() =>
+    searched().map((novel) => ({ isbn: preferredIsbn(novel), pubDate: novel.pubDate })),
+  )
+
+  const filtered = createMemo(() =>
+    searched().filter(
+      (novel) => classifyWithAladin(novel, null, aladinOf(preferredIsbn(novel))) !== '소설 아님',
+    ),
+  )
 
   const [page, setPage] = createSignal(1)
   const pageCount = () => Math.max(1, Math.ceil(filtered().length / PAGE_SIZE))
@@ -108,7 +124,9 @@ export function KoreanLitView(props: Props) {
         </div>
         <ul class="search-results">
           <For each={pageItems()}>
-            {(novel) => <NovelRow novel={novel} inShelf={shelfIds().has(novel.id)} />}
+            {(novel) => (
+              <NovelRow novel={novel} inShelf={shelfIds().has(novel.id)} aladin={aladinOf(preferredIsbn(novel))} />
+            )}
           </For>
         </ul>
         <Pagination page={page()} pageCount={pageCount()} onChange={setPage} />

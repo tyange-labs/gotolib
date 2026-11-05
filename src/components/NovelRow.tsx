@@ -1,13 +1,16 @@
 import { createQuery } from '@tanstack/solid-query'
 import { createMemo } from 'solid-js'
 import { useApp } from '../context/appContext'
-import { aladinProductUrl, classifyNovel } from '../lib/novelClassify'
+import type { BookInfoEntry } from '../lib/bookInfo'
+import { aladinProductUrl, classifyWithAladin } from '../lib/novelClassify'
 import { pageCountQuery } from '../lib/queries'
 import type { NovelCandidate, NovelVerdict } from '../types/novel'
 
 interface Props {
   novel: NovelCandidate
   inShelf: boolean
+  /** 알라딘에서 뽑은 분류·형식어·쪽수(있으면 NL 서지 추정보다 우선한다) */
+  aladin?: BookInfoEntry
 }
 
 const VERDICT_BADGE: Record<NovelVerdict, string> = {
@@ -20,12 +23,16 @@ const VERDICT_BADGE: Record<NovelVerdict, string> = {
 /** '한국문학' 탭의 책 한 줄: 쪽수는 보일 때 종이책 ISBN으로 조회하고, 받으면 장편/소설집 판정을 다시 한다. */
 export function NovelRow(props: Props) {
   const { addBook } = useApp()
+  // 알라딘이 이미 쪽수를 찾아줬으면(book-info) NL 서지 쪽수 조회는 건너뛴다.
   const pageCount = createQuery(() => ({
     ...pageCountQuery(props.novel.paperIsbn13 ?? ''),
-    enabled: !!props.novel.paperIsbn13,
+    enabled: !!props.novel.paperIsbn13 && props.aladin?.pages == null,
   }))
 
-  const verdict = createMemo<NovelVerdict>(() => classifyNovel(props.novel, pageCount.data))
+  const verdict = createMemo<NovelVerdict>(() =>
+    classifyWithAladin(props.novel, pageCount.data, props.aladin),
+  )
+  const pages = createMemo(() => props.aladin?.pages ?? pageCount.data)
 
   const add = () => {
     void addBook({
@@ -49,12 +56,12 @@ export function NovelRow(props: Props) {
             {verdict()}
           </span>
         </span>
-        <span class="search-result__meta" aria-busy={pageCount.isPending}>
+        <span class="search-result__meta" aria-busy={pageCount.isPending && props.aladin?.pages == null}>
           {[
             props.novel.author,
             props.novel.publisher,
             props.novel.pubDate?.slice(0, 4),
-            pageCount.data ? `${pageCount.data}쪽` : props.novel.paperIsbn13 ? undefined : '쪽수 미상',
+            pages() ? `${pages()}쪽` : props.novel.paperIsbn13 ? undefined : '쪽수 미상',
           ]
             .filter(Boolean)
             .join(' · ')}
