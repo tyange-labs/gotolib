@@ -31,9 +31,6 @@ export function KoreanLitView(props: Props) {
   const [query, setQuery] = createSignal('')
   const [publisher, setPublisher] = createSignal(ALL_PUBLISHERS)
 
-  /** 쪽수 조회에 쓰는 것과 같은 우선순위(종이책 ISBN 먼저) — 알라딘 상품 페이지도 종이책 쪽이 더 잘 잡힌다 */
-  const preferredIsbn = (novel: NovelCandidate) => novel.paperIsbn13 ?? novel.ebookIsbn13
-
   const searched = createMemo(() => {
     // filter 콜백은 이 memo 본문 안에서 동기적으로 실행되므로 매번 다시 계산된다(useBookFilter와 같은 패턴).
     /* eslint-disable solid/reactivity */
@@ -48,14 +45,10 @@ export function KoreanLitView(props: Props) {
 
   // 검색·출판사로 좁힌 후보 전체(지금 쪼으로 보이는 20개가 아니라)의 알라딘 정보를 물어서,
   // '소설 아님'으로 확정된 건 목록에서 아예 뺀다 — "한국문학 & 소설만 추릴 것".
-  const aladinOf = useBookInfo(() =>
-    searched().map((novel) => ({ isbn: preferredIsbn(novel), pubDate: novel.pubDate })),
-  )
+  const aladinOf = useBookInfo(() => searched().map((novel) => ({ isbn: novel.id, pubDate: novel.pubDate })))
 
   const filtered = createMemo(() =>
-    searched().filter(
-      (novel) => classifyWithAladin(novel, null, aladinOf(preferredIsbn(novel))) !== '소설 아님',
-    ),
+    searched().filter((novel) => classifyWithAladin(novel, null, aladinOf(novel.id)) !== '소설 아님'),
   )
 
   const [page, setPage] = createSignal(1)
@@ -75,7 +68,7 @@ export function KoreanLitView(props: Props) {
     <div>
       <p class="message">
         국립중앙도서관 서지정보로 모은 17개 문학 출판사의 전자책 중 2020년 이후 한국 장편소설 후보예요.
-        쪽수가 아직 없는 책은 '확인 필요'로 표시돼요.{' '}
+        아직 알라딘·쪽수로 확인이 안 된 책은 '확인 필요'로 표시돼요.{' '}
         <button class="text-button" onClick={() => props.onRefresh()}>
           새로고침
         </button>
@@ -124,9 +117,7 @@ export function KoreanLitView(props: Props) {
         </div>
         <ul class="search-results">
           <For each={pageItems()}>
-            {(novel) => (
-              <NovelRow novel={novel} inShelf={shelfIds().has(novel.id)} aladin={aladinOf(preferredIsbn(novel))} />
-            )}
+            {(novel) => <NovelRow novel={novel} inShelf={shelfIds().has(novel.id)} aladin={aladinOf(novel.id)} />}
           </For>
         </ul>
         <Pagination page={page()} pageCount={pageCount()} onChange={setPage} />

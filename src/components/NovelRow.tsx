@@ -20,7 +20,10 @@ const VERDICT_BADGE: Record<NovelVerdict, string> = {
   '소설 아님': 'badge--warn',
 }
 
-/** '한국문학' 탭의 책 한 줄: 쪽수는 보일 때 종이책 ISBN으로 조회하고, 받으면 장편/소설집 판정을 다시 한다. */
+/**
+ * '한국문학' 탭의 책 한 줄. 쪽수는 화면에 보이지 않지만 장편/소설집 판정에는 여전히 쓴다(보일 때
+ * 종이책 ISBN으로 조회, 받으면 판정을 다시 한다). 서재에 담기·알라딘 링크는 novel.id(단행본 ISBN 우선) 기준.
+ */
 export function NovelRow(props: Props) {
   const { addBook } = useApp()
   // 알라딘이 이미 쪽수를 찾아줬으면(book-info) NL 서지 쪽수 조회는 건너뛴다.
@@ -32,16 +35,16 @@ export function NovelRow(props: Props) {
   const verdict = createMemo<NovelVerdict>(() =>
     classifyWithAladin(props.novel, pageCount.data, props.aladin),
   )
-  const pages = createMemo(() => props.aladin?.pages ?? pageCount.data)
 
   const add = () => {
+    // novel.id는 단행본(종이책) ISBN 우선 — 서재의 책도 그 기준을 따른다(알라딘 표지도 그쪽이 더 잘 잡힌다).
     void addBook({
-      id: props.novel.ebookIsbn13,
+      id: props.novel.id,
       title: props.novel.title,
       author: props.novel.author,
       publisher: props.novel.publisher,
       pubDate: props.novel.pubDate,
-      isbn13: props.novel.ebookIsbn13,
+      isbn13: props.novel.id,
       price: props.novel.price,
       addedAt: Date.now(),
     })
@@ -54,26 +57,17 @@ export function NovelRow(props: Props) {
           {props.novel.title}{' '}
           <span class="badge" classList={{ [VERDICT_BADGE[verdict()]]: true }}>
             {verdict()}
-          </span>
+          </span>{' '}
+          <span class="badge">전자책</span>
         </span>
-        <span class="search-result__meta" aria-busy={pageCount.isPending && props.aladin?.pages == null}>
-          {[
-            props.novel.author,
-            props.novel.publisher,
-            props.novel.pubDate?.slice(0, 4),
-            pages() ? `${pages()}쪽` : props.novel.paperIsbn13 ? undefined : '쪽수 미상',
-          ]
+        <span class="search-result__meta">
+          {[props.novel.author, props.novel.publisher, props.novel.pubDate?.slice(0, 4)]
             .filter(Boolean)
             .join(' · ')}
         </span>
       </div>
       <div class="novel-row__actions">
-        <a
-          class="text-button"
-          href={aladinProductUrl(props.novel.ebookIsbn13)}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a class="text-button" href={aladinProductUrl(props.novel.id)} target="_blank" rel="noopener noreferrer">
           알라딘
         </a>
         <button

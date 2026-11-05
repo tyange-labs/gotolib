@@ -2,7 +2,7 @@
 export type NovelVerdict = '장편' | '소설집·중편' | '확인 필요' | '소설 아님'
 
 export interface NovelCandidate {
-  /** 전자책 ISBN13 */
+  /** 단행본(종이책) ISBN13. 종이책이 없으면 전자책 ISBN13으로 대신한다 */
   id: string
   title: string
   author?: string

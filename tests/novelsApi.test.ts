@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { fetchNovelPeriodRaw, yearWindow, yearsSince2020 } from '../src/lib/novelsApi'
+import { fetchNovelPeriodRaw, toCandidates, yearWindow, yearsSince2020, type NovelSeojiDoc } from '../src/lib/novelsApi'
 import { LibraryApiError } from '../src/lib/libraryApi'
 
 const originalFetch = globalThis.fetch
@@ -31,6 +31,37 @@ describe('fetchNovelPeriodRaw', () => {
     await expect(fetchNovelPeriodRaw('문학동네', '20200101', '20201231')).rejects.toBeInstanceOf(
       LibraryApiError,
     )
+  })
+})
+
+describe('toCandidates', () => {
+  const base: NovelSeojiDoc = {
+    TITLE: '전자책_일곱개의 이름',
+    AUTHOR: '차병직',
+    PUBLISHER: '(주식회사)창비',
+    EA_ISBN: '9791136473988',
+    EA_ADD_CODE: '05810',
+    RELATED_ISBN: '9791136473971',
+    REAL_PUBLISH_DATE: '20260101',
+    EBOOK_YN: 'Y',
+    FORM: '전자책',
+  }
+
+  test('"전자책_"(오타 "전자채_" 포함) 접두는 제목에서 뗀다', () => {
+    const [novel] = toCandidates([base], '창비')
+    expect(novel.title).toBe('일곱개의 이름')
+
+    const [typo] = toCandidates([{ ...base, TITLE: '전자채_심장, 유영' }], '창비')
+    expect(typo.title).toBe('심장, 유영')
+  })
+
+  test('id는 종이책(RELATED_ISBN) ISBN을 쓰고, 없으면 전자책 ISBN으로 대신한다', () => {
+    const [withPaper] = toCandidates([base], '창비')
+    expect(withPaper.id).toBe('9791136473971')
+    expect(withPaper.ebookIsbn13).toBe('9791136473988')
+
+    const [noPaper] = toCandidates([{ ...base, RELATED_ISBN: undefined }], '창비')
+    expect(noPaper.id).toBe('9791136473988')
   })
 })
 

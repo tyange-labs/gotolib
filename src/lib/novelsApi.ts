@@ -31,6 +31,14 @@ const clean = (value: string | undefined): string | undefined => {
   return trimmed ? trimmed : undefined
 }
 
+/**
+ * 일부 출판사(창비 등)는 전자책 서지의 제목 앞에 "전자책_"(오타로 "전자채_"도 있다)을 그대로 붙여
+ * 넣는다. 책 자체 제목이 아니라 출판사의 내부 분류 표시라서 뗀다 — 전자책 여부는 배지로 따로 보여준다.
+ */
+function stripEbookPrefix(title: string): string {
+  return title.replace(/^전자(?:책|채)_+/, '').trim()
+}
+
 function yyyymmddOf(value: string | undefined): string | undefined {
   const digits = value?.replace(/\D/g, '')
   return digits && /^\d{8}$/.test(digits) ? digits : undefined
@@ -60,7 +68,8 @@ function isAudiobook(form: string | undefined): boolean {
 /** 한 레코드를 후보로 바꾼다. 한국문학(810)·독자대상 성인·오디오북 아님·역자만 아님을 만족해야 들어온다 */
 function toCandidate(doc: NovelSeojiDoc, publisherQuery: string): NovelCandidate | null {
   const publisher = clean(doc.PUBLISHER)
-  const title = clean(doc.TITLE)
+  const rawTitle = clean(doc.TITLE)
+  const title = rawTitle && stripEbookPrefix(rawTitle)
   const ebookIsbn13 = isbn13Of(doc.EA_ISBN)
   if (!publisher || !title || !ebookIsbn13 || doc.EBOOK_YN !== 'Y') return null
   if (!publisherMatches(publisher, publisherQuery)) return null
@@ -74,14 +83,17 @@ function toCandidate(doc: NovelSeojiDoc, publisherQuery: string): NovelCandidate
   if (kdc3 && !kdc3.startsWith('81')) return null
   if (readerCodeFromAddCode(addCode) === '7') return null
 
+  const paperIsbn13 = isbn13Of(doc.RELATED_ISBN)
   return {
-    id: ebookIsbn13,
+    // 단행본(종이책) ISBN을 기준으로 삼는다 — 알라딘 상품 페이지·표지도 종이책 쪽이 더 잘 잡히고,
+    // "전자책" 여부는 배지로 따로 보여주면 되니 식별자를 전자책 ISBN에 묶어 둘 이유가 없다.
+    id: paperIsbn13 ?? ebookIsbn13,
     title,
     author: authorsOf(doc.AUTHOR),
     publisher,
     pubDate: toDate(doc.REAL_PUBLISH_DATE) ?? toDate(doc.PUBLISH_PREDATE),
     ebookIsbn13,
-    paperIsbn13: isbn13Of(doc.RELATED_ISBN),
+    paperIsbn13,
     kdc3,
     authorCount: authorCountOf(doc.AUTHOR),
     price: doc.PRICE ? Number(doc.PRICE.replace(/[^\d]/g, '')) || undefined : undefined,
