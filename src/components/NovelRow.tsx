@@ -2,12 +2,15 @@ import { Show } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { yes24ProductUrl } from '../lib/koreanNovelsApi'
 import type { KoreanNovel } from '../types/novel'
+import { BookCover } from './BookCover'
 
 interface Props {
   novel: KoreanNovel
   /** 전자책도 나와 있는가(NL 서지) */
   hasEbook: boolean
   inShelf: boolean
+  /** 서버가 줄여 둔 표지 썸네일 주소(아직 없으면 책 아이콘 칸) */
+  coverUrl?: string
 }
 
 /** '한국문학' 탭의 책 한 줄: YES24가 장편으로 분류한 종이책. 서재에 담기는 종이책 ISBN 기준. */
@@ -27,7 +30,8 @@ export function NovelRow(props: Props) {
   }
 
   return (
-    <li class="search-result">
+    <li class="search-result novel-row">
+      <BookCover src={props.coverUrl} />
       <div class="search-result__body">
         <span class="search-result__title">
           {props.novel.title}

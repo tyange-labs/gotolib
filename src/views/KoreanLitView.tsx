@@ -2,6 +2,8 @@ import { For, Show, createEffect, createMemo, createSignal, on } from 'solid-js'
 import { A } from '@solidjs/router'
 import { KOREAN_GENRES, genrePath, type KoreanGenre } from '../lib/koreanGenres'
 import { useApp } from '../context/appContext'
+import { useCovers } from '../hooks/useCovers'
+import { isUnreleased } from '../lib/covers'
 import { Pagination } from '../components/Pagination'
 import { SearchBar } from '../components/SearchBar'
 import { NovelRow } from '../components/NovelRow'
@@ -70,6 +72,12 @@ export function KoreanLitView(props: Props) {
     const start = (Math.min(page(), pageCount()) - 1) * PAGE_SIZE
     return filtered().slice(start, start + PAGE_SIZE)
   })
+
+  // 지금 쪽에 보이는 책들의 표지만 한 번에 묻는다(목록 전체를 묻지 않는다, BookList와 같은 패턴).
+  // 출간예정(미래 pubMonth)인 책은 알라딘에 상품 페이지가 없으므로 아예 묻지 않는다.
+  const coverOf = useCovers(() =>
+    pageItems().map((novel) => (isUnreleased(novel.pubMonth) ? undefined : novel.id)),
+  )
 
   // 출판사 표기는 "(주)창비"·"(주식회사)창비"처럼 제각각이라 이름이 같은지가 아니라 publisherMatches로 센다.
   const publisherCounts = createMemo(() => {
@@ -150,7 +158,12 @@ export function KoreanLitView(props: Props) {
         <ul class="search-results">
           <For each={pageItems()}>
             {(novel) => (
-              <NovelRow novel={novel} hasEbook={props.ebookIsbns.has(novel.id)} inShelf={shelfIds().has(novel.id)} />
+              <NovelRow
+                novel={novel}
+                hasEbook={props.ebookIsbns.has(novel.id)}
+                inShelf={shelfIds().has(novel.id)}
+                coverUrl={coverOf(novel.id)}
+              />
             )}
           </For>
         </ul>

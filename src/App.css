@@ -1106,6 +1106,15 @@
   border-radius: 5px;
 }
 
+/* ── '한국문학' 탭 책 한 줄: 서재 카드처럼 표지를 왼쪽에 둔다(.search-result는 baseline이라 표지 칸과 안 맞아 center로 덮어쓴다) ── */
+.novel-row {
+  align-items: center;
+}
+
+.novel-row .book-cover {
+  margin-right: var(--tl-space-3);
+}
+
 /* ── '한국문학' 탭 장르 칩: 장르가 늘어나면 가로 스크롤. 연도 칩보다 크고 테두리가 있어 한 단계 위 분류로 읽힌다 ── */
 .genre-chips {
   display: flex;
