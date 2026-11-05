@@ -226,3 +226,33 @@ describe('소장과 읽은 정도', () => {
     expect(a.progress).toBe(70)
   })
 })
+
+describe('한국문학 탭의 연도별 수집 캐시', () => {
+  let db: Awaited<ReturnType<typeof fresh>>
+  beforeEach(async () => {
+    db = await fresh()
+  })
+
+  test('연도별로 출판사마다 저장하고, 전체를 한 번에 불러온다', async () => {
+    await db.putNovelPeriod('문학동네', '2025', [{ TITLE: 'A' }])
+    await db.putNovelPeriod('민음사', '2025', [{ TITLE: 'B' }])
+    await db.putNovelPeriod('문학동네', '2024', [{ TITLE: 'C' }])
+    const all = await db.getAllNovelPeriods()
+    expect(all.map((r: { publisher: string; period: string }) => [r.publisher, r.period]).sort()).toEqual([
+      ['문학동네', '2024'],
+      ['문학동네', '2025'],
+      ['민음사', '2025'],
+    ])
+  })
+
+  test('연도 새로고침은 그 해(모든 출판사)만 지우고 다른 해는 그대로 둔다', async () => {
+    await db.putNovelPeriod('문학동네', '2025', [{ TITLE: 'A' }])
+    await db.putNovelPeriod('민음사', '2025', [{ TITLE: 'B' }])
+    await db.putNovelPeriod('문학동네', '2024', [{ TITLE: 'C' }])
+    await db.clearNovelCacheForYear('2025')
+    const left = await db.getAllNovelPeriods()
+    expect(left.map((r: { publisher: string; period: string }) => [r.publisher, r.period])).toEqual([
+      ['문학동네', '2024'],
+    ])
+  })
+})

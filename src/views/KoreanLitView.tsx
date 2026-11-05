@@ -1,4 +1,4 @@
-import { For, Show, createMemo, createSignal } from 'solid-js'
+import { For, Show, createEffect, createMemo, createSignal, on } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { Pagination } from '../components/Pagination'
 import { SearchBar } from '../components/SearchBar'
@@ -17,6 +17,11 @@ function normalize(text: string): string {
 
 interface Props {
   novels: NovelCandidate[]
+  years: readonly string[]
+  year: string
+  onYearChange: (year: string) => void
+  /** 해별 권수(한 번이라도 캐시된 해만). 칩에 보여준다 */
+  yearCounts: ReadonlyMap<string, number>
   ready: boolean
   progress: NovelsProgress
   error: string | null
@@ -52,6 +57,14 @@ export function KoreanLitView(props: Props) {
   )
 
   const [page, setPage] = createSignal(1)
+  // 연도를 바꾸면(처음 마운트될 때는 말고) 이전 쪽 번호가 그대로 남지 않게 1쪽으로 되돌린다.
+  createEffect(
+    on(
+      () => props.year,
+      () => setPage(1),
+      { defer: true },
+    ),
+  )
   const pageCount = () => Math.max(1, Math.ceil(filtered().length / PAGE_SIZE))
   const pageItems = createMemo(() => {
     const start = (Math.min(page(), pageCount()) - 1) * PAGE_SIZE
@@ -67,7 +80,7 @@ export function KoreanLitView(props: Props) {
   return (
     <div>
       <p class="message">
-        국립중앙도서관 서지정보로 모은 17개 문학 출판사의 전자책 중 2020년 이후 한국 장편소설 후보예요.
+        국립중앙도서관 서지정보로 모은 17개 문학 출판사의 전자책 중 한국 장편소설 후보예요(연도별로 모아요).
         아직 알라딘·쪽수로 확인이 안 된 책은 '확인 필요'로 표시돼요.{' '}
         <button class="text-button" onClick={() => props.onRefresh()}>
           새로고침
@@ -76,9 +89,22 @@ export function KoreanLitView(props: Props) {
 
       <Show when={props.error}>{(message) => <p class="message message--error">{message()}</p>}</Show>
 
+      <div class="year-chips">
+        <div class="seg" role="group" aria-label="연도">
+          <For each={props.years}>
+            {(y) => (
+              <button class="seg__item" aria-pressed={y === props.year} onClick={() => props.onYearChange(y)}>
+                {y}
+                <Show when={props.yearCounts.get(y) != null}>{` (${props.yearCounts.get(y)})`}</Show>
+              </button>
+            )}
+          </For>
+        </div>
+      </div>
+
       <Show when={props.progress.total > 0 && props.progress.done < props.progress.total}>
         <p class="message">
-          모으는 중… {props.progress.done}/{props.progress.total}
+          {props.year}년 모으는 중… {props.progress.done}/{props.progress.total}
           <Show when={props.progress.label}>{(label) => ` (${label()})`}</Show>
         </p>
       </Show>

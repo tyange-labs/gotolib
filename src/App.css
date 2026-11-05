@@ -1058,6 +1058,12 @@
   flex-shrink: 0;
 }
 
+/* ── '한국문학' 탭 연도 칩(.seg 재사용): 해가 늘어나도 줄바꿈 대신 가로 스크롤 ── */
+.year-chips {
+  margin: var(--tl-space-2) 0 var(--tl-space-3);
+  overflow-x: auto;
+}
+
 /* ── 첫 실행 안내(튜토리얼) ───────────────────────────── */
 /* 문서(페이지) 좌표 기준: fixed가 아니라 absolute. 높이는 문서 높이로 컴포넌트가 정한다.
    iOS에서 fixed와 getBoundingClientRect의 기준이 어긋나 점선이 밀리던 문제를 피한다. */

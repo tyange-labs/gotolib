@@ -360,15 +360,6 @@ export async function unwatchBook(id: string): Promise<void> {
 }
 
 // ── '한국문학' 수집 캐시 ──────────────────────────────
-export async function getNovelPeriod(
-  publisher: string,
-  period: string,
-): Promise<NovelSeojiDoc[] | undefined> {
-  const db = await getDB()
-  const row = await db.get('novelPeriods', `${publisher}|${period}`)
-  return row?.docs
-}
-
 export async function putNovelPeriod(
   publisher: string,
   period: string,
@@ -392,9 +383,15 @@ export async function getAllNovelPeriods(): Promise<
   return db.getAll('novelPeriods')
 }
 
-export async function clearNovelCache(): Promise<void> {
+/** 선택한 연도 칩을 새로고침할 때만 그 해(모든 출판사)만 지운다 — 다른 해 캐시는 그대로 둔다. */
+export async function clearNovelCacheForYear(period: string): Promise<void> {
   const db = await getDB()
-  await db.clear('novelPeriods')
+  const tx = db.transaction('novelPeriods', 'readwrite')
+  const rows = await tx.store.getAll()
+  await Promise.all(
+    rows.filter((row) => row.period === period).map((row) => tx.store.delete(row.key)),
+  )
+  await tx.done
 }
 
 // ── API 응답 캐시 ────────────────────────────────────
