@@ -42,7 +42,7 @@ interface GotolibDB extends DBSchema {
   /**
    * '한국문학' 탭 수집 캐시. 출판사 × 해(key: `publisher|yyyy`)로 원본 서지 레코드를 쌓아 둔다.
    * 달 단위(구 novelMonths)는 17개 출판사 × 수십 달이라 요청이 너무 많아져 해 단위로 바꿨다(2026-11).
-   * 걸러내는 기준(classifyNovel)이 바뀌어도 다시 긁지 않고 재계산만 하면 되게 원본을 둔다.
+   * 걸러내는 기준이 바뀌어도 다시 긁지 않고 재계산만 하면 되게 원본을 둔다.
    * 개인 서재와 달리 동기화 대상이 아니라 삭제 표시(tombstone)가 없다.
    */
   novelPeriods: {

@@ -1,5 +1,4 @@
 /** '한국문학' 탭: 전자책 서지(NL 서지정보 API)로 모은(2000년~올해) 한국 장편소설 후보. */
-export type NovelVerdict = '장편' | '소설집' | '확인 필요' | '소설 아님'
 
 export interface NovelCandidate {
   /** 단행본(종이책) ISBN13. 종이책이 없으면 전자책 ISBN13으로 대신한다 */

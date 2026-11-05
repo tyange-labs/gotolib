@@ -1,4 +1,4 @@
-import { createMemo, createSignal, onCleanup } from 'solid-js'
+import { createSignal, onCleanup } from 'solid-js'
 import { clearNovelCacheForYear, getAllNovelPeriods, putNovelPeriod } from '../lib/db'
 import { LibraryApiError } from '../lib/libraryApi'
 import { TARGET_PUBLISHERS } from '../lib/novelClassify'
@@ -31,8 +31,8 @@ function toCandidateList(rows: readonly Row[]): NovelCandidate[] {
 /**
  * '한국문학' 탭 데이터: 연도 칩으로 고른 **한 해**(17개 출판사)만 모은다. 2000~올해를 한꺼번에 긁으면
  * 요청이 너무 많아져서(일일 호출 한도를 쉽게 넘긴다) 연도를 고를 때마다 그 해만 받아 오게 바꿨다.
- * 이미 모은 적 있는 해는(이 기기의 IndexedDB 캐시에) 다시 긁지 않고 바로 보여준다 — 이전에 들렀던
- * 해들의 캐시는 탭을 열 때 한 번에 불러와서(네트워크 없이) 칩에 권수를 보여줄 수 있게 한다.
+ * 이미 모은 적 있는 해는(이 기기의 IndexedDB 캐시에) 다시 긁지 않고 바로 보여준다(탭을 열 때 캐시를
+ * 네트워크 없이 한 번에 불러온다).
  */
 export function useKoreanNovels() {
   const years = collectionYears().slice().reverse()
@@ -114,7 +114,7 @@ export function useKoreanNovels() {
     if (!cancelled && token === runToken) setProgress((p) => ({ ...p, label: undefined }))
   }
 
-  // 처음 열 때: 이미 들렀던 모든 해의 캐시를 네트워크 없이 통째로 불러온다(칩에 권수를 보여주려고).
+  // 처음 열 때: 이미 들렀던 모든 해의 캐시를 네트워크 없이 통째로 불러온다.
   // 그다음 지금 고른 해(기본: 가장 최근 연도, year() 대신 초기값 years[0]을 바로 쓴다)만 부족분을 긁는다.
   const loadInitial = async () => {
     const cached = await getAllNovelPeriods()
@@ -134,20 +134,10 @@ export function useKoreanNovels() {
     void fetchYear(y, false)
   }
 
-  /** 칩에 보여줄 해별 권수. 아직 한 번도 안 긁은 해는 뺀다(0권으로 보이면 혼동되니까). */
-  const yearCounts = createMemo(() => {
-    const byYear = new Map<string, Row[]>()
-    for (const row of rows()) byYear.set(row.period, [...(byYear.get(row.period) ?? []), row])
-    const counts = new Map<string, number>()
-    for (const [y, yearRows] of byYear) counts.set(y, toCandidateList(yearRows).length)
-    return counts
-  })
-
   return {
     years,
     year,
     setYear,
-    yearCounts,
     candidates: () => toCandidateList(rows().filter((r) => r.period === year())),
     ready,
     progress,

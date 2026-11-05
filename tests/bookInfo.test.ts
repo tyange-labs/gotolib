@@ -18,29 +18,35 @@ describe('bookInfo.isbnsToAsk', () => {
   const settled: BookInfoEntry = { status: 'ok', yes24Form: '장편' }
   const okWithoutForm: BookInfoEntry = { status: 'ok', category: '국내도서 > 소설/시/희곡 > 한국소설', pages: 240 }
 
-  test('출간예정 책은 아예 묻지 않는다', () => {
-    expect(isbnsToAsk([{ isbn: 'a', pubDate: '2099-01-01' }], {})).toEqual([])
+  const isbns = (asks: { isbn: string }[]) => asks.map((a) => a.isbn)
+
+  test('출간 전 책도 묻되, 수집 큐에 넣지 않게 표시한다', () => {
+    // 실제 사례: 잠수교에 누가 있다 — 출간 전이라 묻지도 않았는데 서버엔 YES24 "장편"이 있었다.
+    expect(isbnsToAsk([{ isbn: 'a', pubDate: '2099-01-01' }, { isbn: 'b', pubDate: '2020-01-01' }], {})).toEqual([
+      { isbn: 'a', unreleased: true },
+      { isbn: 'b', unreleased: false },
+    ])
   })
-  test('확정된 답은 다시 묻지 않고, pending·모르는 것·형식 신호 없는 ok는 다시 묻는다', () => {
+  test('YES24 분류가 온 답은 다시 묻지 않고, pending·모르는 것·YES24 분류 없는 ok는 다시 묻는다', () => {
     // 실제 사례: 거미는 토요일 새벽 — 처음엔 예전 알라딘 값(분류·240쪽)만 있다가 나중에 YES24 "장편"이 들어왔다.
     const known = { a: settled, b: { status: 'pending' } as BookInfoEntry, d: okWithoutForm }
-    expect(isbnsToAsk([{ isbn: 'a' }, { isbn: 'b' }, { isbn: 'c' }, { isbn: 'd' }], known)).toEqual(['b', 'c', 'd'])
+    expect(isbns(isbnsToAsk([{ isbn: 'a' }, { isbn: 'b' }, { isbn: 'c' }, { isbn: 'd' }], known))).toEqual(['b', 'c', 'd'])
   })
   test('짧은 재시도용으로는 pending·모르는 것만 고를 수 있다', () => {
     const known = { a: settled, b: { status: 'pending' } as BookInfoEntry, d: okWithoutForm }
-    expect(isbnsToAsk([{ isbn: 'a' }, { isbn: 'b' }, { isbn: 'c' }, { isbn: 'd' }], known, isPending)).toEqual(['b', 'c'])
+    expect(isbns(isbnsToAsk([{ isbn: 'a' }, { isbn: 'b' }, { isbn: 'c' }, { isbn: 'd' }], known, isPending))).toEqual([
+      'b',
+      'c',
+    ])
   })
-  test('YES24 분류나 알라딘 형식어가 있어야 확정이다', () => {
-    expect(isSettled({ status: 'ok', formHint: '소설집' })).toBe(true)
-    expect(isSettled({ status: 'pending', yes24Form: '장편' })).toBe(false)
+  test('YES24 분류가 있어야 확정이다(알라딘 형식어만으로는 아니다)', () => {
+    expect(isSettled({ status: 'pending', yes24Form: '장편' })).toBe(true)
+    expect(isSettled({ status: 'ok', formHint: '장편소설' })).toBe(false)
     expect(isSettled(okWithoutForm)).toBe(false)
     expect(isSettled(undefined)).toBe(false)
   })
   test('ISBN 없는 항목·중복은 뺀다', () => {
-    expect(isbnsToAsk([{ isbn: undefined }, { isbn: 'a' }, { isbn: 'a' }], {})).toEqual(['a'])
-  })
-  test('과거 pubDate는 그대로 묻는다', () => {
-    expect(isbnsToAsk([{ isbn: 'a', pubDate: '2020-01-01' }], {})).toEqual(['a'])
+    expect(isbns(isbnsToAsk([{ isbn: undefined }, { isbn: 'a' }, { isbn: 'a' }], {}))).toEqual(['a'])
   })
 })
 

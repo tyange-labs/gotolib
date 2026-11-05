@@ -41,32 +41,34 @@ interface BookInfoResponse {
 export const MAX_ISBNS_PER_REQUEST = 50
 
 /**
- * 더 물어볼 필요가 없는 답인가: 장편/소설집을 확정해 주는 신호(YES24 분류나 알라딘 형식어)까지 왔을 때만.
- * `status: 'ok'`여도 그 신호가 없으면 서버가 아직 모으는 중일 수 있다(YES24 백필, 알라딘 상세 보충) —
- * 그래서 계속 물어서, 새로고침 없이도 나중에 들어온 정보가 반영되게 한다.
+ * 더 물어볼 필요가 없는 답인가: YES24 분류까지 왔을 때만('한국문학' 탭은 YES24가 장편으로 분류한 책만 보여준다).
+ * `status: 'ok'`여도 YES24 분류가 없으면 서버가 아직 백필 중일 수 있어서 계속 물어, 새로고침 없이도 반영되게 한다.
  */
 export function isSettled(entry: BookInfoEntry | undefined): boolean {
-  return entry?.status === 'ok' && (entry.yes24Form != null || entry.formHint != null)
+  return entry?.yes24Form != null
 }
 
 /** 서버가 아직 한 번도 결론을 못 낸(수집 대기 중인) 답 */
 export const isPending = (entry: BookInfoEntry | undefined): boolean => entry?.status !== 'ok'
 
-/**
- * 다시 물어볼 ISBN(중복·ISBN 없음은 뺀다). 기본은 확정되지 않은 것 전부, `needsAsking`으로 좁힐 수 있다.
- * 출간예정 책은 covers.ts와 같은 이유로 애초에 묻지 않는다.
- */
+export interface IsbnToAsk {
+  isbn: string
+  /** 출간 전 책: 알라딘 상품 페이지가 아직 없어서 서버 수집 큐에 넣지 않고 읽기만 한다(`enqueue=false`) */
+  unreleased: boolean
+}
+
+/** 다시 물어볼 ISBN(중복·ISBN 없음은 뺀다). 기본은 확정되지 않은 것 전부, `needsAsking`으로 좁힐 수 있다. */
 export function isbnsToAsk(
   isbns: ReadonlyArray<{ isbn: string | undefined; pubDate?: string }>,
   known: Readonly<Record<string, BookInfoEntry | undefined>>,
   needsAsking: (entry: BookInfoEntry | undefined) => boolean = (entry) => !isSettled(entry),
-): string[] {
+): IsbnToAsk[] {
   const seen = new Set<string>()
-  const ask: string[] = []
+  const ask: IsbnToAsk[] = []
   for (const { isbn, pubDate } of isbns) {
-    if (!isbn || seen.has(isbn) || isUnreleased(pubDate)) continue
+    if (!isbn || seen.has(isbn)) continue
     seen.add(isbn)
-    if (needsAsking(known[isbn])) ask.push(isbn)
+    if (needsAsking(known[isbn])) ask.push({ isbn, unreleased: isUnreleased(pubDate) })
   }
   return ask
 }
@@ -77,8 +79,15 @@ export function chunks<T>(items: readonly T[], size: number): T[][] {
   return out
 }
 
-/** 로그인 없이 쓰는 조회. 서버가 DB만 보고 바로 답한다(알라딘은 부르지 않는다). */
-export async function fetchBookInfo(isbns: string[]): Promise<Record<string, BookInfoEntry>> {
-  const response = await api<BookInfoResponse>(`/gotolib/book-info?isbn=${isbns.join(',')}`, { auth: false })
+/**
+ * 로그인 없이 쓰는 조회. 서버가 DB만 보고 바로 답한다(알라딘은 부르지 않는다). `enqueue: false`면 모르는 ISBN을
+ * 서버의 알라딘 수집 큐에 넣지 않는다(출간 전 책).
+ */
+export async function fetchBookInfo(
+  isbns: string[],
+  { enqueue = true }: { enqueue?: boolean } = {},
+): Promise<Record<string, BookInfoEntry>> {
+  const query = `isbn=${isbns.join(',')}${enqueue ? '' : '&enqueue=false'}`
+  const response = await api<BookInfoResponse>(`/gotolib/book-info?${query}`, { auth: false })
   return response.info
 }

@@ -21,9 +21,8 @@ const [known, setKnown] = createStore<Record<string, BookInfoEntry | undefined>>
 export const LONG_POLL_MS = 5 * 60 * 1000
 
 /**
- * '한국문학' 탭 후보들의 알라딘·YES24 정보를 서버에 묻는다. 장편/소설집을 확정해 주는 신호가 아직 없는 책은
- * 점점 늘어나는 간격으로, 그 뒤에는 LONG_POLL_MS마다 다시 묻는다(탭이 숨겨져 있으면 쉰다). 돌려주는 함수는
- * ISBN의 BookInfoEntry를 준다.
+ * '한국문학' 탭 후보들의 알라딘·YES24 정보를 서버에 묻는다. YES24 분류가 아직 없는 책은 점점 늘어나는 간격으로,
+ * 그 뒤에는 LONG_POLL_MS마다 다시 묻는다(탭이 숨겨져 있으면 쉰다). 돌려주는 함수는 ISBN의 BookInfoEntry를 준다.
  */
 export function useBookInfo(items: () => Array<{ isbn: string | undefined; pubDate?: string }>) {
   const key = createMemo(() =>
@@ -55,11 +54,18 @@ export function useBookInfo(items: () => Array<{ isbn: string | undefined; pubDa
       // 탭이 안 보이는 동안은 묻지 않고 다음 차례만 잡는다.
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return scheduleNext()
       const ask = pendingOnly ? isbnsToAsk(initialWanted, known, isPending) : isbnsToAsk(initialWanted, known)
+      // 출간 전 책은 따로 묻는다: YES24 분류는 받되 서버가 알라딘 수집 큐에 넣지 않게(enqueue=false).
+      const groups = [
+        { isbns: ask.filter((a) => !a.unreleased).map((a) => a.isbn), enqueue: true },
+        { isbns: ask.filter((a) => a.unreleased).map((a) => a.isbn), enqueue: false },
+      ]
       try {
-        for (const chunk of chunks(ask, MAX_ISBNS_PER_REQUEST)) {
-          const entries = await fetchBookInfo(chunk)
-          if (cancelled) return
-          setKnown(entries)
+        for (const { isbns, enqueue } of groups) {
+          for (const chunk of chunks(isbns, MAX_ISBNS_PER_REQUEST)) {
+            const entries = await fetchBookInfo(chunk, { enqueue })
+            if (cancelled) return
+            setKnown(entries)
+          }
         }
       } catch {
         // 실패(요청 제한 포함)해도 그만두지 않고 긴 간격으로 넘어간다.
