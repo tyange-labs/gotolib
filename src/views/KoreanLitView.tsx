@@ -1,5 +1,4 @@
 import { For, Show, createEffect, createMemo, createSignal, on } from 'solid-js'
-import { TabletSmartphone } from 'lucide-solid'
 import { useApp } from '../context/appContext'
 import { Pagination } from '../components/Pagination'
 import { SearchBar } from '../components/SearchBar'
@@ -81,11 +80,8 @@ export function KoreanLitView(props: Props) {
   return (
     <div>
       <p class="message">
-        17개 문학 출판사 책 중 YES24가 '한국 장편소설'로 분류한 종이책이에요(연도별). 전자책도 나온 책에는{' '}
-        <span class="ebook-mark" aria-hidden="true">
-          <TabletSmartphone size={12} />
-        </span>{' '}
-        표시가 붙어요.{' '}
+        17개 문학 출판사 책 중 YES24가 '한국 장편소설'로 분류한 종이책이에요(연도별). 전자책도 나온 책에는 '전자책'이라고
+        표시해요.{' '}
         <button class="text-button" onClick={() => props.onRefresh()}>
           새로고침
         </button>

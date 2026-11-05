@@ -1,5 +1,4 @@
 import { Show } from 'solid-js'
-import { TabletSmartphone } from 'lucide-solid'
 import { useApp } from '../context/appContext'
 import { yes24ProductUrl } from '../lib/koreanNovelsApi'
 import type { KoreanNovel } from '../types/novel'
@@ -32,16 +31,15 @@ export function NovelRow(props: Props) {
       <div class="search-result__body">
         <span class="search-result__title">
           {props.novel.title}
-          <Show when={props.hasEbook}>
-            <span class="ebook-mark" role="img" aria-label="전자책 있음" title="전자책 있음">
-              <TabletSmartphone size={12} aria-hidden="true" />
-            </span>
-          </Show>
         </span>
         <span class="search-result__meta">
           {[props.novel.author, props.novel.publisher, props.novel.pubMonth?.replace('-', '.')]
             .filter(Boolean)
             .join(' · ')}
+          <Show when={props.hasEbook}>
+            {' · '}
+            <span class="ebook-mark">전자책</span>
+          </Show>
         </span>
       </div>
       <div class="novel-row__actions">
@@ -56,12 +54,12 @@ export function NovelRow(props: Props) {
           <img src="/brands/yes24.ico" alt="" width="20" height="20" />
         </a>
         <button
-          class="text-button"
-          classList={{ 'text-button--done': props.inShelf }}
+          class="shelf-pill"
+          classList={{ 'shelf-pill--done': props.inShelf }}
           disabled={props.inShelf}
           onClick={add}
         >
-          {props.inShelf ? '담김' : '서재에 담기'}
+          {props.inShelf ? '✓ 담김' : '서재에 담기'}
         </button>
       </div>
     </li>
