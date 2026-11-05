@@ -93,14 +93,6 @@ export function KoreanLitView(props: Props) {
         </For>
       </nav>
 
-      <p class="message">
-        17개 문학 출판사 책 중 YES24가 '{props.genre.yes24Category}'로 분류한 종이책이에요(연도별). 전자책도 나온 책에는
-        '전자책'이라고 표시해요.{' '}
-        <button class="text-button" onClick={() => props.onRefresh()}>
-          새로고침
-        </button>
-      </p>
-
       <Show when={props.listError}>{(message) => <p class="message message--error">{message()}</p>}</Show>
       <Show when={props.ebookError}>{(message) => <p class="message">{message()}</p>}</Show>
 
