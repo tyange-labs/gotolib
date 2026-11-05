@@ -15,7 +15,7 @@ export function AppRouter() {
   return (
     <Router root={AppLayout}>
       <Route path="/" component={ShelfRoute} />
-      <Route path="/korean-lit" component={KoreanLitRoute} />
+      <Route path="/korean-lit/:genre?"component={KoreanLitRoute} />
       <Route path="/account" component={AccountRoute} />
       <Route path="/nearby" component={NearbyLayout}>
         <Route path="/" component={NearbyList} />

@@ -1,5 +1,5 @@
 /**
- * '한국문학' 탭 목록: 서버가 YES24 "한국 장편소설" 분류에서 모은 17개 출판사 종이책(`GET /gotolib/korean-novels`).
+ * '한국문학' 탭 목록: 서버가 YES24 "한국 장편소설"·"한국 단편소설" 분류에서 모은 17개 출판사 종이책(`GET /gotolib/korean-novels`).
  * 서버는 DB만 보고 YES24에는 가지 않는다(수집은 서버의 수집 작업 한 곳에서 한다).
  */
 import { api } from './auth'
@@ -38,10 +38,10 @@ export function toKoreanNovel(book: ServerBook): KoreanNovel {
   }
 }
 
-export async function fetchKoreanNovels(year: string): Promise<KoreanNovel[]> {
-  const response = await api<ServerResponse>(`/gotolib/korean-novels?year=${encodeURIComponent(year)}`, {
-    auth: false,
-  })
+/** `form`은 장르 slug(`novel`·`short`, `koreanGenres.ts`) */
+export async function fetchKoreanNovels(form: string, year: string): Promise<KoreanNovel[]> {
+  const query = new URLSearchParams({ year, form })
+  const response = await api<ServerResponse>(`/gotolib/korean-novels?${query}`, { auth: false })
   return response.books.map(toKoreanNovel)
 }
 

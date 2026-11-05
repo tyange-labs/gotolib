@@ -1,4 +1,4 @@
-import { createSignal, onCleanup } from 'solid-js'
+import { createEffect, createSignal, on, onCleanup, untrack, type Accessor } from 'solid-js'
 import { clearNovelCacheForYear, getAllNovelPeriods, putNovelPeriod } from '../lib/db'
 import { LibraryApiError } from '../lib/libraryApi'
 import { TARGET_PUBLISHERS } from '../lib/novelClassify'
@@ -30,12 +30,12 @@ function toCandidateList(rows: readonly Row[]): NovelCandidate[] {
 }
 
 /**
- * '한국문학' 탭 데이터. 연도 칩으로 고른 **한 해**만 다룬다.
- * - 목록: 서버가 YES24 "한국 장편소설"에서 모은 종이책(`fetchKoreanNovels`). 한 번 받은 해는 이 화면에 있는 동안 다시 받지 않는다.
+ * '한국문학' 탭 데이터. 장르(`genre`, 주소에서 온 slug)와 연도 칩으로 고른 **한 해**만 다룬다.
+ * - 목록: 서버가 YES24 분류(장편·단편)에서 모은 종이책(`fetchKoreanNovels`). 한 번 받은 장르·해는 이 화면에 있는 동안 다시 받지 않는다.
  * - 전자책 여부: NL 서지정보 API의 전자책 레코드(17개 출판사 × 그해)에서 종이책 ISBN(RELATED_ISBN)을 모아 표시만 한다.
  *   이미 모은 적 있는 해는 이 기기의 IndexedDB 캐시를 쓰고 다시 긁지 않는다.
  */
-export function useKoreanNovels() {
+export function useKoreanNovels(genre: Accessor<string>) {
   const years = collectionYears().slice().reverse()
   const [year, setYearSignal] = createSignal(years[0])
   const [rows, setRows] = createSignal<Row[]>([])
@@ -50,18 +50,25 @@ export function useKoreanNovels() {
     cancelled = true
   })
 
-  const loadList = async (targetYear: string, force: boolean) => {
-    if (!force && lists()[targetYear]) return
+  const listKey = (form: string, y: string) => `${form}|${y}`
+
+  const loadList = async (form: string, targetYear: string, force: boolean) => {
+    const key = listKey(form, targetYear)
+    if (!force && lists()[key]) return
     setListError(null)
     try {
-      const novels = await fetchKoreanNovels(targetYear)
+      const novels = await fetchKoreanNovels(form, targetYear)
       if (cancelled) return
-      setLists((prev) => ({ ...prev, [targetYear]: novels }))
+      setLists((prev) => ({ ...prev, [key]: novels }))
     } catch (e) {
-      if (cancelled || targetYear !== year()) return
+      if (cancelled || key !== listKey(genre(), year())) return
       setListError(e instanceof Error ? e.message : '목록을 불러오지 못했어요.')
     }
   }
+
+  // 장르가 바뀌면(주소가 바뀌면) 그 장르의 지금 해 목록을 받는다. 처음 한 번도 여기서 받는다.
+  // 전자책 정보(NL 서지)는 장르와 상관없이 출판사 × 해 단위라 다시 긁지 않는다.
+  createEffect(on(genre, (form) => void loadList(form, untrack(year), false)))
 
   // 연도를 바꾸면 이전 해를 긁던 워커는 멈춰야 한다(cancelled 하나로는 이 훅 자체가 사라질 때만 막아서,
   // 토큰으로 "지금 고른 해"가 바뀌었는지도 따로 본다).
@@ -138,17 +145,15 @@ export function useKoreanNovels() {
     setRows(cached)
     void fetchYear(years[0], false)
   }
-  // fetchYear·loadList가 내부에서 신호를 읽어서 eslint-plugin-solid가 이 마운트 때 단 한 번뿐인 호출도
+  // fetchYear가 내부에서 신호를 읽어서 eslint-plugin-solid가 이 마운트 때 단 한 번뿐인 호출도
   // "추적되는 범위 밖에서 신호를 읽는다"고 본다 — 의도한 일회성 초기화라 경고를 끈다.
-  // eslint-disable-next-line solid/reactivity
-  void loadList(years[0], false)
   // eslint-disable-next-line solid/reactivity
   void loadInitial()
 
   const setYear = (y: string) => {
     if (y === year()) return
     setYearSignal(y)
-    void loadList(y, false)
+    void loadList(genre(), y, false)
     void fetchYear(y, false)
   }
 
@@ -165,15 +170,15 @@ export function useKoreanNovels() {
     years,
     year,
     setYear,
-    novels: () => lists()[year()] ?? [],
-    /** 지금 고른 해의 목록을 받았는가 */
-    ready: () => lists()[year()] !== undefined,
+    novels: () => lists()[listKey(genre(), year())] ?? [],
+    /** 지금 고른 장르·해의 목록을 받았는가 */
+    ready: () => lists()[listKey(genre(), year())] !== undefined,
     listError,
     ebookIsbns,
     progress,
     error,
     refresh: () => {
-      void loadList(year(), true)
+      void loadList(genre(), year(), true)
       void fetchYear(year(), true)
     },
   }

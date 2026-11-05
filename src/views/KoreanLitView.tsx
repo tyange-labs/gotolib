@@ -1,4 +1,6 @@
 import { For, Show, createEffect, createMemo, createSignal, on } from 'solid-js'
+import { A } from '@solidjs/router'
+import { KOREAN_GENRES, genrePath, type KoreanGenre } from '../lib/koreanGenres'
 import { useApp } from '../context/appContext'
 import { Pagination } from '../components/Pagination'
 import { SearchBar } from '../components/SearchBar'
@@ -15,6 +17,7 @@ function normalize(text: string): string {
 }
 
 interface Props {
+  genre: KoreanGenre
   /** 서버가 최근 달 순으로 정렬해 준다 */
   novels: KoreanNovel[]
   /** 전자책이 있는 종이책 ISBN(NL 서지) */
@@ -31,9 +34,9 @@ interface Props {
 }
 
 /**
- * '한국문학' 탭: 서버가 YES24 "한국 장편소설" 분류에서 모은 17개 출판사 **종이책**을 연도별로 보여준다
- * (2000년~올해). 장편 판정은 YES24 분류 하나로 한다 — 청소년·장르소설·소설집·시집·굿즈는 YES24가 이
- * 분류에 넣지 않아서 자연히 빠진다. 전자책 여부는 NL 서지정보 API로 따로 채워 배지로만 보여준다.
+ * '한국문학' 탭: 서버가 YES24 분류(장르 칩: 장편·단편, `koreanGenres.ts`)에서 모은 17개 출판사 **종이책**을
+ * 연도별로 보여준다(2000년~올해). 장르 판정은 YES24 분류 하나로 한다 — 청소년·장르소설·시집·굿즈는 YES24가
+ * 이 분류들에 넣지 않아서 자연히 빠진다. 전자책 여부는 NL 서지정보 API로 따로 채워 배지로만 보여준다.
  */
 export function KoreanLitView(props: Props) {
   const { books } = useApp()
@@ -54,10 +57,10 @@ export function KoreanLitView(props: Props) {
   })
 
   const [page, setPage] = createSignal(1)
-  // 연도를 바꾸면(처음 마운트될 때는 말고) 이전 쪽 번호가 그대로 남지 않게 1쪽으로 되돌린다.
+  // 장르·연도를 바꾸면(처음 마운트될 때는 말고) 이전 쪽 번호가 그대로 남지 않게 1쪽으로 되돌린다.
   createEffect(
     on(
-      () => props.year,
+      () => [props.genre, props.year],
       () => setPage(1),
       { defer: true },
     ),
@@ -79,9 +82,20 @@ export function KoreanLitView(props: Props) {
 
   return (
     <div>
+      <nav class="genre-chips" aria-label="장르">
+        <For each={KOREAN_GENRES}>
+          {(genre) => (
+            // 라우터의 A가 주소가 정확히 같을 때 aria-current="page"를 단다 — 선택 표시는 그걸로 한다.
+            <A href={genrePath(genre)} class="genre-chip" replace>
+              {genre.label}
+            </A>
+          )}
+        </For>
+      </nav>
+
       <p class="message">
-        17개 문학 출판사 책 중 YES24가 '한국 장편소설'로 분류한 종이책이에요(연도별). 전자책도 나온 책에는 '전자책'이라고
-        표시해요.{' '}
+        17개 문학 출판사 책 중 YES24가 '{props.genre.yes24Category}'로 분류한 종이책이에요(연도별). 전자책도 나온 책에는
+        '전자책'이라고 표시해요.{' '}
         <button class="text-button" onClick={() => props.onRefresh()}>
           새로고침
         </button>
