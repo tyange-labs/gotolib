@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { fetchNovelPeriodRaw, toCandidates, yearWindow, yearsSince2020, type NovelSeojiDoc } from '../src/lib/novelsApi'
+import { fetchNovelPeriodRaw, toCandidates, yearWindow, collectionYears, type NovelSeojiDoc } from '../src/lib/novelsApi'
 import { LibraryApiError } from '../src/lib/libraryApi'
 
 const originalFetch = globalThis.fetch
@@ -65,10 +65,10 @@ describe('toCandidates', () => {
   })
 })
 
-describe('yearsSince2020 / yearWindow', () => {
-  test('2020년부터 올해까지, 달이 아니라 해 단위다', () => {
-    const years = yearsSince2020()
-    expect(years[0]).toBe('2020')
+describe('collectionYears / yearWindow', () => {
+  test('2000년부터 올해까지, 달이 아니라 해 단위다', () => {
+    const years = collectionYears()
+    expect(years[0]).toBe('2000')
     expect(years.at(-1)).toBe(String(new Date().getFullYear()))
     expect(years.every((y) => /^\d{4}$/.test(y))).toBe(true)
   })

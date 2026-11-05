@@ -69,7 +69,12 @@ export function readerCodeFromAddCode(addCode: string | undefined): string | und
   return digits.length >= 1 ? digits[0] : undefined
 }
 
-const EXCLUDE_TITLE = /시집|산문집?|에세이|동화|그림책|대본집|희곡|웹툰|만화|사진집|화집/
+// '시인선'(예: "문학동네시인선", "창비 시인선")은 거의 항상 시집 시리즈 이름이라 안전하게 제외한다.
+// 반면 '시선'은 "창비시선"(시 선집) 말고도 "~의 시선으로"처럼 일반 단어(視線, 바라보는 시선)로
+// 소설 제목에도 흔히 쓰여서 함께 넣지 않는다 — 실제로 NL 서지 TITLE에는 "창비시선"·"문학동네시인선"
+// 같은 시리즈명 자체가 아예 안 실려 있어서(알라딘 상품명에만 나온다, book-info의 category로 걸러짐)
+// 이 제목 신호는 보조일 뿐이고, 진짜 걸러내기는 classifyWithAladin의 분류 경로 확인이 맡는다.
+const EXCLUDE_TITLE = /시집|산문집?|에세이|동화|그림책|대본집|희곡|웹툰|만화|사진집|화집|시인선/
 const COLLECTION_TITLE = /소설집|단편집|연작소설|중단편|단편선/
 const BOUNDARY_MIN_PAGES = 200
 const NOVEL_MIN_PAGES = 250

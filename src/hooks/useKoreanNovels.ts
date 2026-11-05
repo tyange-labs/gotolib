@@ -2,7 +2,7 @@ import { createMemo, createSignal, onCleanup } from 'solid-js'
 import { clearNovelCacheForYear, getAllNovelPeriods, putNovelPeriod } from '../lib/db'
 import { LibraryApiError } from '../lib/libraryApi'
 import { TARGET_PUBLISHERS } from '../lib/novelClassify'
-import { fetchNovelPeriodRaw, yearWindow, yearsSince2020, toCandidates, type NovelSeojiDoc } from '../lib/novelsApi'
+import { fetchNovelPeriodRaw, yearWindow, collectionYears, toCandidates, type NovelSeojiDoc } from '../lib/novelsApi'
 import type { NovelCandidate } from '../types/novel'
 
 export interface NovelsProgress {
@@ -29,13 +29,13 @@ function toCandidateList(rows: readonly Row[]): NovelCandidate[] {
 }
 
 /**
- * '한국문학' 탭 데이터: 연도 칩으로 고른 **한 해**(17개 출판사)만 모은다. 2020~올해를 한꺼번에 긁으면
+ * '한국문학' 탭 데이터: 연도 칩으로 고른 **한 해**(17개 출판사)만 모은다. 2000~올해를 한꺼번에 긁으면
  * 요청이 너무 많아져서(일일 호출 한도를 쉽게 넘긴다) 연도를 고를 때마다 그 해만 받아 오게 바꿨다.
  * 이미 모은 적 있는 해는(이 기기의 IndexedDB 캐시에) 다시 긁지 않고 바로 보여준다 — 이전에 들렀던
  * 해들의 캐시는 탭을 열 때 한 번에 불러와서(네트워크 없이) 칩에 권수를 보여줄 수 있게 한다.
  */
 export function useKoreanNovels() {
-  const years = yearsSince2020().slice().reverse()
+  const years = collectionYears().slice().reverse()
   const [year, setYearSignal] = createSignal(years[0])
   const [rows, setRows] = createSignal<Row[]>([])
   const [progress, setProgress] = createSignal<NovelsProgress>({ done: 0, total: 0 })

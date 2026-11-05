@@ -19,6 +19,14 @@ describe('classifyNovel', () => {
   test('제목에 에세이·시집 등이 있으면 소설 아님', () => {
     expect(classifyNovel({ title: '어느 날의 에세이', kdc3: '810', authorCount: 1 }, 300)).toBe('소설 아님')
   })
+  test('제목에 "시인선"이 있으면 소설 아님(시집 시리즈 이름)', () => {
+    expect(classifyNovel({ title: '문학동네시인선 200 아무 시집', kdc3: '810', authorCount: 1 }, 300)).toBe(
+      '소설 아님',
+    )
+  })
+  test('"시선"만으로는 제외하지 않는다 — 소설 제목에도 흔히 쓰이는 일반 단어라서', () => {
+    expect(classifyNovel({ title: '타인의 시선', kdc3: '810', authorCount: 1 }, 300)).toBe('장편')
+  })
   test('공저 3인 이상이면 소설 아님(앤솔로지)', () => {
     expect(classifyNovel({ title: '아무 제목', kdc3: '810', authorCount: 3 }, 300)).toBe('소설 아님')
   })

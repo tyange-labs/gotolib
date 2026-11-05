@@ -189,15 +189,19 @@ export function toCandidates(docs: NovelSeojiDoc[], publisherQuery: string): Nov
   return out
 }
 
+/** '한국문학' 탭 연도 칩의 시작 연도. 전자책 자체가 드문 2000년 이전은 다루지 않는다 */
+export const COLLECTION_START_YEAR = 2000
+
 /**
- * 2020년부터 올해까지 "yyyy" 목록(과거→현재). 달 단위로 쪼개면 17개 출판사 × 수십 달이라
- * 요청이 너무 많아져(일일 호출 한도를 쉽게 넘긴다) 해 단위로 묻는다 — 한 해 안에서는
- * fetchNovelPeriodRaw가 page_no로 계속 넘겨 받으니 건수가 많아도 상관없다.
+ * COLLECTION_START_YEAR부터 올해까지 "yyyy" 목록(과거→현재). 달 단위로 쪼개면 17개 출판사 × 수십
+ * 달이라 요청이 너무 많아져(일일 호출 한도를 쉽게 넘긴다) 해 단위로 묻는다 — 한 해 안에서는
+ * fetchNovelPeriodRaw가 page_no로 계속 넘겨 받으니 건수가 많아도 상관없다. 연도 칩이 해마다 하나씩
+ * 늘어도 한 해(17건)만 긁는 구조라 범위를 넓혀도 요청량에는 영향이 없다.
  */
-export function yearsSince2020(): string[] {
+export function collectionYears(): string[] {
   const years: string[] = []
   const thisYear = new Date().getFullYear()
-  for (let y = 2020; y <= thisYear; y++) years.push(String(y))
+  for (let y = COLLECTION_START_YEAR; y <= thisYear; y++) years.push(String(y))
   return years
 }
 

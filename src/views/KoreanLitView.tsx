@@ -28,7 +28,7 @@ interface Props {
   onRefresh: () => void
 }
 
-/** '한국문학' 탭: 2020년대 이후 전자책으로 나온 한국 장편소설을 모아 보여준다 */
+/** '한국문학' 탭: 전자책으로 나온 한국 장편소설을 연도별로 모아 보여준다(2000년~올해) */
 export function KoreanLitView(props: Props) {
   const { books } = useApp()
   const shelfIds = createMemo(() => new Set(books().map((book) => book.id)))
