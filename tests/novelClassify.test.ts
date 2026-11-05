@@ -51,6 +51,12 @@ describe('classifyNovel', () => {
 describe('classifyWithAladin', () => {
   const candidate = { title: '아무 제목', kdc3: '810', authorCount: 1 }
 
+  test('YES24 분류가 있으면 다른 신호보다 먼저 쓴다', () => {
+    expect(classifyWithAladin(candidate, 100, { yes24Form: '장편', formHint: '소설집' })).toBe('장편')
+    expect(classifyWithAladin(candidate, 400, { yes24Form: '단편', formHint: '장편소설' })).toBe('소설집')
+    // 제목 키워드로 '소설 아님'이 나오는 책이어도 YES24가 소설 분류에 넣었으면 소설이다
+    expect(classifyWithAladin({ ...candidate, title: '어느 산문집 같은 제목' }, null, { yes24Form: '장편' })).toBe('장편')
+  })
   test('알라딘 형식어가 있으면 쪽수 없이도 바로 확정한다 — 장편·중편·단편집을 따로 구분하지 않고 소설집으로 묶는다', () => {
     expect(classifyWithAladin(candidate, null, { formHint: '장편소설' })).toBe('장편')
     expect(classifyWithAladin(candidate, null, { formHint: '경장편소설' })).toBe('장편')
@@ -75,6 +81,24 @@ describe('classifyWithAladin', () => {
         category: '전자책 > 소설/시/희곡 > 한국소설 > 2000년대 이전',
       }),
     ).not.toBe('소설 아님')
+  })
+  test('분류가 여러 줄이면 한 줄이라도 소설이면 소설로 본다', () => {
+    // 정전: 장르 줄 + "추천도서 > 국내 문학상" 줄
+    expect(
+      classifyWithAladin(candidate, 300, {
+        categories: ['국내도서 > 추천도서 > 국내 문학상 > 김수영 문학상', '국내도서 > 소설/시/희곡 > 한국소설'],
+      }),
+    ).not.toBe('소설 아님')
+    expect(
+      classifyWithAladin(candidate, 300, {
+        categories: ['국내도서 > 소설/시/희곡 > 시 > 한국시', '국내도서 > 추천도서 > 국내 문학상 > 김수영 문학상'],
+      }),
+    ).toBe('소설 아님')
+  })
+  test('categories가 있으면 예전 category 한 줄보다 먼저 본다', () => {
+    expect(
+      classifyWithAladin(candidate, 300, { categories: ['전자책 > 에세이 > 한국에세이'], category: '국내도서 > 소설/시/희곡 > 한국소설' }),
+    ).toBe('소설 아님')
   })
   test('에세이처럼 "소설/시/희곡" 묶음이 아예 없는 분류도 정확히 걸러낸다', () => {
     expect(

@@ -1,16 +1,37 @@
 /**
- * 알라딘 책 정보(분류·형식어·쪽수): 서버(tyange-cms-api)가 ISBN으로 모아 둔 걸 받아 온다.
- * 표지(covers.ts)와 같은 큐·같은 행을 보는 조회라서 모양도 똑같다 — '한국문학' 탭의 장편/소설집
- * 판정을 NL 서지 추정보다 더 믿을 만하게 보강하는 데 쓴다.
+ * 알라딘 책 정보: 서버(tyange-cms-api)가 ISBN으로 모아 둔 걸 받아 온다. 표지(covers.ts)와 같은
+ * 큐·같은 행을 보는 조회다 — '한국문학' 탭의 장편/소설집 판정을 NL 서지 추정보다 믿을 만하게 보강한다.
+ * 제목·사람·출판사 같은 상세는 종이책에만 있다(서버가 전자책 상세는 쌓지 않는다).
  */
 import { api } from './auth'
 import { isUnreleased } from './covers'
 
+export interface BookPerson {
+  name: string
+  /** 페이지 표기 그대로: "지은이", "옮긴이", "글" … */
+  role?: string
+}
+
 export interface BookInfoEntry {
   status: 'ok' | 'pending'
+  /** 분류 경로들. 한 책이 여러 분류에 걸릴 수 있다 */
+  categories?: string[]
+  /** 예전 서버 응답의 분류 한 줄(categories가 없을 때만 본다) */
   category?: string
   formHint?: string
   pages?: number
+  title?: string
+  subtitle?: string
+  people?: BookPerson[]
+  publisher?: string
+  pubDate?: string
+  originalTitle?: string
+  hasEbook?: boolean
+  size?: string
+  weight?: string
+  extraInfo?: string[]
+  /** YES24 분류("한국 장편소설"/"한국 단편소설")에서 찾은 형식. status가 pending이어도 올 수 있다 */
+  yes24Form?: '장편' | '단편'
 }
 
 interface BookInfoResponse {

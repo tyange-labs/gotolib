@@ -133,17 +133,22 @@ export function classifyNovel(
 
 /** 알라딘(book-info)에서 받은 신호. 모르면(아직 수집 전) undefined */
 export interface AladinSignal {
-  /** 알라딘 주제 분류 경로(예: "국내도서 > 소설/시/희곡 > 한국소설 > …") */
+  /** 알라딘 주제 분류 경로들(예: "국내도서 > 소설/시/희곡 > 한국소설 > …"). 한 책이 여러 분류에 걸릴 수 있다 */
+  categories?: string[]
+  /** 예전 서버 응답의 분류 한 줄(categories가 없을 때만 본다) */
   category?: string
   /** 책소개에서 뽑은 형식어: "장편소설"·"경장편소설"·"연작소설"·"소설집" */
   formHint?: string
   pages?: number
+  /** YES24 분류("한국 장편소설"/"한국 단편소설") */
+  yes24Form?: '장편' | '단편'
 }
 
 /**
- * NL 서지 신호에 알라딘 신호를 겹쳐 더 정확하게 판정한다(알라딘이 1차, NL 서지가 보강·대체).
- * - formHint가 있으면 그걸로 바로 '장편'/'소설집' 확정(책소개에 직접 적힌 값이라 가장 믿을 만하다).
- * - 분류 경로가 있는데 '소설'이 전혀 안 들어 있으면(시·에세이·희곡 등 알라딘 자체 분류) '소설 아님'.
+ * NL 서지 신호에 알라딘·YES24 신호를 겹쳐 더 정확하게 판정한다(서점 분류가 1차, NL 서지가 보강·대체).
+ * - YES24가 "한국 장편소설"/"한국 단편소설"로 분류해 둔 책이면 그대로 '장편'/'소설집'(편집자가 나눠 둔 분류라 가장 확실하다).
+ * - 알라딘 formHint가 있으면 그걸로 '장편'/'소설집' 확정(책소개에 직접 적힌 값).
+ * - 분류 경로가 있는데 어느 줄에도 '소설'이 없으면(시·에세이·희곡 등 알라딘 자체 분류) '소설 아님'.
  * - 그 외엔 알라딘 쪽수(있으면 NL 쪽수보다 믿는다)로 classifyNovel을 그대로 쓴다.
  */
 export function classifyWithAladin(
@@ -152,13 +157,17 @@ export function classifyWithAladin(
   aladin: AladinSignal | undefined,
   minPages = NOVEL_MIN_PAGES,
 ): NovelVerdict {
+  if (aladin?.yes24Form === '장편') return '장편'
+  if (aladin?.yes24Form === '단편') return '소설집'
   if (aladin?.formHint && FORM_HINT_VERDICT[aladin.formHint]) return FORM_HINT_VERDICT[aladin.formHint]
-  // 알라딘 분류 경로에 "소설"이 있는지로 가른다. 묶음 카테고리명 "소설/시/희곡" 자체에는 시여도 항상
-  // "소설"이 들어 있어서 그 부분은 빼고 본다. 맨 끝 갈래만 보면 안 된다 — 예전 책은
-  // "…한국소설 > 2000년대 이전"처럼 장르가 아니라 시기 구간이 한 단계 더 붙어서(실제 버그 사례:
-  // 최인호 "몽유도원도") 맨 끝만 보면 '한국소설' 신호를 놓친다.
-  const category = aladin?.category?.replace('소설/시/희곡', '')
-  if (category && !category.includes('소설')) return '소설 아님'
+  // 분류 경로에 "소설"이 있는지로 가른다. 묶음 카테고리명 "소설/시/희곡" 자체에는 시여도 항상 "소설"이
+  // 들어 있어서 그 부분은 빼고 본다. 맨 끝 갈래만 보면 안 된다 — 예전 책은 "…한국소설 > 2000년대 이전"처럼
+  // 장르가 아니라 시기 구간이 한 단계 더 붙는다(실제 버그 사례: 최인호 "몽유도원도"). 여러 줄이면 한 줄이라도
+  // 소설이면 소설로 본다(예: 정전은 "한국소설" 줄과 "추천도서 > 국내 문학상" 줄이 같이 있다).
+  const categories = aladin?.categories?.length ? aladin.categories : aladin?.category ? [aladin.category] : []
+  if (categories.length && !categories.some((c) => c.replace('소설/시/희곡', '').includes('소설'))) {
+    return '소설 아님'
+  }
   return classifyNovel(candidate, aladin?.pages ?? nlPages, minPages)
 }
 
