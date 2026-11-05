@@ -3,10 +3,9 @@ import { useApp } from '../context/appContext'
 import { Pagination } from '../components/Pagination'
 import { SearchBar } from '../components/SearchBar'
 import { NovelRow } from '../components/NovelRow'
-import { useBookInfo } from '../hooks/useBookInfo'
 import type { NovelsProgress } from '../hooks/useKoreanNovels'
 import { TARGET_PUBLISHERS, publisherMatches } from '../lib/novelClassify'
-import type { NovelCandidate } from '../types/novel'
+import type { KoreanNovel } from '../types/novel'
 
 const PAGE_SIZE = 20
 const ALL_PUBLISHERS = '전체 출판사'
@@ -16,20 +15,25 @@ function normalize(text: string): string {
 }
 
 interface Props {
-  novels: NovelCandidate[]
+  /** 서버가 최근 달 순으로 정렬해 준다 */
+  novels: KoreanNovel[]
+  /** 전자책이 있는 종이책 ISBN(NL 서지) */
+  ebookIsbns: ReadonlySet<string>
   years: readonly string[]
   year: string
   onYearChange: (year: string) => void
   ready: boolean
+  listError: string | null
+  /** 전자책 정보 모으기 진행률 */
   progress: NovelsProgress
-  error: string | null
+  ebookError: string | null
   onRefresh: () => void
 }
 
 /**
- * '한국문학' 탭: NL 서지로 모은 17개 출판사 전자책 후보 중 **YES24가 "한국 장편소설"로 분류한 책만** 연도별로
- * 보여준다(2000년~올해). 장편 판정은 YES24 분류 하나로 한다 — 청소년·장르소설·소설집·시집·굿즈는 YES24가 이
- * 분류에 넣지 않아서 자연히 빠진다.
+ * '한국문학' 탭: 서버가 YES24 "한국 장편소설" 분류에서 모은 17개 출판사 **종이책**을 연도별로 보여준다
+ * (2000년~올해). 장편 판정은 YES24 분류 하나로 한다 — 청소년·장르소설·소설집·시집·굿즈는 YES24가 이
+ * 분류에 넣지 않아서 자연히 빠진다. 전자책 여부는 NL 서지정보 API로 따로 채워 배지로만 보여준다.
  */
 export function KoreanLitView(props: Props) {
   const { books } = useApp()
@@ -38,22 +42,13 @@ export function KoreanLitView(props: Props) {
   const [query, setQuery] = createSignal('')
   const [publisher, setPublisher] = createSignal(ALL_PUBLISHERS)
 
-  // 이 해의 후보 전체(지금 쪽의 20권만이 아니라)를 서버에 물어 YES24 분류를 받는다.
-  const bookInfoOf = useBookInfo(() => props.novels.map((novel) => ({ isbn: novel.id, pubDate: novel.pubDate })))
-
-  const yes24Novels = createMemo(() =>
-    props.novels
-      .filter((novel) => bookInfoOf(novel.id)?.yes24Form === '장편')
-      .sort((a, b) => (b.pubDate ?? '').localeCompare(a.pubDate ?? '')),
-  )
-
   const filtered = createMemo(() => {
     // filter 콜백은 이 memo 본문 안에서 동기적으로 실행되므로 매번 다시 계산된다(useBookFilter와 같은 패턴).
     /* eslint-disable solid/reactivity */
     const term = normalize(query())
     const selectedPublisher = publisher()
     /* eslint-enable solid/reactivity */
-    return yes24Novels()
+    return props.novels
       .filter((novel) => selectedPublisher === ALL_PUBLISHERS || publisherMatches(novel.publisher, selectedPublisher))
       .filter((novel) => !term || normalize(`${novel.title} ${novel.author ?? ''}`).includes(term))
   })
@@ -77,7 +72,7 @@ export function KoreanLitView(props: Props) {
   const publisherCounts = createMemo(() => {
     const counts = new Map<string, number>()
     for (const name of TARGET_PUBLISHERS) {
-      counts.set(name, yes24Novels().filter((novel) => publisherMatches(novel.publisher, name)).length)
+      counts.set(name, props.novels.filter((novel) => publisherMatches(novel.publisher, name)).length)
     }
     return counts
   })
@@ -85,14 +80,15 @@ export function KoreanLitView(props: Props) {
   return (
     <div>
       <p class="message">
-        17개 문학 출판사의 전자책 중 YES24가 '한국 장편소설'로 분류한 책이에요(연도별로 모아요). YES24 분류는 서버가
-        옛 연도까지 차례로 모으는 중이라, 오래된 해는 아직 비어 있을 수 있어요.{' '}
+        17개 문학 출판사 책 중 YES24가 '한국 장편소설'로 분류한 종이책이에요(연도별). 전자책이 있는 책은 배지로
+        표시해요.{' '}
         <button class="text-button" onClick={() => props.onRefresh()}>
           새로고침
         </button>
       </p>
 
-      <Show when={props.error}>{(message) => <p class="message message--error">{message()}</p>}</Show>
+      <Show when={props.listError}>{(message) => <p class="message message--error">{message()}</p>}</Show>
+      <Show when={props.ebookError}>{(message) => <p class="message">{message()}</p>}</Show>
 
       <div class="year-chips">
         <div class="seg" role="group" aria-label="연도">
@@ -108,7 +104,7 @@ export function KoreanLitView(props: Props) {
 
       <Show when={props.progress.total > 0 && props.progress.done < props.progress.total}>
         <p class="message">
-          {props.year}년 모으는 중… {props.progress.done}/{props.progress.total}
+          {props.year}년 전자책 정보 모으는 중… {props.progress.done}/{props.progress.total}
           <Show when={props.progress.label}>{(label) => ` (${label()})`}</Show>
         </p>
       </Show>
@@ -147,7 +143,9 @@ export function KoreanLitView(props: Props) {
         </div>
         <ul class="search-results">
           <For each={pageItems()}>
-            {(novel) => <NovelRow novel={novel} inShelf={shelfIds().has(novel.id)} />}
+            {(novel) => (
+              <NovelRow novel={novel} hasEbook={props.ebookIsbns.has(novel.id)} inShelf={shelfIds().has(novel.id)} />
+            )}
           </For>
         </ul>
         <Pagination page={page()} pageCount={pageCount()} onChange={setPage} />

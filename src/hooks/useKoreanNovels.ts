@@ -2,8 +2,9 @@ import { createSignal, onCleanup } from 'solid-js'
 import { clearNovelCacheForYear, getAllNovelPeriods, putNovelPeriod } from '../lib/db'
 import { LibraryApiError } from '../lib/libraryApi'
 import { TARGET_PUBLISHERS } from '../lib/novelClassify'
+import { fetchKoreanNovels } from '../lib/koreanNovelsApi'
 import { fetchNovelPeriodRaw, yearWindow, collectionYears, toCandidates, type NovelSeojiDoc } from '../lib/novelsApi'
-import type { NovelCandidate } from '../types/novel'
+import type { KoreanNovel, NovelCandidate } from '../types/novel'
 
 export interface NovelsProgress {
   done: number
@@ -29,10 +30,10 @@ function toCandidateList(rows: readonly Row[]): NovelCandidate[] {
 }
 
 /**
- * '한국문학' 탭 데이터: 연도 칩으로 고른 **한 해**(17개 출판사)만 모은다. 2000~올해를 한꺼번에 긁으면
- * 요청이 너무 많아져서(일일 호출 한도를 쉽게 넘긴다) 연도를 고를 때마다 그 해만 받아 오게 바꿨다.
- * 이미 모은 적 있는 해는(이 기기의 IndexedDB 캐시에) 다시 긁지 않고 바로 보여준다(탭을 열 때 캐시를
- * 네트워크 없이 한 번에 불러온다).
+ * '한국문학' 탭 데이터. 연도 칩으로 고른 **한 해**만 다룬다.
+ * - 목록: 서버가 YES24 "한국 장편소설"에서 모은 종이책(`fetchKoreanNovels`). 한 번 받은 해는 이 화면에 있는 동안 다시 받지 않는다.
+ * - 전자책 여부: NL 서지정보 API의 전자책 레코드(17개 출판사 × 그해)에서 종이책 ISBN(RELATED_ISBN)을 모아 표시만 한다.
+ *   이미 모은 적 있는 해는 이 기기의 IndexedDB 캐시를 쓰고 다시 긁지 않는다.
  */
 export function useKoreanNovels() {
   const years = collectionYears().slice().reverse()
@@ -40,12 +41,27 @@ export function useKoreanNovels() {
   const [rows, setRows] = createSignal<Row[]>([])
   const [progress, setProgress] = createSignal<NovelsProgress>({ done: 0, total: 0 })
   const [error, setError] = createSignal<string | null>(null)
-  const [ready, setReady] = createSignal(false)
+
+  const [lists, setLists] = createSignal<Record<string, KoreanNovel[]>>({})
+  const [listError, setListError] = createSignal<string | null>(null)
 
   let cancelled = false
   onCleanup(() => {
     cancelled = true
   })
+
+  const loadList = async (targetYear: string, force: boolean) => {
+    if (!force && lists()[targetYear]) return
+    setListError(null)
+    try {
+      const novels = await fetchKoreanNovels(targetYear)
+      if (cancelled) return
+      setLists((prev) => ({ ...prev, [targetYear]: novels }))
+    } catch (e) {
+      if (cancelled || targetYear !== year()) return
+      setListError(e instanceof Error ? e.message : '목록을 불러오지 못했어요.')
+    }
+  }
 
   // 연도를 바꾸면 이전 해를 긁던 워커는 멈춰야 한다(cancelled 하나로는 이 훅 자체가 사라질 때만 막아서,
   // 토큰으로 "지금 고른 해"가 바뀌었는지도 따로 본다).
@@ -96,8 +112,8 @@ export function useKoreanNovels() {
           if (cancelled || token !== runToken) return
           setError(
             e instanceof LibraryApiError
-              ? e.message
-              : '수집 중 일부 구간을 가져오지 못했어요. 나중에 다시 열면 이어서 모아요.',
+              ? `전자책 정보를 다 모으지 못했어요: ${e.message}`
+              : '전자책 정보를 다 모으지 못했어요. 나중에 다시 열면 이어서 모아요.',
           )
         } finally {
           // try 안에서 token이 바뀐 걸 보고 return해도 finally는 돈다 — 연도를 전환해 멈춘(stale) 워커가
@@ -120,32 +136,45 @@ export function useKoreanNovels() {
     const cached = await getAllNovelPeriods()
     if (cancelled) return
     setRows(cached)
-    setReady(true)
     void fetchYear(years[0], false)
   }
-  // fetchYear가 내부에서 rows()를 읽어서 eslint-plugin-solid가 이 마운트 때 단 한 번뿐인 호출도
+  // fetchYear·loadList가 내부에서 신호를 읽어서 eslint-plugin-solid가 이 마운트 때 단 한 번뿐인 호출도
   // "추적되는 범위 밖에서 신호를 읽는다"고 본다 — 의도한 일회성 초기화라 경고를 끈다.
+  // eslint-disable-next-line solid/reactivity
+  void loadList(years[0], false)
   // eslint-disable-next-line solid/reactivity
   void loadInitial()
 
   const setYear = (y: string) => {
     if (y === year()) return
     setYearSignal(y)
+    void loadList(y, false)
     void fetchYear(y, false)
+  }
+
+  /** 그해 전자책이 있는 종이책 ISBN(NL 전자책 레코드의 RELATED_ISBN) */
+  const ebookIsbns = () => {
+    const set = new Set<string>()
+    for (const candidate of toCandidateList(rows().filter((r) => r.period === year()))) {
+      if (candidate.paperIsbn13) set.add(candidate.paperIsbn13)
+    }
+    return set
   }
 
   return {
     years,
     year,
     setYear,
-    candidates: () => toCandidateList(rows().filter((r) => r.period === year())),
-    ready,
+    novels: () => lists()[year()] ?? [],
+    /** 지금 고른 해의 목록을 받았는가 */
+    ready: () => lists()[year()] !== undefined,
+    listError,
+    ebookIsbns,
     progress,
     error,
-    fetching: () => {
-      const p = progress()
-      return p.total > 0 && p.done < p.total
+    refresh: () => {
+      void loadList(year(), true)
+      void fetchYear(year(), true)
     },
-    refresh: () => void fetchYear(year(), true),
   }
 }

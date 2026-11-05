@@ -1,4 +1,22 @@
-/** '한국문학' 탭: 전자책 서지(NL 서지정보 API)로 모은(2000년~올해) 한국 장편소설 후보. */
+/**
+ * '한국문학' 탭 목록의 책 한 권: 서버가 YES24 "한국 장편소설" 분류에서 모은 종이책
+ * (`GET /gotolib/korean-novels`). 전자책 여부만 NL 서지정보 API로 따로 채운다.
+ */
+export interface KoreanNovel {
+  /** 종이책 ISBN13(YES24 상품 페이지에서 받은 값) */
+  id: string
+  /** YES24 상품 번호 — 상품 페이지 링크용 */
+  goodsNo: number
+  title: string
+  subtitle?: string
+  /** "양귀자" 처럼 끝의 " 저"를 뗀 표기 */
+  author?: string
+  publisher: string
+  /** "2026-11" (YES24 목록은 출간 연월까지만 준다) */
+  pubMonth?: string
+}
+
+/** NL 서지정보 API의 전자책 레코드에서 만든 후보. '한국문학' 탭에서는 전자책 여부 표시에만 쓴다. */
 
 export interface NovelCandidate {
   /** 단행본(종이책) ISBN13. 종이책이 없으면 전자책 ISBN13으로 대신한다 */

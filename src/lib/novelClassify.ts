@@ -65,7 +65,3 @@ export function readerCodeFromAddCode(addCode: string | undefined): string | und
   return digits.length >= 1 ? digits[0] : undefined
 }
 
-/** 알라딘 상품 페이지 링크(ISBN 기준). CORS 때문에 내용을 긁어 오지 못하니 '보러 가기' 링크로만 쓴다. */
-export function aladinProductUrl(isbn13: string): string {
-  return `https://www.aladin.co.kr/shop/wproduct.aspx?ISBN=${isbn13}`
-}
