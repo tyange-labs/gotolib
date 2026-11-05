@@ -1,4 +1,5 @@
 import { Show } from 'solid-js'
+import { TabletSmartphone } from 'lucide-solid'
 import { useApp } from '../context/appContext'
 import { yes24ProductUrl } from '../lib/koreanNovelsApi'
 import type { KoreanNovel } from '../types/novel'
@@ -32,8 +33,9 @@ export function NovelRow(props: Props) {
         <span class="search-result__title">
           {props.novel.title}
           <Show when={props.hasEbook}>
-            {' '}
-            <span class="badge">전자책</span>
+            <span class="ebook-mark" role="img" aria-label="전자책 있음" title="전자책 있음">
+              <TabletSmartphone size={12} aria-hidden="true" />
+            </span>
           </Show>
         </span>
         <span class="search-result__meta">
@@ -44,12 +46,14 @@ export function NovelRow(props: Props) {
       </div>
       <div class="novel-row__actions">
         <a
-          class="text-button"
+          class="brand-link"
           href={yes24ProductUrl(props.novel.goodsNo)}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label={`YES24에서 ${props.novel.title} 보기`}
+          title="YES24에서 보기"
         >
-          YES24
+          <img src="/brands/yes24.ico" alt="" width="20" height="20" />
         </a>
         <button
           class="text-button"
