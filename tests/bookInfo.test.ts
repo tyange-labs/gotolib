@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { isUnreleased } from '../src/lib/covers'
-import { chunks, isbnsToAsk, type BookInfoEntry } from '../src/lib/bookInfo'
+import { chunks, isPending, isSettled, isbnsToAsk, type BookInfoEntry } from '../src/lib/bookInfo'
 
 describe('isUnreleased', () => {
   const now = new Date('2026-11-05T00:00:00Z')
@@ -15,14 +15,26 @@ describe('isUnreleased', () => {
 })
 
 describe('bookInfo.isbnsToAsk', () => {
-  const ok: BookInfoEntry = { status: 'ok', category: '국내도서 > 소설/시/희곡 > 한국소설' }
+  const settled: BookInfoEntry = { status: 'ok', yes24Form: '장편' }
+  const okWithoutForm: BookInfoEntry = { status: 'ok', category: '국내도서 > 소설/시/희곡 > 한국소설', pages: 240 }
 
   test('출간예정 책은 아예 묻지 않는다', () => {
     expect(isbnsToAsk([{ isbn: 'a', pubDate: '2099-01-01' }], {})).toEqual([])
   })
-  test('ok는 다시 묻지 않고, pending·모르는 건 묻는다', () => {
-    const known = { a: ok, b: { status: 'pending' } as BookInfoEntry }
-    expect(isbnsToAsk([{ isbn: 'a' }, { isbn: 'b' }, { isbn: 'c' }], known)).toEqual(['b', 'c'])
+  test('확정된 답은 다시 묻지 않고, pending·모르는 것·형식 신호 없는 ok는 다시 묻는다', () => {
+    // 실제 사례: 거미는 토요일 새벽 — 처음엔 예전 알라딘 값(분류·240쪽)만 있다가 나중에 YES24 "장편"이 들어왔다.
+    const known = { a: settled, b: { status: 'pending' } as BookInfoEntry, d: okWithoutForm }
+    expect(isbnsToAsk([{ isbn: 'a' }, { isbn: 'b' }, { isbn: 'c' }, { isbn: 'd' }], known)).toEqual(['b', 'c', 'd'])
+  })
+  test('짧은 재시도용으로는 pending·모르는 것만 고를 수 있다', () => {
+    const known = { a: settled, b: { status: 'pending' } as BookInfoEntry, d: okWithoutForm }
+    expect(isbnsToAsk([{ isbn: 'a' }, { isbn: 'b' }, { isbn: 'c' }, { isbn: 'd' }], known, isPending)).toEqual(['b', 'c'])
+  })
+  test('YES24 분류나 알라딘 형식어가 있어야 확정이다', () => {
+    expect(isSettled({ status: 'ok', formHint: '소설집' })).toBe(true)
+    expect(isSettled({ status: 'pending', yes24Form: '장편' })).toBe(false)
+    expect(isSettled(okWithoutForm)).toBe(false)
+    expect(isSettled(undefined)).toBe(false)
   })
   test('ISBN 없는 항목·중복은 뺀다', () => {
     expect(isbnsToAsk([{ isbn: undefined }, { isbn: 'a' }, { isbn: 'a' }], {})).toEqual(['a'])

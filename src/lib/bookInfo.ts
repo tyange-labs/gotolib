@@ -40,17 +40,33 @@ interface BookInfoResponse {
 
 export const MAX_ISBNS_PER_REQUEST = 50
 
-/** 아직 결론(ok)이 안 난 ISBN만. 출간예정 책은 covers.ts와 같은 이유로 애초에 묻지 않는다 */
+/**
+ * 더 물어볼 필요가 없는 답인가: 장편/소설집을 확정해 주는 신호(YES24 분류나 알라딘 형식어)까지 왔을 때만.
+ * `status: 'ok'`여도 그 신호가 없으면 서버가 아직 모으는 중일 수 있다(YES24 백필, 알라딘 상세 보충) —
+ * 그래서 계속 물어서, 새로고침 없이도 나중에 들어온 정보가 반영되게 한다.
+ */
+export function isSettled(entry: BookInfoEntry | undefined): boolean {
+  return entry?.status === 'ok' && (entry.yes24Form != null || entry.formHint != null)
+}
+
+/** 서버가 아직 한 번도 결론을 못 낸(수집 대기 중인) 답 */
+export const isPending = (entry: BookInfoEntry | undefined): boolean => entry?.status !== 'ok'
+
+/**
+ * 다시 물어볼 ISBN(중복·ISBN 없음은 뺀다). 기본은 확정되지 않은 것 전부, `needsAsking`으로 좁힐 수 있다.
+ * 출간예정 책은 covers.ts와 같은 이유로 애초에 묻지 않는다.
+ */
 export function isbnsToAsk(
   isbns: ReadonlyArray<{ isbn: string | undefined; pubDate?: string }>,
   known: Readonly<Record<string, BookInfoEntry | undefined>>,
+  needsAsking: (entry: BookInfoEntry | undefined) => boolean = (entry) => !isSettled(entry),
 ): string[] {
   const seen = new Set<string>()
   const ask: string[] = []
   for (const { isbn, pubDate } of isbns) {
     if (!isbn || seen.has(isbn) || isUnreleased(pubDate)) continue
     seen.add(isbn)
-    if (known[isbn]?.status !== 'ok') ask.push(isbn)
+    if (needsAsking(known[isbn])) ask.push(isbn)
   }
   return ask
 }
