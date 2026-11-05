@@ -100,8 +100,13 @@ export function useKoreanNovels() {
               : '수집 중 일부 구간을 가져오지 못했어요. 나중에 다시 열면 이어서 모아요.',
           )
         } finally {
-          doneCount += 1
-          setProgress({ done: doneCount, total: jobs.length, label: `${publisher} ${period}` })
+          // try 안에서 token이 바뀐 걸 보고 return해도 finally는 돈다 — 연도를 전환해 멈춘(stale) 워커가
+          // 그 뒤에도 공유 progress 신호를 계속 덮어쓰면 다른 해의 진행률·라벨이 섞여 보인다. 여기서도
+          // 한 번 더 막는다.
+          if (!cancelled && token === runToken) {
+            doneCount += 1
+            setProgress({ done: doneCount, total: jobs.length, label: `${publisher} ${period}` })
+          }
         }
       }
     }
