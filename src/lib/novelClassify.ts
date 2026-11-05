@@ -82,22 +82,30 @@ const NOVEL_MIN_PAGES = 250
  */
 const EXCLUDE_KDC3 = new Set(['811', '812', '814', '815', '816', '817', '818', '819'])
 
-/** 알라딘 책소개에서 뽑은 형식어(book_info::extract_form_hint)를 판정으로 옮긴다 */
+/**
+ * 알라딘 책소개에서 뽑은 형식어(book_info::extract_form_hint)를 판정으로 옮긴다. 장편·중편·단편집을
+ * 따로 구분하지 않는다 — NL 서지·알라딘 어느 쪽도 그 셋을 안정적으로 구분해 주지 않아서, 장편이
+ * 아니면 전부 뭉뚱그려 '소설집'으로 본다.
+ */
 const FORM_HINT_VERDICT: Record<string, NovelVerdict> = {
   장편소설: '장편',
   경장편소설: '장편',
-  연작소설: '소설집·중편',
-  소설집: '소설집·중편',
+  연작소설: '소설집',
+  소설집: '소설집',
 }
 
 /**
- * 장편/소설집·중편/확인 필요/소설 아님을 추정한다.
+ * 장편/소설집/확인 필요/소설 아님을 추정한다.
  * - KDC 3자리가 EXCLUDE_KDC3에 있으면 '소설 아님'(시·수필·희곡 등). 813은 물론이고 810(갈래 미기재)도
  *   통과시킨다.
  * - 제목에 시집·에세이·동화·희곡 등이 있으면 '소설 아님'.
  * - 공저 3인 이상이면 앤솔로지로 보고 '소설 아님'.
- * - 제목에 소설집·단편·연작소설 등이 있거나 쪽수가 200 미만이면 '소설집·중편'.
+ * - 제목에 소설집·단편·연작소설 등이 있으면 '소설집'(쪽수와 무관하게 확정).
  * - 쪽수가 없으면 '확인 필요'.
+ * - 쪽수가 200 미만이면: kdc3가 813(한국소설 확정)일 때만 '소설집', 아니면 '확인 필요'로 둔다
+ *   (시집·에세이도 흔히 그만큼 짧고, NL 서지에는 구분할 신호가 아예 없는 레코드가 많다 — 예: 문학동네
+ *   시인선 시집들은 kdc3·SERIES_TITLE 모두 비어 있어서 쪽수만 보면 소설집과 구별이 안 된다.
+ *   알라딘이 분류를 확정해 줄 때까지 섣불리 소설로 단정하지 않는다).
  * - 쪽수가 `minPages`(기본 250) 이상이면 '장편', 200~minPages-1이면 '확인 필요'.
  */
 export function classifyNovel(
@@ -111,9 +119,9 @@ export function classifyNovel(
   if (EXCLUDE_TITLE.test(title)) return '소설 아님'
   if ((authorCount ?? 0) >= 3) return '소설 아님'
 
-  if (COLLECTION_TITLE.test(title)) return '소설집·중편'
+  if (COLLECTION_TITLE.test(title)) return '소설집'
   if (pages == null) return '확인 필요'
-  if (pages < BOUNDARY_MIN_PAGES) return '소설집·중편'
+  if (pages < BOUNDARY_MIN_PAGES) return kdc3 === '813' ? '소설집' : '확인 필요'
   if (pages < minPages) return '확인 필요'
   return '장편'
 }
@@ -129,7 +137,7 @@ export interface AladinSignal {
 
 /**
  * NL 서지 신호에 알라딘 신호를 겹쳐 더 정확하게 판정한다(알라딘이 1차, NL 서지가 보강·대체).
- * - formHint가 있으면 그걸로 바로 '장편'/'소설집·중편' 확정(책소개에 직접 적힌 값이라 가장 믿을 만하다).
+ * - formHint가 있으면 그걸로 바로 '장편'/'소설집' 확정(책소개에 직접 적힌 값이라 가장 믿을 만하다).
  * - 분류 경로가 있는데 '소설'이 전혀 안 들어 있으면(시·에세이·희곡 등 알라딘 자체 분류) '소설 아님'.
  * - 그 외엔 알라딘 쪽수(있으면 NL 쪽수보다 믿는다)로 classifyNovel을 그대로 쓴다.
  */

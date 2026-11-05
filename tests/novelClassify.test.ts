@@ -22,12 +22,19 @@ describe('classifyNovel', () => {
   test('공저 3인 이상이면 소설 아님(앤솔로지)', () => {
     expect(classifyNovel({ title: '아무 제목', kdc3: '810', authorCount: 3 }, 300)).toBe('소설 아님')
   })
-  test('제목에 소설집·연작소설 등이 있으면 소설집·중편', () => {
-    expect(classifyNovel({ title: '단편선', kdc3: '810', authorCount: 1 }, null)).toBe('소설집·중편')
+  test('제목에 소설집·연작소설 등이 있으면 쪽수와 무관하게 소설집', () => {
+    expect(classifyNovel({ title: '단편선', kdc3: '810', authorCount: 1 }, null)).toBe('소설집')
   })
-  test('쪽수 없으면 확인 필요, 200 미만이면 소설집·중편, 250 이상이면 장편', () => {
+  test('실제 버그 사례: kdc3·SERIES_TITLE 모두 비어 있는 문학동네 시인선 시집(쪽수만 짧음)은 소설집으로 단정하지 않는다', () => {
+    // 수진 "종이 인형 목욕시키기" — NL 서지에 시집이라는 신호가 전혀 없고 쪽수만 짧다(시집은 보통 150쪽 안팎).
+    // kdc3가 813으로 확정되지 않은 한 짧다는 이유만으로 소설집이라 단정하지 않고, 알라딘이 확인해 줄 때까지 기다린다.
+    expect(classifyNovel({ title: '종이 인형 목욕시키기', kdc3: '810', authorCount: 1 }, 132)).toBe('확인 필요')
+  })
+  test('쪽수 200 미만이어도 kdc3가 813(한국소설 확정)이면 소설집', () => {
+    expect(classifyNovel({ title: '아무 제목', kdc3: '813', authorCount: 1 }, 150)).toBe('소설집')
+  })
+  test('쪽수 없으면 확인 필요, 200~250 미만이면 확인 필요, 250 이상이면 장편', () => {
     expect(classifyNovel({ title: '아무 제목', kdc3: '810', authorCount: 1 }, null)).toBe('확인 필요')
-    expect(classifyNovel({ title: '아무 제목', kdc3: '810', authorCount: 1 }, 150)).toBe('소설집·중편')
     expect(classifyNovel({ title: '아무 제목', kdc3: '810', authorCount: 1 }, 220)).toBe('확인 필요')
     expect(classifyNovel({ title: '아무 제목', kdc3: '810', authorCount: 1 }, 250)).toBe('장편')
   })
@@ -36,11 +43,11 @@ describe('classifyNovel', () => {
 describe('classifyWithAladin', () => {
   const candidate = { title: '아무 제목', kdc3: '810', authorCount: 1 }
 
-  test('알라딘 형식어가 있으면 쪽수 없이도 바로 확정한다', () => {
+  test('알라딘 형식어가 있으면 쪽수 없이도 바로 확정한다 — 장편·중편·단편집을 따로 구분하지 않고 소설집으로 묶는다', () => {
     expect(classifyWithAladin(candidate, null, { formHint: '장편소설' })).toBe('장편')
     expect(classifyWithAladin(candidate, null, { formHint: '경장편소설' })).toBe('장편')
-    expect(classifyWithAladin(candidate, null, { formHint: '소설집' })).toBe('소설집·중편')
-    expect(classifyWithAladin(candidate, null, { formHint: '연작소설' })).toBe('소설집·중편')
+    expect(classifyWithAladin(candidate, null, { formHint: '소설집' })).toBe('소설집')
+    expect(classifyWithAladin(candidate, null, { formHint: '연작소설' })).toBe('소설집')
   })
   test('분류 경로가 있는데 "소설"이 없으면 소설 아님(알라딘 자체 분류를 믿는다)', () => {
     expect(

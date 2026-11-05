@@ -15,7 +15,7 @@ interface Props {
 
 const VERDICT_BADGE: Record<NovelVerdict, string> = {
   장편: 'badge--ok',
-  '소설집·중편': 'badge--warn',
+  소설집: 'badge--warn',
   '확인 필요': 'badge--warn',
   '소설 아님': 'badge--warn',
 }
