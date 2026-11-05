@@ -14,6 +14,7 @@ export interface KoreanGenre {
 export const KOREAN_GENRES: readonly KoreanGenre[] = [
   { slug: 'novel', label: '장편', yes24Category: '한국 장편소설' },
   { slug: 'short', label: '단편', yes24Category: '한국 단편소설' },
+  { slug: 'poem', label: '시', yes24Category: '한국 시' },
 ]
 
 /** 주소의 장르 조각 → 장르. 없거나 모르는 값이면 기본 장르 */

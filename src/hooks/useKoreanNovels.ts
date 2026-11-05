@@ -31,7 +31,7 @@ function toCandidateList(rows: readonly Row[]): NovelCandidate[] {
 
 /**
  * '한국문학' 탭 데이터. 장르(`genre`, 주소에서 온 slug)와 연도 칩으로 고른 **한 해**만 다룬다.
- * - 목록: 서버가 YES24 분류(장편·단편)에서 모은 종이책(`fetchKoreanNovels`). 한 번 받은 장르·해는 이 화면에 있는 동안 다시 받지 않는다.
+ * - 목록: 서버가 YES24 분류(장편·단편·시)에서 모은 종이책(`fetchKoreanNovels`). 한 번 받은 장르·해는 이 화면에 있는 동안 다시 받지 않는다.
  * - 전자책 여부: NL 서지정보 API의 전자책 레코드(17개 출판사 × 그해)에서 종이책 ISBN(RELATED_ISBN)을 모아 표시만 한다.
  *   이미 모은 적 있는 해는 이 기기의 IndexedDB 캐시를 쓰고 다시 긁지 않는다.
  */
