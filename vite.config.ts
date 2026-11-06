@@ -11,7 +11,11 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [solid(), VitePWA({
-      registerType: 'prompt',
+      // 'prompt'였을 때는 새 배포 뒤 PWABadge.tsx의 토스트를 직접 눌러야(또는 모든 탭을 완전히 닫아야)
+      // skipWaiting이 돼서, 안 누르면 홈 화면 앱이 계속 예전 번들을 보여줬다(사용자 보고, 2026-11).
+      // 'autoUpdate'는 서비스워커가 설치되자마자 self.skipWaiting()·clients.claim()을 스스로 부른다 —
+      // 그 뒤 PWABadge.tsx가 컨트롤러 교체를 감지해 바로 새로고침한다.
+      registerType: 'autoUpdate',
       injectRegister: false,
 
       pwaAssets: {

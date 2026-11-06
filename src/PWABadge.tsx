@@ -1,78 +1,24 @@
-import './PWABadge.css'
-import { Show } from 'solid-js'
+import { createEffect } from 'solid-js'
 
 import { useRegisterSW } from 'virtual:pwa-register/solid'
 
+/**
+ * 새 배포를 자동으로 받는다(사용자 결정, 2026-11) — registerType: 'autoUpdate'와 짝이다.
+ * 예전엔 needRefresh일 때 토스트를 띄워 사용자가 "Reload"를 직접 눌러야 했는데, 그걸 놓치면(또는
+ * 탭만 닫고 완전히 끄지 않으면) 홈 화면 앱이 계속 예전 번들을 보여주는 문제가 있었다. 혼자 쓰는 앱이라
+ * 화면이 쓰는 도중 한 번 새로고침되는 쪽이 "업데이트가 전혀 안 먹는" 쪽보다 낫다는 판단.
+ */
 function PWABadge() {
-  // periodic sync is disabled, change the value to enable it, the period is in milliseconds
-// You can remove onRegisteredSW callback and registerPeriodicSync function
-  const period = 0
-
   const {
-    
-    needRefresh: [needRefresh, setNeedRefresh],
+    needRefresh: [needRefresh],
     updateServiceWorker,
-  } = useRegisterSW({
-    onRegisteredSW(swUrl, r) {
-      if (period <= 0) return
-      if (r?.active?.state === 'activated') {
-        registerPeriodicSync(period, swUrl, r)
-      }
-      else if (r?.installing) {
-        r.installing.addEventListener('statechange', (e) => {
-          const sw = e.target as ServiceWorker
-          if (sw.state === 'activated')
-            registerPeriodicSync(period, swUrl, r)
-        })
-      }
-    },
+  } = useRegisterSW()
+
+  createEffect(() => {
+    if (needRefresh()) void updateServiceWorker(true)
   })
 
-  function close() {
-    
-    setNeedRefresh(false)
-  }
-
-  return (
-    <div class="PWABadge" role="alert" aria-labelledby="toast-message">
-      <Show when={needRefresh()}>
-        <div class="PWABadge-toast">
-          <div class="PWABadge-message">
-            <span id="toast-message">New content available, click on reload button to update.</span>
-              
-              
-          </div>
-          <div class="PWABadge-buttons">
-            <button class="PWABadge-toast-button" onClick={() => updateServiceWorker(true)}>Reload</button>
-            <button class="PWABadge-toast-button" onClick={() => close()}>Close</button>
-          </div>
-        </div>
-      </Show>
-    </div>
-  )
+  return null
 }
 
 export default PWABadge
-
-/**
- * This function will register a periodic sync check every hour, you can modify the interval as needed.
- */
-function registerPeriodicSync(period: number, swUrl: string, r: ServiceWorkerRegistration) {
-  if (period <= 0) return
-
-  setInterval(async () => {
-    if ('onLine' in navigator && !navigator.onLine)
-      return
-
-    const resp = await fetch(swUrl, {
-      cache: 'no-store',
-      headers: {
-        'cache': 'no-store',
-        'cache-control': 'no-cache',
-      },
-    })
-
-    if (resp?.status === 200)
-      await r.update()
-  }, period)
-}
