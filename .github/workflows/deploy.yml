@@ -42,7 +42,7 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: 'dist'
           target: '${{ vars.DEPLOY_PATH }}/releases/${{ github.sha }}'
           strip_components: 0
@@ -54,7 +54,7 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
             DEPLOY_PATH="${{ vars.DEPLOY_PATH }}"
