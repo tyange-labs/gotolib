@@ -1083,9 +1083,11 @@
   border-radius: 5px;
 }
 
-/* ── '한국문학' 탭 책 한 줄: 서재 카드처럼 표지를 왼쪽에 둔다(.search-result는 baseline이라 표지 칸과 안 맞아 center로 덮어쓴다) ── */
+/* ── '한국문학' 탭 책 한 줄: 서재 카드(.book-card__row)와 같은 규칙 — flex-start로 위쪽을 맞춘다.
+   center로 하면 제목·메타가 두 줄로 밀리는 책(부제 있는 책, "(큰글자도서)" 등)만 행 높이가 커져서
+   아이콘이 아래로 처지고, 그 옆줄과 높이가 안 맞아 정렬이 흔들려 보인다. */
 .novel-row {
-  align-items: center;
+  align-items: flex-start;
 }
 
 .novel-row .book-cover {
