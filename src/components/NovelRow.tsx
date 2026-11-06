@@ -1,3 +1,4 @@
+import { Check, Library as ShelfIcon } from 'lucide-solid'
 import { Show } from 'solid-js'
 import { useApp } from '../context/appContext'
 import { yes24ProductUrl } from '../lib/koreanNovelsApi'
@@ -58,12 +59,16 @@ export function NovelRow(props: Props) {
           <img src="/brands/yes24.ico" alt="" width="20" height="20" />
         </a>
         <button
-          class="shelf-pill"
-          classList={{ 'shelf-pill--done': props.inShelf }}
+          class="icon-button"
           disabled={props.inShelf}
+          aria-pressed={props.inShelf}
           onClick={add}
+          aria-label={`${props.novel.title} ${props.inShelf ? '서재에 담김' : '서재에 담기'}`}
+          title={props.inShelf ? '서재에 담겼어요' : '서재에 담기'}
         >
-          {props.inShelf ? '✓ 담김' : '서재에 담기'}
+          <Show when={props.inShelf} fallback={<ShelfIcon size={18} />}>
+            <Check size={18} />
+          </Show>
         </button>
       </div>
     </li>

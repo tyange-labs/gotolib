@@ -1064,29 +1064,6 @@
 }
 
 /* 서재에 담기: 상태와 상관없이 같은 폭의 알약 버튼이라 옆 YES24 아이콘이 줄마다 흔들리지 않는다 */
-.shelf-pill {
-  width: 6.5em;
-  padding: var(--tl-space-1) 0;
-  border: 1px solid var(--tl-border-strong);
-  border-radius: 999px;
-  font-size: var(--tl-text-xs);
-  text-align: center;
-  white-space: nowrap;
-  color: var(--tl-fg-muted);
-}
-
-.shelf-pill:hover:not(:disabled) {
-  color: var(--tl-fg);
-  border-color: var(--tl-fg-muted);
-}
-
-.shelf-pill--done,
-.shelf-pill:disabled {
-  border-color: transparent;
-  background: var(--tl-surface-sunken);
-  color: var(--tl-fg-subtle);
-}
-
 /* 외부 서점 링크: 브랜드 아이콘만(누르기 쉬운 영역은 패딩으로 넓힌다) */
 .brand-link {
   display: inline-flex;
